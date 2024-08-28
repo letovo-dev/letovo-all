@@ -1,0 +1,3 @@
+[submodule "letovo-soc-net"]
+	path = letovo-soc-net
+	url = https://github.com/letovo-dev/letovo-soc-net.git
