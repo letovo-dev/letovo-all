@@ -35,11 +35,7 @@
 *
 !/**/
 !*.*
-*/CMakeFiles/*
+CMakeFiles/*
 *.cmake
-*/Makefile
-*/CMakeCache.txt
-
-*/_deps/*
-build/*
-.vscode/*
+Makefile
+CMakeCache.txt

@@ -18,6 +18,16 @@ else()
     set(httplib_path ${HTTPLIB_LIBRARY})
 endif()
 
-add_executable(example auth.cc)
+# ?
+include(FetchContent)
+fetchcontent_declare(jwt-cpp 
+    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
+    GIT_TAG 08bcf77a687fb06e34138e9e9fa12a4ecbe12332 # v0.7.0 release
+)
+set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "disable building examples" FORCE)
+fetchcontent_makeavailable(jwt-cpp)
 
-target_link_libraries(example ${httplib_path} -lpqxx -lpq)
+
+add_executable(server_starter pqxx_cp.cc)
+
+target_link_libraries(server_starter ${httplib_path} jwt-cpp::jwt-cpp -lpqxx -lpq)
