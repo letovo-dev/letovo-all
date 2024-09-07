@@ -1,6 +1,6 @@
-[submodule "letovo-soc-net"]
+[submodule "src/market"]
+	path = src/market
+	url = https://github.com/letovo-dev/market.git
+[submodule "src/letovo-soc-net"]
 	path = src/letovo-soc-net
 	url = https://github.com/letovo-dev/letovo-soc-net.git
-[submodule "src/market"]
-	path = market
-	url = https://github.com/letovo-dev/market.git
