@@ -71,6 +71,8 @@ void connection_pool() {
 
     auto tx = cp::tx(pool, create_table);
 
+    tx.get().esc("");
+
     pqxx::result r = create_table();
 
     tx.commit();

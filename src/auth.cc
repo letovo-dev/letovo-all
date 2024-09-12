@@ -2,40 +2,47 @@
 #include <httplib.h>
 #include "pqxx_cp.cc"
 #include <pqxx/pqxx>
+#include <unordered_set> 
 
-
-void auth(std::shared_ptr<httplib::Server> svr_ptr, cp::connection_pool& pool) {
-    svr_ptr->Get("/auth", [](const httplib::Request& req, httplib::Response& res)
+void auth(std::shared_ptr<httplib::Server> svr_ptr, cp::connection_pool pool) {
+    svr_ptr->Get("/auth", [&](const httplib::Request& req, httplib::Response& res)
     {
         int status = 200;
 
-        auto loginHeader = req.get_header_value("login");
-        auto passwordHeader = req.get_header_value("password");
+        std::string loginHeader = req.get_header_value("login");
+        std::string passwordHeader = req.get_header_value("password");
 
-        if (!loginHeader.empty() && !passwordHeader.empty())
-        {
-            // get password from db, compare hash
-        }
-        else
+        if (loginHeader.empty() || passwordHeader.empty())
         {
             status = 403;
         }
+        else
+        {
+            // get password from db, compare hash
+            std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
 
-        auto token = jwt::create()
-            .set_type("JWS")
-            .set_issuer("auth0")
-            .set_id(loginHeader)
-            .sign(jwt::algorithm::hs256{"secret"});
+            cp::query get_user("SELECT userId User WHEREE userName=($1) AND passwdHash=($2)");
+            auto tx = cp::tx(pool, get_user);
+            
+            pqxx::result result = get_user(loginHeader, passwordHash);
+            if(result.empty()) {
+                status = 401;
+            }
+            else {
+                auto token = jwt::create()
+                    .set_type("JWS")
+                    .set_issuer("auth0")
+                    .set_id(loginHeader)
+                    .sign(jwt::algorithm::hs256{"secret"});
 
+                res.set_header("token", token);
+            }
+        }
         res.status = status;
-        res.set_header("token", token);
 
-        res.set_header("Access-Control-Allow-Origin", "*");
-        res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        res.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     });
 
-    svr_ptr->Get("/reg", [](const httplib::Request& req, httplib::Response& res)
+    svr_ptr->Get("/reg", [&](const httplib::Request& req, httplib::Response& res)
     {
         int status = 200;
 
@@ -45,25 +52,25 @@ void auth(std::shared_ptr<httplib::Server> svr_ptr, cp::connection_pool& pool) {
         if (!loginHeader.empty() && !passwordHeader.empty())
         {
             // create password hash, write info to db
+            std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
+
+            cp::query add_user("INSERT INTO public.\"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, '$2', '$3', '', now());");
+
+            auto tx = cp::tx(pool, add_user);
+
+            pqxx::result result = add_user(std::stoi(passwordHash), loginHeader, passwordHash);         
+
+            auto token = jwt::create()
+                .set_type("JWS")
+                .set_issuer("auth0")
+                .set_id(loginHeader)
+                .sign(jwt::algorithm::hs256{"secret"});  
         }
         else
         {
             status = 403;
         }
-
-        auto token = jwt::create()
-            .set_type("JWS")
-            .set_issuer("auth0")
-            .set_id(loginHeader)
-            .sign(jwt::algorithm::hs256{"secret"});
-
-
         res.status = status;
-        res.set_header("token", token);
-
-        res.set_header("Access-Control-Allow-Origin", "*");
-        res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        res.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     });
 }
 

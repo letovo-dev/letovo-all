@@ -28,6 +28,6 @@ set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "disable building examples" FORCE)
 fetchcontent_makeavailable(jwt-cpp)
 
 
-add_executable(server_starter examples.cpp)
+add_executable(server_starter test_pqxx.cc)
 
 target_link_libraries(server_starter ${httplib_path} jwt-cpp::jwt-cpp -lpqxx -lpq)
