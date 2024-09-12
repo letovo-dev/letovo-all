@@ -1,0 +1,6 @@
+{
+    "dbname": "sandbox",
+    "user": "<username>",
+    "password": "<passwd (default 1234)>",
+    "host": "91.203.232.173"
+}

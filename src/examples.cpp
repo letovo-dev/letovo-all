@@ -6,6 +6,9 @@
 #include <string>
 #include <ctime>
 #include <pqxx/pqxx>
+#include "pqxx_cp.cc"
+#include "rapidjson/document.h" 
+
 
 std::ifstream in("image.png", std::ios::in | std::ios::binary);
 std::ostringstream contents;
@@ -46,6 +49,36 @@ void postgresql_example() {
         std::cout << name << ", " << user_id << std::endl;
     }
 }
+
+void connection_pool() {
+    std::ifstream config_file("SqlConnectionConfig.json");
+    std::string json((std::istreambuf_iterator<char>(config_file)), std::istreambuf_iterator<char>());
+
+    rapidjson::Document sql_config;
+
+    sql_config.Parse(json.c_str());
+    
+    cp::connection_options options;
+
+    options.user = sql_config["user"].GetString();
+    options.password = sql_config["password"].GetString();
+    options.dbname = sql_config["dbname"].GetString();
+    options.hostaddr = sql_config["host"].GetString();
+    
+    cp::connection_pool pool{options};
+
+    cp::query create_table("SELECT * FROM User;");
+
+    auto tx = cp::tx(pool, create_table);
+
+    pqxx::result r = create_table();
+
+    tx.commit();
+
+    std::string s1 = r[0][0].as<std::string>();
+
+    std::cout<<'\n'<<s1<<'\n';
+} 
 
 
 int main() {

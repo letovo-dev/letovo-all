@@ -1,6 +1,8 @@
 #include <jwt-cpp/jwt.h>
 #include <httplib.h>
 #include "pqxx_cp.cc"
+#include <pqxx/pqxx>
+
 
 void auth(std::shared_ptr<httplib::Server> svr_ptr, cp::connection_pool& pool) {
     svr_ptr->Get("/auth", [](const httplib::Request& req, httplib::Response& res)
@@ -83,20 +85,20 @@ bool is_authed(const httplib::Request& req, cp::connection_pool& pool) {
     return is_authed(token, pool);
 }
 
-// int main() {
-//     auto token = jwt::create()
-//         .set_type("JWS")
-//         .set_issuer("auth0")
-//         .set_id("scv")
-//         .set_payload_claim("user", jwt::claim(std::string("scv")))
-//         .sign(jwt::algorithm::hs256{"secret"});
+int main() {
+    auto token = jwt::create()
+        .set_type("JWS")
+        .set_issuer("auth0")
+        .set_id("scv")
+        .set_payload_claim("user", jwt::claim(std::string("scv")))
+        .sign(jwt::algorithm::hs256{"secret"});
 
-//     std::cout<<token<<std::endl;
+    std::cout<<token<<std::endl;
 
-//     auto decoded = jwt::decode(token);  
+    auto decoded = jwt::decode(token);  
 
-//     for(auto& e : decoded.get_payload_json())
-//         std::cout << e.first << " = " << e.second << std::endl;
+    for(auto& e : decoded.get_payload_json())
+        std::cout << e.first << " = " << e.second << std::endl;
 
-//     std::cout<<std::endl;   
-// }
+    std::cout<<std::endl;   
+}
