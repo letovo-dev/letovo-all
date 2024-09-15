@@ -1,52 +1,20 @@
-#ifndef _PQXX_CONNECTION_POOL_HPP
-#define _PQXX_CONNECTION_POOL_HPP
-
-#include <string>
-#include <unordered_set>
-#include <condition_variable>
-#include <mutex>
-#include <pqxx/pqxx>
-#include <queue>
-
-#include <iostream>
+#include "pqxx_cp.h"
 
 namespace cp {
-	struct basic_transaction;
 
-	struct connection_options {
-		std::string dbname{};
-		std::string user{};
-		std::string password{};
-		std::string hostaddr{};
-		int16_t port = 5432;
 
-		int connections_count = 8;
-	};
+	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection) : connection(std::move(connection)){};
 
-	struct connection_manager {
-		connection_manager(std::unique_ptr<pqxx::connection>& connection) : connection(std::move(connection)){};
-		connection_manager(const connection_manager&) = delete;
-		connection_manager& operator=(const connection_manager&) = delete;
+	void connection_manager::prepare(const std::string& name, const std::string& definition) {
+		std::scoped_lock lock(prepares_mutex);
+		if (prepares.contains(name))
+			return;
 
-		void prepare(const std::string& name, const std::string& definition) {
-			std::scoped_lock lock(prepares_mutex);
-			if (prepares.contains(name))
-				return;
+		connection->prepare(name, definition);
+		prepares.insert(name);
+	}
 
-			connection->prepare(name, definition);
-			prepares.insert(name);
-		}
-
-		friend struct basic_connection;
-
-	private:
-		std::unordered_set<std::string> prepares{};
-		std::mutex prepares_mutex{};
-		std::unique_ptr<pqxx::connection> connection{};
-	};
-
-	struct 	connection_pool {
-		connection_pool(const connection_options& options) {
+	connection_pool::connection_pool(const connection_options& options) {
 			for (int i = 0; i < options.connections_count; ++i) {
 				const auto connect_string = std::format("dbname = {} user = {} password = {} hostaddr = {} port = {}", options.dbname, options.user, options.password, options.hostaddr, options.port);
 
@@ -54,19 +22,9 @@ namespace cp {
 				auto manager = std::make_unique<connection_manager>(connection);
 				connections.push(std::move(manager));
 			}
-		}
+	}
 
-		std::unique_ptr<connection_manager> borrow_connection() {
-			std::unique_lock lock(connections_mutex);
-			connections_cond.wait(lock, [this]() { return !connections.empty(); });
-
-			// if we have something here, we can borrow it from the queue
-			auto manager = std::move(connections.front());
-			connections.pop();
-			return manager;
-		}
-
-		void return_connection(std::unique_ptr<connection_manager>& manager) {
+	void connection_pool::return_connection(std::unique_ptr<connection_manager>& manager) {
 			// return the borrowed connection
 			{
 				std::scoped_lock lock(connections_mutex);
@@ -77,87 +35,54 @@ namespace cp {
 			connections_cond.notify_one();
 		}
 
-	private:
-		std::mutex connections_mutex{};
-		std::condition_variable connections_cond{};
-		std::queue<std::unique_ptr<connection_manager>> connections{};
-	};
+	std::unique_ptr<connection_manager> connection_pool::borrow_connection() {
+			std::unique_lock lock(connections_mutex);
+			connections_cond.wait(lock, [this]() { return !connections.empty(); });
 
-	struct basic_connection final {
-		basic_connection(connection_pool& pool) : pool(pool) {
-			manager = pool.borrow_connection();
-		}
+			// if we have something here, we can borrow it from the queue
+			auto manager = std::move(connections.front());
+			connections.pop();
+			return manager;
+	}
 
-		~basic_connection() {
-			pool.return_connection(manager);
-		}
 
-		pqxx::connection& get() const { return *manager->connection; }
+	basic_connection::basic_connection(connection_pool& pool) : pool(pool) {
+		manager = pool.borrow_connection();
+	}
 
-		operator pqxx::connection&() { return get(); }
-		operator const pqxx::connection&() const { return get(); }
+	basic_connection::~basic_connection() {
+		pool.return_connection(manager);
+	}
 
-		pqxx::connection* operator->() { return manager->connection.get(); }
-		const pqxx::connection* operator->() const { return manager->connection.get(); }
+	pqxx::connection& basic_connection::get() const { return *manager->connection; }
 
-		void prepare(std::string_view name, std::string_view definition) {
-			manager->prepare(std::string(name), std::string(definition));
-		}
+	basic_connection::operator pqxx::connection&() { return get(); }
+	basic_connection::operator const pqxx::connection&() const { return get(); }
 
-		basic_connection(const basic_connection&) = delete;
-		basic_connection& operator=(const basic_connection&) = delete;
+	pqxx::connection* basic_connection::operator->() { return manager->connection.get(); }
+	const pqxx::connection* basic_connection::operator->() const { return manager->connection.get(); }
 
-	private:
-		connection_pool& pool;
-		std::unique_ptr<connection_manager> manager;
-	};
+	void basic_connection::prepare(std::string_view name, std::string_view definition) {
+		manager->prepare(std::string(name), std::string(definition));
+	}
 
-	struct query_manager {
-		query_manager(basic_transaction& transaction, std::string_view query_id) : transaction_view(transaction), query_id(query_id) {}
 
-		template<typename... Args>
-		pqxx::result exec_prepared(Args&&... args);
+	query_manager::query_manager(basic_transaction& transaction, std::string_view query_id) : transaction_view(transaction), query_id(query_id) {}
+	
+	query::query(std::string_view str) : str(str) {}
 
-	private:
-		std::string query_id{};
-		basic_transaction& transaction_view;
-	};
-
-	struct query {
-		query(std::string_view str) : str(str) {}
-
-		const char* data() const {
+	const char* query::data() const {
 			return str.data();
 		}
 
-		operator std::string() const {
+		query::operator std::string() const {
 			return { str.begin(), str.end() };
 		}
 
-		constexpr operator std::string_view() const {
+		constexpr query::operator std::string_view() const {
 			return { str.data(), str.size() };
 		}
 
-		template<typename... Args>
-		pqxx::result operator()(Args&&... args) {
-			return exec(std::forward<Args>(args)...);
-		}
-
-		template<typename... Args>
-		pqxx::result exec(Args&&... args) {
-			if (!manager.has_value())
-				throw std::runtime_error("attempt to execute a query without connection with a transaction");
-
-			return manager->exec_prepared(std::forward<Args>(args)...);
-		}
-
-		friend struct query_manager;
-		friend struct basic_transaction;
-
-	protected:
-		std::string str;
-		mutable std::optional<query_manager> manager{};
-	};
 
 	struct named_query : query {
 		named_query(std::string_view name, std::string_view str) : query(str), name(name) {}
@@ -169,55 +94,28 @@ namespace cp {
 		std::string name;
 	};
 
-	struct basic_transaction {
-		void prepare_one(const query& q) {
+	void basic_transaction::prepare_one(const query& q) {
 			const auto query_id = std::format("{:X}", std::hash<std::string_view>()(q));
 			connection.prepare(query_id, q);
 			q.manager.emplace(*this, query_id);
-		}
-
-		void prepare_one(const named_query& q) {
+	}
+	
+	void basic_transaction::prepare_one(const named_query& q) {
 			connection.prepare(q.name, q);
 			q.manager.emplace(*this, q.name);
-		}
-
-		template<typename... Queries>
-		void prepare(Queries&&... queries) {
-			(prepare_one(std::forward<Queries>(queries)), ...);
-		}
-
-		template<typename... Queries>
-		basic_transaction(connection_pool& pool, Queries&&... queries) : connection(pool), transaction(connection.get()) {
-			prepare(std::forward<Queries>(queries)...);
-		}
-
-		basic_transaction(const basic_transaction&) = delete;
-		basic_transaction& operator=(const basic_transaction&) = delete;
-
-		pqxx::result exec(std::string_view q) { return transaction.exec(q); }
-		void commit() { transaction.commit(); }
-		void abort() { transaction.abort(); }
-
-		pqxx::work& get() { return transaction; }
-		operator pqxx::work&() { return get(); }
-
-		friend struct query_manager;
-		friend struct connection_pool;
-
-	private:
-		basic_connection connection;
-		pqxx::work transaction;
-	};
-
-	template<typename... Args>
-	pqxx::result query_manager::exec_prepared(Args&&... args) {
-		return transaction_view.transaction.exec_prepared(query_id, std::forward<Args>(args)...);
 	}
+	
+	pqxx::result basic_transaction::exec(std::string_view q) { return transaction.exec(q); }
+	
+	void basic_transaction::commit() { transaction.commit(); }
+	
+	void basic_transaction::abort() { transaction.abort(); }
 
-	template<typename... Queries>
-	static basic_transaction tx(connection_pool& pool, Queries&&... queries) {
-		return basic_transaction(pool, std::forward<Queries>(queries)...);
-	}
-} // namespace cp
+	pqxx::work& basic_transaction::get() { return transaction; }
+	
+	basic_transaction::operator pqxx::work&() { return get(); }
+	
 
-#endif
+
+
+}

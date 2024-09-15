@@ -1,10 +1,6 @@
-#include <jwt-cpp/jwt.h>
-#include <httplib.h>
-#include "pqxx_cp.cc"
-#include <pqxx/pqxx>
-#include <unordered_set> 
+#include "auth.h"
 
-void enable_auth(std::shared_ptr<httplib::Server> svr_ptr, cp::connection_pool& pool_ptr) {
+void enable_auth(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr) {
     svr_ptr->Get("/auth", [&](const httplib::Request& req, httplib::Response& res)
     {
         int status = 200;
@@ -22,7 +18,7 @@ void enable_auth(std::shared_ptr<httplib::Server> svr_ptr, cp::connection_pool& 
             std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
 
             cp::query get_user("SELECT userId User WHEREE userName=($1) AND passwdHash=($2)");
-            auto tx = cp::tx(pool_ptr, get_user);
+            auto tx = cp::tx(*pool_ptr, get_user);
             
             pqxx::result result = get_user(loginHeader, passwordHash);
             if(result.empty()) {
@@ -59,7 +55,7 @@ void enable_auth(std::shared_ptr<httplib::Server> svr_ptr, cp::connection_pool& 
 
                 cp::query add_user("INSERT INTO public.\"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
 
-                auto tx = cp::tx(pool_ptr, add_user);
+                auto tx = cp::tx(*pool_ptr, add_user);
 
                 pqxx::result result = add_user(std::stoi(passwordHash), loginHeader, passwordHash);         
 

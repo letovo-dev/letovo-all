@@ -1,8 +1,8 @@
 #include <pqxx/pqxx>
 #include <httplib.h>
-#include "pqxx_cp.cc"
+#include "pqxx_cp.h"
 #include "rapidjson/document.h" 
-#include "auth.cc"
+#include "auth.h"
 
 
 int main() {
@@ -21,10 +21,10 @@ int main() {
     options.password = sql_config["password"].GetString();
     options.dbname = sql_config["dbname"].GetString();
     options.hostaddr = sql_config["host"].GetString();
-    
-    cp::connection_pool pool{options};
 
-    enable_auth(p, pool);
+    std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(options);
+
+    enable_auth(p, pool_ptr);
 
     // test_http(pool);
     

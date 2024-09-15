@@ -33,6 +33,6 @@ fetchcontent_makeavailable(jwt-cpp)
 fetchContent_MakeAvailable(spdlog)
 
 
-add_executable(server_starter "$ENV{BUILD_FILE}")
+add_executable(server_starter "$ENV{BUILD_FILE}" auth.cc pqxx_cp.cc)
 
 target_link_libraries(server_starter ${httplib_path} jwt-cpp::jwt-cpp spdlog::spdlog -lpqxx -lpq)

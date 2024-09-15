@@ -6,7 +6,7 @@
 #include <string>
 #include <ctime>
 #include <pqxx/pqxx>
-#include "pqxx_cp.cc"
+#include "pqxx_cp.h"
 #include "rapidjson/document.h" 
 #include "spdlog/spdlog.h"
 
