@@ -8,6 +8,8 @@
 #include <pqxx/pqxx>
 #include <queue>
 
+#include <iostream>
+
 namespace cp {
 	struct basic_transaction;
 

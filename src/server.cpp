@@ -1,14 +1,8 @@
 #include <pqxx/pqxx>
 #include <httplib.h>
-#include "letovo-soc-net/chats.cc"
 #include "pqxx_cp.cc"
 #include "rapidjson/document.h" 
-
-
-
-void enable_auth(std::shared_ptr<httplib::Server> p) {
-    
-}
+#include "auth.cc"
 
 
 int main() {
@@ -29,9 +23,10 @@ int main() {
     options.hostaddr = sql_config["host"].GetString();
     
     cp::connection_pool pool{options};
-    std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(pool); 
-    // enable_auth(p);
-    // placeholder(p);
+
+    enable_auth(p, pool);
+
+    // test_http(pool);
     
 
     p -> listen("0.0.0.0", 8080);
