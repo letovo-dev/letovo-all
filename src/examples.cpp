@@ -68,17 +68,22 @@ void connection_pool() {
     
     cp::connection_pool pool{options};
 
-    cp::query create_table("SELECT * FROM User;");
+    cp::query create_table("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
 
     auto tx = cp::tx(pool, create_table);
 
-    pqxx::result r = create_table();
+
+    std::string passwordHash = std::to_string(std::hash<std::string>{}("scv14"));
+    int id = std::stoul(passwordHash) % 1000;
+    std::cout<<id<<std::endl;
+    pqxx::result r = create_table(id, "scv14", passwordHash);
 
     tx.commit();
 
-    std::string s1 = r[0][0].as<std::string>();
+    // std::string s1 = r[0][0].as<std::string>();
 
-    std::cout<<'\n'<<s1<<'\n';
+    // std::cout<<'\n'<<s1<<'\n';
+    std::cout<<"all fine\n";
 } 
 
 void loger() 
@@ -107,4 +112,5 @@ void loger()
 
 
 int main() {
+    connection_pool();
 }

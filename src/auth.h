@@ -5,6 +5,7 @@
 #include "pqxx_cp.h"
 #include <pqxx/pqxx>
 #include <unordered_set> 
+#include "spdlog/spdlog.h"
 
 void enable_auth(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr);
 

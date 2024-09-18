@@ -1,8 +1,6 @@
 #include "pqxx_cp.h"
 
 namespace cp {
-
-
 	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection) : connection(std::move(connection)){};
 
 	void connection_manager::prepare(const std::string& name, const std::string& definition) {
@@ -114,8 +112,4 @@ namespace cp {
 	pqxx::work& basic_transaction::get() { return transaction; }
 	
 	basic_transaction::operator pqxx::work&() { return get(); }
-	
-
-
-
 }

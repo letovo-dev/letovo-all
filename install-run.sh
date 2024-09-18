@@ -16,7 +16,7 @@ while getopts 'tif:' OPTION; do
             ;;
         t)
             echo "running test file"
-            work_file="$OPTARG"
+            work_file="$test_file"
             ;;
         ?)
             echo "idk what you mean"

@@ -4,6 +4,12 @@
 #include "rapidjson/document.h" 
 #include "auth.h"
 
+void echo(std::shared_ptr<httplib::Server> svr_ptr) {
+    svr_ptr -> Get("/hi", [](const httplib::Request & /*req*/, httplib::Response &res) {
+    res.set_content("Hello World!", "text/plain");
+  });
+}
+
 
 int main() {
     std::shared_ptr<httplib::Server> p = std::make_shared<httplib::Server>();
@@ -23,11 +29,8 @@ int main() {
     options.hostaddr = sql_config["host"].GetString();
 
     std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(options);
-
-    enable_auth(p, pool_ptr);
-
-    // test_http(pool);
-    
+    echo(p);
+    enable_auth(p, pool_ptr);    
 
     p -> listen("0.0.0.0", 8080);
 }
