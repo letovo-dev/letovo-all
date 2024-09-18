@@ -57,8 +57,28 @@ CREATE TABLE IF NOT EXISTS "active" (
     activeName VARCHAR(255), 
     activeTicker VARCHAR(16), -- TODO: check size
     activePrice INT,
-    activeDescription TEXT
+    activeDescription text,
+    ispublic BOOL default false
     -- something else?
+);
+
+create table if not exists "activeHistory" (
+	dealId INT primary key,
+	buy BOOL,
+	userId INT references "user"(userId),
+	activeId INT references "active"(activeId),
+	ammount INT,
+	activePrice INT,
+	dealTime TIMESTAMP DEFAULT Now()
+);
+
+create table if not exists "pool" (
+	bidId INT primary key,
+	buy BOOL,
+	userId INT references "user"(userId),
+	activeId INT references "active"(activeId),
+	bidPrice INT, 
+	ammount INT
 );
 
 CREATE TABLE IF NOT EXISTS usersActives (
@@ -68,10 +88,3 @@ CREATE TABLE IF NOT EXISTS usersActives (
     ammount INT,
     avgBoughtPrice FLOAT(5) -- TODO: check size
 );
-
-CREATE TABLE IF NOT EXISTS "transaction" (
-    transactionId INT primary key,
-    lineId INT references usersActives(lineId),
-    transactionTime TIMESTAMP DEFAULT Now(),
-    transactionPrice FLOAT(10) -- TODO: check size
-)

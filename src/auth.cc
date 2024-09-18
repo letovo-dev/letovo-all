@@ -27,7 +27,7 @@ bool is_authed(const httplib::Request& req, std::shared_ptr<cp::connection_pool>
     return is_authed(token, pool_ptr);
 }
 
-void enable_auth(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr) {
+void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr) {
     svr_ptr->Get("/auth", [&](const httplib::Request& req, httplib::Response& res){
         spdlog::info("auth request from " + req.remote_addr);
         int status = 200;
@@ -112,8 +112,6 @@ void enable_auth(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::c
         }
     });
 }
-
-
 
 // DELETE ME
 void test_http(cp::connection_pool& pool_ptr) {

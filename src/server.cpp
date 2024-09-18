@@ -3,6 +3,7 @@
 #include "pqxx_cp.h"
 #include "rapidjson/document.h" 
 #include "auth.h"
+#include "market/actives_server.h"
 
 void echo(std::shared_ptr<httplib::Server> svr_ptr) {
     svr_ptr -> Get("/hi", [](const httplib::Request & /*req*/, httplib::Response &res) {
@@ -29,8 +30,11 @@ int main() {
     options.hostaddr = sql_config["host"].GetString();
 
     std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(options);
+
+    // start all server functions
     echo(p);
-    enable_auth(p, pool_ptr);    
+    enable_auth_reg(p, pool_ptr);    
+    enable_all_actives(p, pool_ptr);
 
     p -> listen("0.0.0.0", 8080);
 }
