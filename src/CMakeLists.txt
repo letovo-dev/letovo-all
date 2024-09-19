@@ -32,7 +32,9 @@ set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "disable building examples" FORCE)
 fetchcontent_makeavailable(jwt-cpp)
 fetchContent_MakeAvailable(spdlog)
 
+string(REPLACE " " ";" BUILD_FILES $ENV{BUILD_FILES})
+set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")
 
-add_executable(server_starter "$ENV{BUILD_FILE}" auth.cc pqxx_cp.cc)
+add_executable(server_starter ${SOURCES})
 
 target_link_libraries(server_starter ${httplib_path} jwt-cpp::jwt-cpp spdlog::spdlog -lpqxx -lpq)

@@ -2,7 +2,28 @@
 
 test_file="test.cpp"
 work_file="server.cpp"
+build_files=""
 run_flag=true
+
+# Read and parse BuildConfig.json
+config_file="./BuildConfig.json"
+
+if [ -f "$config_file" ]; then
+    test_file=$(jq -r '.test_file' "$config_file")
+    work_file=$(jq -r '.work_file' "$config_file")
+    for i in $(jq -c '.build_files[]' "$config_file"); do
+        build_files+="$i "
+    done 
+    build_files=$(echo "$build_files" | tr -d '"')
+    build_files=$(echo "$build_files" | tr '\n' ' ')
+else
+    echo "Config file not found!"
+    exit 1
+fi
+
+echo "test file $test_file"
+echo "work file $work_file"
+echo "build files: $build_files"
 
 while getopts 'tif:' OPTION; do
     case "$OPTION" in
@@ -24,7 +45,8 @@ while getopts 'tif:' OPTION; do
 done
 
 if [ $run_flag = true ]; then
-    export BUILD_FILE="$work_file"
+    export MAIN_FILE="$work_file"
+    export BUILD_FILES="$build_files"
     echo "running $work_file"
     cd src
     cmake .
