@@ -28,19 +28,20 @@ bool is_authed(const httplib::Request& req, std::shared_ptr<cp::connection_pool>
 }
 
 void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr) {
-    svr_ptr->Get("/auth", [&](const httplib::Request& req, httplib::Response& res){
+    svr_ptr->Post("/auth", [&](const httplib::Request& req, httplib::Response& res){
         spdlog::info("auth request from " + req.remote_addr);
         int status = 200;
 
-        std::string loginHeader = req.get_header_value("login");
-        std::string passwordHeader = req.get_header_value("password");
+        rapidjson::Document new_body;
+        new_body.Parse(req.body.c_str());
 
-        if (loginHeader.empty() || passwordHeader.empty())
-        {
-            status = 403;
-        }
-        else
-        {
+        // std::string loginHeader = req.get_header_value("login");
+        // std::string passwordHeader = req.get_header_value("password");
+
+        if (new_body.HasMember("login") && new_body.HasMember("password")) {
+            std::string loginHeader = new_body["login"].GetString();
+            std::string passwordHeader = new_body["password"].GetString();
+
             // get password from db, compare hash
             std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
 
@@ -63,18 +64,28 @@ void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<c
                 res.set_content(token, "text/plain");
             }
         }
+        else
+        {
+            status = 403;
+        }
         spdlog::info(req.remote_addr + " is authed");
         res.status = status;
+
     });
 
-    svr_ptr->Get("/reg", [&](const httplib::Request& req, httplib::Response& res){
-        int status = 200;
-        
-        auto loginHeader = req.get_header_value("login");
-        auto passwordHeader = req.get_header_value("password");
+    svr_ptr->Post("/reg", [&](const httplib::Request& req, httplib::Response& res){
+        spdlog::info("reg request from " + req.remote_addr);
 
-        if (!loginHeader.empty() && !passwordHeader.empty())
+        int status = 200;
+
+        rapidjson::Document new_body;
+        new_body.Parse(req.body.c_str());
+
+        if (new_body.HasMember("login") && new_body.HasMember("password"))
         {
+            std::string loginHeader = new_body["login"].GetString();
+            std::string passwordHeader = new_body["password"].GetString();
+
             try {
                 // create password hash, write info to db
                 std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
@@ -94,14 +105,15 @@ void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<c
                     .sign(jwt::algorithm::hs256{"secret"});  
             }
             catch(const char* error_message) {std::cout<<error_message<<std::endl;} 
+            spdlog::info("new user " + loginHeader);
+            res.set_content("ok", "text/plain");
         }
         else
         {
+            res.set_content("probably wrong body names", "text/plain");
             status = 403;
         }
         res.status = status;
-        spdlog::info("new user " + loginHeader);
-        res.set_content("ok", "text/plain");
     });
 
     svr_ptr -> Get("/amiauthed", [&](const httplib::Request& req, httplib::Response& res) {
