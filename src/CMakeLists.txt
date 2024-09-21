@@ -8,6 +8,9 @@ set(CMAKE_CXX_EXTENSIONS Off)
 
 INCLUDE(FindPkgConfig)
 
+# TODO: add to install-run
+# add_compile_options(-g)
+
 if("$ENV{ROS_DISTRO}" STRGREATER "debian")
     pkg_check_modules(HTTPLIB cpp-httplib REQUIRED)
     set(httplib_path ${HTTPLIB_LIBRARIES})

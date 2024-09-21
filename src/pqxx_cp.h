@@ -17,6 +17,8 @@ namespace cp
 	struct connection_manager;
 	struct query;
 
+	std::string serialize(pqxx::result res);
+
 	struct basic_connection final {
 		basic_connection(connection_pool& pool);
 

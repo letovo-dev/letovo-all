@@ -28,6 +28,7 @@ int main() {
     options.password = sql_config["password"].GetString();
     options.dbname = sql_config["dbname"].GetString();
     options.hostaddr = sql_config["host"].GetString();
+    options.connections_count = 1;
 
     std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(options);
 

@@ -28,15 +28,12 @@ bool is_authed(const httplib::Request& req, std::shared_ptr<cp::connection_pool>
 }
 
 void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr) {
-    svr_ptr->Post("/auth", [&](const httplib::Request& req, httplib::Response& res){
+    svr_ptr->Post("/auth", [pool_ptr](const httplib::Request& req, httplib::Response& res){
         spdlog::info("auth request from " + req.remote_addr);
         int status = 200;
 
         rapidjson::Document new_body;
         new_body.Parse(req.body.c_str());
-
-        // std::string loginHeader = req.get_header_value("login");
-        // std::string passwordHeader = req.get_header_value("password");
 
         if (new_body.HasMember("login") && new_body.HasMember("password")) {
             std::string loginHeader = new_body["login"].GetString();
@@ -73,7 +70,7 @@ void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<c
 
     });
 
-    svr_ptr->Post("/reg", [&](const httplib::Request& req, httplib::Response& res){
+    svr_ptr->Post("/reg", [pool_ptr](const httplib::Request& req, httplib::Response& res){
         spdlog::info("reg request from " + req.remote_addr);
 
         int status = 200;
