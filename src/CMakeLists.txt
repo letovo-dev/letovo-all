@@ -9,7 +9,9 @@ set(CMAKE_CXX_EXTENSIONS Off)
 INCLUDE(FindPkgConfig)
 
 # TODO: add to install-run
-# add_compile_options(-g)
+if("$ENV{DEBUG}" STREQUAL "t")
+    add_compile_options(-g)
+endif()
 
 if("$ENV{ROS_DISTRO}" STRGREATER "debian")
     pkg_check_modules(HTTPLIB cpp-httplib REQUIRED)
@@ -17,6 +19,10 @@ if("$ENV{ROS_DISTRO}" STRGREATER "debian")
 else()
     find_package(httplib REQUIRED)
     set(httplib_path ${HTTPLIB_LIBRARY})
+    # # 3. fmtlib
+    find_package(fmt REQUIRED)
+    # RESTinio itself
+    find_package(restinio REQUIRED)
 endif()
 
 # ?
@@ -35,9 +41,16 @@ set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "disable building examples" FORCE)
 fetchcontent_makeavailable(jwt-cpp)
 fetchContent_MakeAvailable(spdlog)
 
+FetchContent_Declare(llhttp
+  URL "https://github.com/nodejs/llhttp/archive/refs/tags/release/v8.1.0.tar.gz")
+
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
+set(BUILD_STATIC_LIBS ON CACHE INTERNAL "")
+FetchContent_MakeAvailable(llhttp)
+
 string(REPLACE " " ";" BUILD_FILES $ENV{BUILD_FILES})
 set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")
 
 add_executable(server_starter ${SOURCES})
 
-target_link_libraries(server_starter ${httplib_path} jwt-cpp::jwt-cpp spdlog::spdlog -lpqxx -lpq)
+target_link_libraries(server_starter ${httplib_path} restinio::restinio jwt-cpp::jwt-cpp spdlog::spdlog -lpqxx -lpq)

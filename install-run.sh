@@ -25,7 +25,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'tif:' OPTION; do
+while getopts 'tifd:' OPTION; do
     case "$OPTION" in
         i) 
             ehco "installing"
@@ -38,6 +38,10 @@ while getopts 'tif:' OPTION; do
         t)
             echo "running test file"
             work_file="$test_file"
+            ;;
+        d)
+            echo "running with debug keys"
+            export DEBUG="t"
             ;;
         ?)
             echo "idk what you mean"

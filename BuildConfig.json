@@ -1,5 +1,5 @@
 {
     "test_file": "test.cpp",
     "work_file": "server.cpp",
-    "build_files": ["auth.cc", "pqxx_cp.cc", "./market/actives_db.cc", "./market/actives_server.cc"]
+    "build_files": ["auth.cc", "pqxx_cp.cc"]
 }
