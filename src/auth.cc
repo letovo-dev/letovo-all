@@ -55,10 +55,6 @@ std::unique_ptr<restinio::router::express_router_t<>> enable_auth_reg(std::uniqu
                     .set_id(loginHeader)
                     .sign(jwt::algorithm::hs256{"secret"});
                 return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
-
-        //         res.set_header("token", token);
-        //         res.set_content(token, "text/plain");
-                
             }
         }
         
@@ -66,70 +62,62 @@ std::unique_ptr<restinio::router::express_router_t<>> enable_auth_reg(std::uniqu
             return req->create_response(restinio::status_non_authoritative_information()) .append_header_date_field().connection_close().done();
         }
         // spdlog::info(endpoint + " is authed");
-        // res.status = status;
     }); 
 
 
-    // svr_ptr->Post("/reg", [pool_ptr](const httplib::Request& req, httplib::Response& res){
-    //     // spdlog::info("reg request from " + req.remote_addr);
+    svr_ptr->http_post("/reg", [pool_ptr](auto req, auto) {
+        std::string endpoint = req->remote_endpoint().address().to_string();
 
-    //     int status = 200;
+    //     // spdlog::info("reg request from " + endpoint);
 
-    //     rapidjson::Document new_body;
-    //     new_body.Parse(req.body.c_str());
 
-    //     if (new_body.HasMember("login") && new_body.HasMember("password"))
-    //     {
-    //         std::string loginHeader = new_body["login"].GetString();
-    //         std::string passwordHeader = new_body["password"].GetString();
+        rapidjson::Document new_body;
+        new_body.Parse(req->body().c_str());
 
-    //         try {
-    //             // create password hash, write info to db
-    //             std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
+        if (new_body.HasMember("login") && new_body.HasMember("password"))
+        {
+            std::string loginHeader = new_body["login"].GetString();
+            std::string passwordHeader = new_body["password"].GetString();
 
-    //             cp::query add_user("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
+            try {
+                // create password hash, write info to db
+                std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
 
-    //             auto tx = cp::tx(*pool_ptr, add_user);
+                cp::query add_user("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
 
-    //             pqxx::result result = add_user(std::stoul(passwordHash) % 10000, loginHeader, passwordHash);      
+                auto tx = cp::tx(*pool_ptr, add_user);
 
-    //             tx.commit();
+                pqxx::result result = add_user(std::stoul(passwordHash) % 10000, loginHeader, passwordHash);      
 
-    //             auto token = jwt::create()
-    //                 .set_type("JWS")
-    //                 .set_issuer("auth0")
-    //                 .set_id(loginHeader)
-    //                 .sign(jwt::algorithm::hs256{"secret"});  
-    //         }
-    //         catch(const char* error_message) {std::cout<<error_message<<std::endl;} 
-    //         // spdlog::info("new user " + loginHeader);
-    //         res.set_content("ok", "text/plain");
-    //     }
-    //     else
-    //     {
-    //         res.set_content("probably wrong body names", "text/plain");
-    //         status = 403;
-    //     }
-    //     res.status = status;
-    // });
+                tx.commit();
 
-    // svr_ptr -> Get("/amiauthed", [&](const httplib::Request& req, httplib::Response& res) {
-    //     if(is_authed(req, pool_ptr)) {
-    //         res.status = 200;
-    //     } else {
-    //         res.status = 403;
-    //     }
-    // });
+                auto token = jwt::create()
+                    .set_type("JWS")
+                    .set_issuer("auth0")
+                    .set_id(loginHeader)
+                    .sign(jwt::algorithm::hs256{"secret"});  
+            }
+            catch(const char* error_message) {std::cout<<error_message<<std::endl;} 
+            // spdlog::info("new user " + loginHeader);
+            return req->create_response().set_body("ok").done();
+        }
+        else
+        {
+            return req->create_response(restinio::status_non_authoritative_information()).done();
+        }
+    });
+
+
+    svr_ptr -> http_get("/amiauthed", [pool_ptr](auto req, auto){
+        rapidjson::Document new_body;
+        new_body.Parse(req->body().c_str());
+        if(new_body.HasMember("id")) {
+            if(is_authed(new_body["id"].GetString(), pool_ptr)) {
+                return req->create_response(restinio::status_ok()).done();
+            }
+            return req->create_response(restinio::status_non_authoritative_information()).done();
+        }
+    });
+
     return svr_ptr;
-}
-
-// DELETE ME
-void test_http(cp::connection_pool& pool_ptr) {
-    cp::query add_user("INSERT INTO public.\"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
-
-    auto tx = cp::tx(pool_ptr, add_user);
-
-    pqxx::result result = add_user(123, "scv2", "password2");
-
-    tx.commit();
 }
