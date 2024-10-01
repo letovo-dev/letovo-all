@@ -23,8 +23,8 @@ bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr)
 }
 
 
-std::unique_ptr<restinio::router::express_router_t<>> enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr) {
-    svr_ptr->http_post("/auth", [pool_ptr](auto req, auto) {
+void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    router.get()->http_post("/auth", [pool_ptr](auto req, auto) {
         std::string endpoint = req->remote_endpoint().address().to_string();
         // spdlog::info("auth request from " + endpoint);
 
@@ -65,7 +65,7 @@ std::unique_ptr<restinio::router::express_router_t<>> enable_auth_reg(std::uniqu
     }); 
 
 
-    svr_ptr->http_post("/reg", [pool_ptr](auto req, auto) {
+    router.get()->http_post("/reg", [pool_ptr](auto req, auto) {
         std::string endpoint = req->remote_endpoint().address().to_string();
 
     //     // spdlog::info("reg request from " + endpoint);
@@ -107,17 +107,20 @@ std::unique_ptr<restinio::router::express_router_t<>> enable_auth_reg(std::uniqu
         }
     });
 
-
-    svr_ptr -> http_get("/amiauthed", [pool_ptr](auto req, auto){
+    // I NEED TO BE GET WITH HEADERS
+    router.get()->http_get("/amiauthed", [pool_ptr](auto req, auto){
         rapidjson::Document new_body;
         new_body.Parse(req->body().c_str());
-        if(new_body.HasMember("id")) {
-            if(is_authed(new_body["id"].GetString(), pool_ptr)) {
+        
+        if(new_body.HasMember("token")) {
+            if(is_authed(new_body["token"].GetString(), pool_ptr)) {
                 return req->create_response(restinio::status_ok()).done();
+            } else {
+                return req->create_response(restinio::status_bad_request()).done();
             }
+        } else {
             return req->create_response(restinio::status_non_authoritative_information()).done();
         }
     });
 
-    return svr_ptr;
 }

@@ -1,14 +1,17 @@
 #include <restinio/all.hpp>
 #include "rapidjson/document.h"
 #include <iostream>
+
+// server functions
 #include "auth.h"
+#include "./market/actives_server.h"
 
 using namespace restinio;
 
 
-std::unique_ptr<restinio::router::express_router_t<>> hi(std::unique_ptr<restinio::router::express_router_t<>> router) {
+void hi(std::unique_ptr<restinio::router::express_router_t<>>& router) {
     std::cout<<"creating hi request\n";
-    router->http_get(
+    router.get()->http_get(
         "/hi",
         [](auto req, auto) {
             asio_ns::ip::tcp::endpoint endpoint = req->remote_endpoint();
@@ -16,16 +19,14 @@ std::unique_ptr<restinio::router::express_router_t<>> hi(std::unique_ptr<restini
             std::cout<<"endpoint: "<<endpoint.address().to_string()<<std::endl;
             return req->create_response().set_body(endpoint.address().to_string()).done();
     }); 
-    return router;
 }
 
 std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::connection_pool> pool_ptr) {
     auto router = std::make_unique<router::express_router_t<>>();
     
-    // include needed functions to build like this:
-    // router = func_name(move(router));
-    router = hi(move(router));
-    router = enable_auth_reg(move(router), pool_ptr);
+    hi(router);
+    enable_auth_reg(router, pool_ptr);
+    enable_all_actives(router, pool_ptr);
 
     return router;
 }
