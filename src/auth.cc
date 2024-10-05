@@ -23,10 +23,12 @@ bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr)
 }
 
 
-void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr) {
-    router.get()->http_post("/auth", [pool_ptr](auto req, auto) {
+void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, 
+                    std::shared_ptr<cp::connection_pool> pool_ptr, 
+                    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    router.get()->http_post("/auth", [pool_ptr, logger_ptr](auto req, auto) {
         std::string endpoint = req->remote_endpoint().address().to_string();
-        // spdlog::info("auth request from " + endpoint);
+        logger_ptr->info( [endpoint]{return fmt::format("auth request from {}", endpoint);});
 
         rapidjson::Document new_body;
         new_body.Parse(req->body().c_str());
@@ -43,7 +45,8 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
             pqxx::result result = get_user(loginHeader, passwordHash);
             
             if(result.empty()) {
-                // spdlog::info("empty headers from " + endpoint);
+                logger_ptr->info( [endpoint]{return fmt::format("empty headers from {}", endpoint);});
+
                 // TODO: wrong status, change
                 return req->create_response(restinio::status_non_authoritative_information()) .append_header_date_field().connection_close().done();
                 
@@ -54,6 +57,8 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
                     .set_issuer("auth0")
                     .set_id(loginHeader)
                     .sign(jwt::algorithm::hs256{"secret"});
+                logger_ptr->info( [endpoint]{return fmt::format("{} is authed", endpoint);});
+                
                 return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
             }
         }
@@ -61,14 +66,14 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
         else {
             return req->create_response(restinio::status_non_authoritative_information()) .append_header_date_field().connection_close().done();
         }
-        // spdlog::info(endpoint + " is authed");
+
     }); 
 
 
-    router.get()->http_post("/reg", [pool_ptr](auto req, auto) {
+    router.get()->http_post("/reg", [pool_ptr, logger_ptr](auto req, auto) {
         std::string endpoint = req->remote_endpoint().address().to_string();
 
-    //     // spdlog::info("reg request from " + endpoint);
+        logger_ptr->info( [endpoint]{return fmt::format("reg request from {}", endpoint);});
 
 
         rapidjson::Document new_body;
@@ -98,7 +103,8 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
                     .sign(jwt::algorithm::hs256{"secret"});  
             }
             catch(const char* error_message) {std::cout<<error_message<<std::endl;} 
-            // spdlog::info("new user " + loginHeader);
+            logger_ptr->info( [endpoint, loginHeader]{return fmt::format("new user with ip {} username {}", endpoint, loginHeader);});
+            
             return req->create_response().set_body("ok").done();
         }
         else

@@ -11,7 +11,7 @@
 
 std::string endpoint_to_str(restinio::asio_ns::ip::tcp::endpoint endpoint);
 
-void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr);
+void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
 bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr);
 

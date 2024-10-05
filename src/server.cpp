@@ -9,12 +9,14 @@
 using namespace restinio;
 
 
-void hi(std::unique_ptr<restinio::router::express_router_t<>>& router) {
-    std::cout<<"creating hi request\n";
+void hi(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_get(
         "/hi",
-        [](auto req, auto) {
+        [logger_ptr](auto req, auto) {
+
             asio_ns::ip::tcp::endpoint endpoint = req->remote_endpoint();
+
+            logger_ptr->info( []{return fmt::format("hi recieved");});
             
             std::cout<<"endpoint: "<<endpoint.address().to_string()<<std::endl;
             return req->create_response().set_body(endpoint.address().to_string()).done();
@@ -23,10 +25,12 @@ void hi(std::unique_ptr<restinio::router::express_router_t<>>& router) {
 
 std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::connection_pool> pool_ptr) {
     auto router = std::make_unique<router::express_router_t<>>();
+
+    auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
     
-    hi(router);
-    enable_auth_reg(router, pool_ptr);
-    enable_all_actives(router, pool_ptr);
+    hi(router, logger_ptr);
+    enable_auth_reg(router, pool_ptr, logger_ptr);
+    // enable_all_actives(router, pool_ptr);
 
     return router;
 }

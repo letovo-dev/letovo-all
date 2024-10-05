@@ -32,14 +32,10 @@ fetchcontent_declare(jwt-cpp
     GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
     GIT_TAG 08bcf77a687fb06e34138e9e9fa12a4ecbe12332 # v0.7.0 release
 )
-fetchcontent_declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.9.2
-)
+
 set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "disable building examples" FORCE)
 fetchcontent_makeavailable(jwt-cpp)
-fetchContent_MakeAvailable(spdlog)
+
 
 FetchContent_Declare(llhttp
   URL "https://github.com/nodejs/llhttp/archive/refs/tags/release/v8.1.0.tar.gz")
@@ -53,4 +49,4 @@ set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")
 
 add_executable(server_starter ${SOURCES})
 
-target_link_libraries(server_starter ${httplib_path} restinio::restinio jwt-cpp::jwt-cpp spdlog::spdlog -lpqxx -lpq)
+target_link_libraries(server_starter ${httplib_path} restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq)
