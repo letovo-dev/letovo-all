@@ -22,18 +22,16 @@ bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr)
     return true;
 }
 
-bool is_authed(const httplib::Request& req, std::shared_ptr<cp::connection_pool> pool_ptr) {
-    auto token = req.get_header_value("token");
-    return is_authed(token, pool_ptr);
-}
 
-void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<cp::connection_pool> pool_ptr) {
-    svr_ptr->Post("/auth", [pool_ptr](const httplib::Request& req, httplib::Response& res){
-        spdlog::info("auth request from " + req.remote_addr);
-        int status = 200;
+void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, 
+                    std::shared_ptr<cp::connection_pool> pool_ptr, 
+                    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    router.get()->http_post("/auth", [pool_ptr, logger_ptr](auto req, auto) {
+        std::string endpoint = req->remote_endpoint().address().to_string();
+        logger_ptr->info( [endpoint]{return fmt::format("auth request from {}", endpoint);});
 
         rapidjson::Document new_body;
-        new_body.Parse(req.body.c_str());
+        new_body.Parse(req->body().c_str());
 
         if (new_body.HasMember("login") && new_body.HasMember("password")) {
             std::string loginHeader = new_body["login"].GetString();
@@ -47,8 +45,11 @@ void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<c
             pqxx::result result = get_user(loginHeader, passwordHash);
             
             if(result.empty()) {
-                status = 401;
-                spdlog::info("empty headers from " + req.remote_addr);
+                logger_ptr->info( [endpoint]{return fmt::format("empty headers from {}", endpoint);});
+
+                // TODO: wrong status, change
+                return req->create_response(restinio::status_non_authoritative_information()) .append_header_date_field().connection_close().done();
+                
             }
             else {
                 auto token = jwt::create()
@@ -56,27 +57,27 @@ void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<c
                     .set_issuer("auth0")
                     .set_id(loginHeader)
                     .sign(jwt::algorithm::hs256{"secret"});
-
-                res.set_header("token", token);
-                res.set_content(token, "text/plain");
+                logger_ptr->info( [endpoint]{return fmt::format("{} is authed", endpoint);});
+                
+                return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
             }
         }
-        else
-        {
-            status = 403;
+        
+        else {
+            return req->create_response(restinio::status_non_authoritative_information()) .append_header_date_field().connection_close().done();
         }
-        spdlog::info(req.remote_addr + " is authed");
-        res.status = status;
 
-    });
+    }); 
 
-    svr_ptr->Post("/reg", [pool_ptr](const httplib::Request& req, httplib::Response& res){
-        spdlog::info("reg request from " + req.remote_addr);
 
-        int status = 200;
+    router.get()->http_post("/reg", [pool_ptr, logger_ptr](auto req, auto) {
+        std::string endpoint = req->remote_endpoint().address().to_string();
+
+        logger_ptr->info( [endpoint]{return fmt::format("reg request from {}", endpoint);});
+
 
         rapidjson::Document new_body;
-        new_body.Parse(req.body.c_str());
+        new_body.Parse(req->body().c_str());
 
         if (new_body.HasMember("login") && new_body.HasMember("password"))
         {
@@ -102,33 +103,30 @@ void enable_auth_reg(std::shared_ptr<httplib::Server> svr_ptr, std::shared_ptr<c
                     .sign(jwt::algorithm::hs256{"secret"});  
             }
             catch(const char* error_message) {std::cout<<error_message<<std::endl;} 
-            spdlog::info("new user " + loginHeader);
-            res.set_content("ok", "text/plain");
+            logger_ptr->info( [endpoint, loginHeader]{return fmt::format("new user with ip {} username {}", endpoint, loginHeader);});
+            
+            return req->create_response().set_body("ok").done();
         }
         else
         {
-            res.set_content("probably wrong body names", "text/plain");
-            status = 403;
+            return req->create_response(restinio::status_non_authoritative_information()).done();
         }
-        res.status = status;
     });
 
-    svr_ptr -> Get("/amiauthed", [&](const httplib::Request& req, httplib::Response& res) {
-        if(is_authed(req, pool_ptr)) {
-            res.status = 200;
+    // I NEED TO BE GET WITH HEADERS
+    router.get()->http_get("/amiauthed", [pool_ptr](auto req, auto){
+        rapidjson::Document new_body;
+        new_body.Parse(req->body().c_str());
+        
+        if(new_body.HasMember("token")) {
+            if(is_authed(new_body["token"].GetString(), pool_ptr)) {
+                return req->create_response(restinio::status_ok()).done();
+            } else {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
         } else {
-            res.status = 403;
+            return req->create_response(restinio::status_non_authoritative_information()).done();
         }
     });
-}
 
-// DELETE ME
-void test_http(cp::connection_pool& pool_ptr) {
-    cp::query add_user("INSERT INTO public.\"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
-
-    auto tx = cp::tx(pool_ptr, add_user);
-
-    pqxx::result result = add_user(123, "scv2", "password2");
-
-    tx.commit();
 }

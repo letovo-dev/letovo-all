@@ -4,6 +4,7 @@ test_file="test.cpp"
 work_file="server.cpp"
 build_files=""
 run_flag=true
+logging=true
 
 # Read and parse BuildConfig.json
 config_file="./BuildConfig.json"
@@ -25,7 +26,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'tif:' OPTION; do
+while getopts 'toifd:' OPTION; do
     case "$OPTION" in
         i) 
             ehco "installing"
@@ -39,6 +40,14 @@ while getopts 'tif:' OPTION; do
             echo "running test file"
             work_file="$test_file"
             ;;
+        d)
+            echo "running with debug keys"
+            export DEBUG="t"
+            ;;
+        o)
+            echo "console output"
+            logging=false
+            ;;
         ?)
             echo "idk what you mean"
     esac
@@ -49,7 +58,13 @@ if [ $run_flag = true ]; then
     export BUILD_FILES="$build_files"
     echo "running $work_file"
     cd src
-    cmake .
-    cmake --build .
-    ./server_starter
+    if [ $logging = true ]; then
+        cmake . &>> ./launch_logs/build_"$(date '+%d-%m-%Y_%H:%M:%S')".log 2>&1
+        cmake --build . 2>> ./launch_logs/build_"$(date '+%d-%m-%Y_%H:%M:%S')".log
+        ./server_starter &> ./launch_logs/run_"$(date '+%d-%m-%Y_%H:%M:%S')".log
+    else
+        cmake . 
+        cmake --build .
+        ./server_starter
+    fi
 fi

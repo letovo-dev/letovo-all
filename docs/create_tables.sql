@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS "user" (
     userName VARCHAR(255) NOT NULL,
     passwdHash VARCHAR(255) NOT NULL, -- not shure about datetype
     userRights VARCHAR(255) NOT NULL, -- default 0 
-    -- user 1
-    -- moderator 2
-    -- admin 3
+    -- user empy
+    -- moderator 1
+    -- admin 2
     joinTime TIMESTAMP DEFAULT Now()
     --   userGroupLink INT
 );
