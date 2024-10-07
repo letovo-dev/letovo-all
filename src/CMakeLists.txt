@@ -14,11 +14,11 @@ if("$ENV{DEBUG}" STREQUAL "t")
 endif()
 
 if("$ENV{ROS_DISTRO}" STRGREATER "debian")
-    pkg_check_modules(HTTPLIB cpp-httplib REQUIRED)
-    set(httplib_path ${HTTPLIB_LIBRARIES})
+    # pkg_check_modules(HTTPLIB cpp-httplib REQUIRED)s
+    pkg_check_modules(FMT fmt REQUIRED)
+    pkg_check_modules(RESTINIO librestinio-dev REQUIRED)
+    # set(httplib_path ${HTTPLIB_LIBRARIES})
 else()
-    find_package(httplib REQUIRED)
-    set(httplib_path ${HTTPLIB_LIBRARY})
     # # 3. fmtlib
     find_package(fmt REQUIRED)
     # RESTinio itself
@@ -49,4 +49,4 @@ set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")
 
 add_executable(server_starter ${SOURCES})
 
-target_link_libraries(server_starter ${httplib_path} restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq)
+target_link_libraries(server_starter restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq)
