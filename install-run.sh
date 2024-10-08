@@ -96,4 +96,16 @@ else
     
     echo "install cmake"
     sudo $pack_manager cmake 
+    echo "install jq"
+    sudo $pack_manager jq
+    echo "install pkg-config"
+    sudo $pack_manager pkg-config
+    echo "install nlohmann-json3-dev"
+    sudo $pack_manager nlohmann-json3-dev
+    echo "install libasio-dev"
+    sudo $pack_manager libasio-dev
+    echo "install rapidjson-dev"
+    sudo $pack_manager rapidjson-dev
+    echo "install libpqxx-dev"
+    sudo $pack_manager libpqxx-devn
 fi
