@@ -67,4 +67,45 @@ if [ $run_flag = true ]; then
         cmake --build .
         ./server_starter
     fi
+else
+    # detect system packet manager
+    declare -A osInfo;
+    osInfo[/etc/arch-release]="pacman -S"
+    osInfo[/etc/debian_version]="apt-get install"
+
+    # install pacages
+    for f in ${!osInfo[@]}
+    do
+        if [[ -f $f ]];then
+            pack_manager=${osInfo[$f]}
+        fi
+    done
+    if [ -z ${pack_manager+x} ]; then 
+        echo "I have no idea, what this system is, sorry"
+        exit 255
+    fi
+
+    echo "install c++ compiler"
+    if [ "$pack_manager" == "pacman -S" ]; then
+      sudo pacman -Syu base-devel
+      sudo pacman -S restinio
+    else
+       sudo apt-get install build-essential
+       sudo apt-get install librestinio-dev
+    fi
+    
+    echo "install cmake"
+    sudo $pack_manager cmake 
+    echo "install jq"
+    sudo $pack_manager jq
+    echo "install pkg-config"
+    sudo $pack_manager pkg-config
+    echo "install nlohmann-json3-dev"
+    sudo $pack_manager nlohmann-json3-dev
+    echo "install libasio-dev"
+    sudo $pack_manager libasio-dev
+    echo "install rapidjson-dev"
+    sudo $pack_manager rapidjson-dev
+    echo "install libpqxx-dev"
+    sudo $pack_manager libpqxx-devn
 fi
