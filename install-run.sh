@@ -107,5 +107,5 @@ else
     echo "install rapidjson-dev"
     sudo $pack_manager rapidjson-dev
     echo "install libpqxx-dev"
-    sudo $pack_manager libpqxx-devn
+    sudo $pack_manager libpqxx-dev
 fi
