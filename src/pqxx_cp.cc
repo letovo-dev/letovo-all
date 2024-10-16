@@ -34,10 +34,13 @@ namespace cp {
 	connection_pool::connection_pool(const connection_options& options) {
 			for (int i = 0; i < options.connections_count; ++i) {
 				const auto connect_string = std::format("dbname = {} user = {} password = {} hostaddr = {} port = {}", options.dbname, options.user, options.password, options.hostaddr, options.port);
-
-				auto connection = std::make_unique<pqxx::connection>(connect_string);
-				auto manager = std::make_unique<connection_manager>(connection);
-				connections.push(std::move(manager));
+				try {
+					auto connection = std::make_unique<pqxx::connection>(connect_string);
+					auto manager = std::make_unique<connection_manager>(connection);
+					connections.push(std::move(manager));
+				} catch(...) {
+					throw ("Connection failed. Check your internet and sql config");
+				}
 			}
 	}
 
