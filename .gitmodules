@@ -7,3 +7,6 @@
 [submodule "src/letovo-wiki"]
 	path = src/letovo-wiki
 	url = https://github.com/letovo-dev/letovo-wiki.git
+[submodule "src/letovo-secrets"]
+	path = src/letovo-secrets
+	url = https://github.com/letovo-dev/letovo-secrets.git
