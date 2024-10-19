@@ -1,5 +1,9 @@
 {
     "test_file": "test.cpp",
     "work_file": "server.cpp",
+    "required_sub_repos": {
+        "letovo-secrets" : "https://github.com/letovo-dev/letovo-secrets.git", 
+        "letovo-wiki": "https://github.com/letovo-dev/letovo-wiki.git"
+},
     "build_files": ["auth.cc", "pqxx_cp.cc", "./market/actives_db.cc", "./market/actives_server.cc"]
 }
