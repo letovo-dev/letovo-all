@@ -26,7 +26,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'toifd:' OPTION; do
+while getopts 'toifd:h' OPTION; do
     case "$OPTION" in
         i) 
             ehco "installing"
@@ -48,8 +48,20 @@ while getopts 'toifd:' OPTION; do
             echo "console output"
             logging=false
             ;;
+        h)
+            echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o]"
+            echo "Options:"
+            echo "  -i: install dependencies"
+            echo "  -f: set work file"
+            echo "  -t: run test file"
+            echo "  -d: run with debug keys"
+            echo "  -o: console output"
+            exit 0
+            ;;
         ?)
             echo "idk what you mean"
+            exit 1
+            ;;
     esac
 done
 

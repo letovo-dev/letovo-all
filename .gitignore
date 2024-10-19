@@ -49,3 +49,5 @@ build/*
 *.log
 
 node_modules/*
+
+*venv*/*
