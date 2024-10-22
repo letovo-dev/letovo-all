@@ -46,7 +46,7 @@ if [ "$param_a" = true ]; then
     echo "running auth server"
     ./install-run-core.sh &
     pids+=($!)
-    exit 0
+    # exit 0
 fi
 
 if [ "$param_b" = true ]; then
@@ -54,14 +54,14 @@ if [ "$param_b" = true ]; then
 
     "$parent_path/venv/bin/python3" "$parent_path/src/letovo-secrets/src/interfase_bot.py" &
     pids+=($!)
-    exit 0
+    # exit 0
 fi
 
 if [ "$param_s" = true ]; then
     echo "running secrets server"
     "$parent_path/venv/bin/python3" "$parent_path/src/letovo-secrets/src/server.py" & 
     pids+=($!)
-    exit 0
+    # exit 0
 fi
 
 if [ "$param_w" = true ]; then
@@ -69,7 +69,7 @@ if [ "$param_w" = true ]; then
     cd "$parent_path/src/letovo-wiki"
     npx docusaurus start &
     pids+=($!)
-    exit 0
+    # exit 0
 fi
 
 echo "${pids[@]}" > "$parent_path/pids"
@@ -85,6 +85,6 @@ if [ "$stop_services" = true ]; then
     for pid in "${pids[@]}"; do
         kill $pid
     done
-    exit 0
+    # exit 0
 fi
 
