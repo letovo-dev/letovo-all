@@ -7,6 +7,7 @@
 // #include "spdlog/spdlog.h"
 #include "rapidjson/document.h" 
 #include "asio/ip/detail/endpoint.hpp"
+#include "hash.h"
 
 
 std::string endpoint_to_str(restinio::asio_ns::ip::tcp::endpoint endpoint);

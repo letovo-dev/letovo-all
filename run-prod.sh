@@ -39,6 +39,12 @@ done
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 echo "parent path: $parent_path"
 
+current_ip=$(curl -s http://ipv4.icanhazip.com)
+
+echo "Current public IPv4: $current_ip"
+
+export CURRENT_IP=$current_ip
+
 
 pids=()
 
@@ -50,11 +56,12 @@ if [ "$param_a" = true ]; then
 fi
 
 if [ "$param_b" = true ]; then
-    echo "running secrets server"
+    echo "running secrets bot"
 
     "$parent_path/venv/bin/python3" "$parent_path/src/letovo-secrets/src/interfase_bot.py" &
     pids+=($!)
     # exit 0
+    echo pids: "${pids[@]}"
 fi
 
 if [ "$param_s" = true ]; then
@@ -62,6 +69,7 @@ if [ "$param_s" = true ]; then
     "$parent_path/venv/bin/python3" "$parent_path/src/letovo-secrets/src/server.py" & 
     pids+=($!)
     # exit 0
+    echo pids: "${pids[@]}"
 fi
 
 if [ "$param_w" = true ]; then
@@ -70,6 +78,7 @@ if [ "$param_w" = true ]; then
     npx docusaurus start &
     pids+=($!)
     # exit 0
+    echo pids: "${pids[@]}"
 fi
 
 echo "${pids[@]}" > "$parent_path/pids"
@@ -87,4 +96,4 @@ if [ "$stop_services" = true ]; then
     done
     # exit 0
 fi
-
+echo pids: "${pids[@]}"

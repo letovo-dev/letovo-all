@@ -3,11 +3,9 @@
 #include <iostream>
 
 bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr) { 
-    auto decoded = jwt::decode(token);
+    auto decoded = string_from_hash(token);
     std::string user;
-    if (decoded.has_id())
-        user = decoded.get_id();
-    else return false;
+    std::cout<<decoded<<std::endl;
 
     // if user in db true, else false 
     cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1);");
@@ -52,12 +50,7 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
                 
             }
             else {
-                auto token = jwt::create()
-                    .set_type("JWS")
-                    .set_issuer("auth0")
-                    .set_id(loginHeader)
-                    .sign(jwt::algorithm::hs256{"secret"});
-                logger_ptr->info( [endpoint]{return fmt::format("{} is authed", endpoint);});
+                auto token = hash_from_string(loginHeader);
                 
                 return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
             }
@@ -96,11 +89,7 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
 
                 tx.commit();
 
-                auto token = jwt::create()
-                    .set_type("JWS")
-                    .set_issuer("auth0")
-                    .set_id(loginHeader)
-                    .sign(jwt::algorithm::hs256{"secret"});  
+                auto token = hash_from_string(loginHeader); 
             }
             catch(const char* error_message) {std::cout<<error_message<<std::endl;} 
             logger_ptr->info( [endpoint, loginHeader]{return fmt::format("new user with ip {} username {}", endpoint, loginHeader);});
