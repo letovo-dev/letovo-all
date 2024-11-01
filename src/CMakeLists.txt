@@ -49,4 +49,4 @@ set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")
 
 add_executable(server_starter ${SOURCES})
 
-target_link_libraries(server_starter restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq)
+target_link_libraries(server_starter restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq -lssl -lcrypto)
