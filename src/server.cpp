@@ -66,6 +66,8 @@ int main()
     restinio::run(
 			restinio::on_thread_pool<traits>(7)
 				.address( "localhost" )
+                // .port( 8080 )
+                // .buffer_size( 2048 )
 				.request_handler( move(router))
     );
     return 0;

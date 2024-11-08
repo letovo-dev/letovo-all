@@ -4,20 +4,29 @@
 
 bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr) { 
     auto decoded = string_from_hash(token);
-    std::string user;
-    std::cout<<decoded<<std::endl;
 
     // if user in db true, else false 
     cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1);");
 
     auto tx = cp::tx(*pool_ptr, get_user);
     
-    pqxx::result result = get_user(user);
+    pqxx::result result = get_user(decoded);
 
     if(result.empty()) {
         return false;
     }
     return true;
+}
+
+bool is_authed_by_body(std::string req_body, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    rapidjson::Document new_body;
+    new_body.Parse(req_body.c_str());
+
+    if (new_body.HasMember("token")) {
+        std::string token = new_body["token"].GetString();
+        return is_authed(token, pool_ptr);
+    }
+    return false;
 }
 
 
@@ -45,8 +54,7 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
             if(result.empty()) {
                 logger_ptr->info( [endpoint]{return fmt::format("empty headers from {}", endpoint);});
 
-                // TODO: wrong status, change
-                return req->create_response(restinio::status_non_authoritative_information()) .append_header_date_field().connection_close().done();
+                return req->create_response(restinio::status_unauthorized()) .append_header_date_field().connection_close().done();
                 
             }
             else {
@@ -91,7 +99,7 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
 
                 auto token = hash_from_string(loginHeader); 
             }
-            catch(const char* error_message) {std::cout<<error_message<<std::endl;} 
+            catch(const char* error_message) {logger_ptr->error( [endpoint, error_message]{return fmt::format("error from {} {}", endpoint, error_message);});}
             logger_ptr->info( [endpoint, loginHeader]{return fmt::format("new user with ip {} username {}", endpoint, loginHeader);});
             
             return req->create_response().set_body("ok").done();
@@ -101,20 +109,17 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
             return req->create_response(restinio::status_non_authoritative_information()).done();
         }
     });
+    
+    router.get()->http_get(R"(/amiauthed/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto){
+        std::string token = get_url_arg(req->header().path());
 
-    // I NEED TO BE GET WITH HEADERS
-    router.get()->http_get("/amiauthed", [pool_ptr](auto req, auto){
-        rapidjson::Document new_body;
-        new_body.Parse(req->body().c_str());
-        
-        if(new_body.HasMember("token")) {
-            if(is_authed(new_body["token"].GetString(), pool_ptr)) {
-                return req->create_response(restinio::status_ok()).done();
-            } else {
-                return req->create_response(restinio::status_bad_request()).done();
-            }
-        } else {
+        if(token.empty()) {
             return req->create_response(restinio::status_non_authoritative_information()).done();
+        }
+        if(is_authed(token, pool_ptr)) {
+            return req->create_response(restinio::status_ok()).done();
+        } else {
+            return req->create_response(restinio::status_unauthorized()).done();
         }
     });
 

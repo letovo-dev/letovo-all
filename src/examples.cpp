@@ -10,6 +10,9 @@
 #include "rapidjson/document.h" 
 #include "spdlog/spdlog.h"
 
+// устарел нахуй и полностью, к прочтению не рекомендуется
+// когда-нибудь перепишу, но не сегодня
+
 
 std::ifstream in("image.png", std::ios::in | std::ios::binary);
 std::ostringstream contents;
