@@ -44,7 +44,11 @@
 build/*
 .vscode/*
 
-*test*
+*test*.c*
+
+
+__pycache__
+.pytest_cache
 
 *.log
 
