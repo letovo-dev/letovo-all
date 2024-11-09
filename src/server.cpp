@@ -28,7 +28,9 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
     
     hi(router, logger_ptr);
-    enable_auth_reg(router, pool_ptr, logger_ptr);
+    enable_reg(router, pool_ptr, logger_ptr);
+    enable_auth(router, pool_ptr, logger_ptr);
+    am_i_authed(router, pool_ptr, logger_ptr);
     // enable_all_actives(router, pool_ptr);
 
     return router;

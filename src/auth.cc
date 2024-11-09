@@ -2,35 +2,36 @@
 
 #include <iostream>
 
-bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr) { 
-    auto decoded = string_from_hash(token);
+namespace auth {    
+    bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr) { 
+        auto decoded = hashing::string_from_hash(token);
 
-    // if user in db true, else false 
-    cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1);");
+        // if user in db true, else false 
+        cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1);");
 
-    auto tx = cp::tx(*pool_ptr, get_user);
-    
-    pqxx::result result = get_user(decoded);
+        auto tx = cp::tx(*pool_ptr, get_user);
+        
+        pqxx::result result = get_user(decoded);
 
-    if(result.empty()) {
+        if(result.empty()) {
+            return false;
+        }
+        return true;
+    }
+
+    bool is_authed_by_body(std::string req_body, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        rapidjson::Document new_body;
+        new_body.Parse(req_body.c_str());
+
+        if (new_body.HasMember("token")) {
+            std::string token = new_body["token"].GetString();
+            return is_authed(token, pool_ptr);
+        }
         return false;
     }
-    return true;
 }
 
-bool is_authed_by_body(std::string req_body, std::shared_ptr<cp::connection_pool> pool_ptr) {
-    rapidjson::Document new_body;
-    new_body.Parse(req_body.c_str());
-
-    if (new_body.HasMember("token")) {
-        std::string token = new_body["token"].GetString();
-        return is_authed(token, pool_ptr);
-    }
-    return false;
-}
-
-
-void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, 
+void enable_auth(std::unique_ptr<restinio::router::express_router_t<>>& router, 
                     std::shared_ptr<cp::connection_pool> pool_ptr, 
                     std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_post("/auth", [pool_ptr, logger_ptr](auto req, auto) {
@@ -58,7 +59,7 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
                 
             }
             else {
-                auto token = hash_from_string(loginHeader);
+                auto token = hashing::hash_from_string(loginHeader);
                 
                 return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
             }
@@ -69,8 +70,11 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
         }
 
     }); 
+}
 
-
+void enable_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, 
+                    std::shared_ptr<cp::connection_pool> pool_ptr, 
+                    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_post("/reg", [pool_ptr, logger_ptr](auto req, auto) {
         std::string endpoint = req->remote_endpoint().address().to_string();
 
@@ -97,7 +101,7 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
 
                 tx.commit();
 
-                auto token = hash_from_string(loginHeader); 
+                auto token = hashing::hash_from_string(loginHeader); 
             }
             catch(const char* error_message) {logger_ptr->error( [endpoint, error_message]{return fmt::format("error from {} {}", endpoint, error_message);});}
             logger_ptr->info( [endpoint, loginHeader]{return fmt::format("new user with ip {} username {}", endpoint, loginHeader);});
@@ -109,15 +113,43 @@ void enable_auth_reg(std::unique_ptr<restinio::router::express_router_t<>>& rout
             return req->create_response(restinio::status_non_authoritative_information()).done();
         }
     });
-    
+}
+
+void am_i_authed(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     router.get()->http_get(R"(/amiauthed/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto){
-        std::string token = get_url_arg(req->header().path());
+        std::string token = url::get_url_arg(req->header().path());
 
         if(token.empty()) {
             return req->create_response(restinio::status_non_authoritative_information()).done();
         }
-        if(is_authed(token, pool_ptr)) {
+        if(auth::is_authed(token, pool_ptr)) {
             return req->create_response(restinio::status_ok()).done();
+        } else {
+            return req->create_response(restinio::status_unauthorized()).done();
+        }
+    });
+}
+
+void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    router.get()->http_delete(R"(/delete/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto){
+        std::string token = url::get_url_arg(req->header().path());
+
+        if(token.empty()) {
+            return req->create_response(restinio::status_non_authoritative_information()).done();
+        }
+
+        std::string username = hashing::string_from_hash(token);
+
+        if(auth::is_authed(token, pool_ptr)) {
+            try {
+                cp::query delete_user("DELETE FROM \"user\" WHERE \"username\"=($1);");
+                auto tx = cp::tx(*pool_ptr, delete_user);
+                delete_user(username);
+                tx.commit();
+            } catch(const char* error_message) {logger_ptr->error( [username, error_message]{return fmt::format("error on delete user from {} {}", username, error_message);});}
+            
+            logger_ptr->info( [username]{return fmt::format("user {} deleted", username);});
+            return req->create_response().set_body("ok").done();
         } else {
             return req->create_response(restinio::status_unauthorized()).done();
         }
