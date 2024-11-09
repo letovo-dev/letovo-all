@@ -1,7 +1,8 @@
 import requests
+import pytest
 
 def register_user():
-    url = "http://0.0.0.0:8080/reg"
+    url = "http://0.0.0.0:8080/auth/reg"
     data = {
         "login": "test",
         "password": "test"
@@ -10,7 +11,7 @@ def register_user():
 
 
 def login_user():
-    url = "http://0.0.0.0:8080/auth/"
+    url = "http://0.0.0.0:8080/auth/login/"
     data = {
         "login": "test",
         "password": "test"
@@ -18,40 +19,35 @@ def login_user():
     response = requests.post(url, json=data)
     return response.json()["token"]
 
-def detele_user():
-    url = "http://0.0.0.0:8080/auth/"
+def delete_user():
+    url = "http://0.0.0.0:8080/auth/login/"
     data = {
         "login": "test",
         "password": "test"
     }
     response = requests.post(url, json=data)
     token = response.json()["token"]
-    url = "http://0.0.0.0:8080/delete/{}".format(token)
+    url = "http://0.0.0.0:8080/auth/delete/{}".format(token)
     response = requests.delete(url)
     assert response.status_code == 200
 
-    url = "http://0.0.0.0:8080/auth/"
-    data = {
-        "login": "test",
-        "password": "test"
-    }
-    response = requests.post(url, json=data)
-    return response
 
+@pytest.mark.order1
 def test_get_page_content():
-    url = "http://0.0.0.0:8080/page/1"
+    url = "http://0.0.0.0:8080/post/1"
     response = requests.get(url)
     assert response.status_code == 200
 
+@pytest.mark.order2
 def test_add_page_by_content():
     try:
-        detele_user()
+        delete_user(login_user())
     except:
         pass
     register_user()
     token = login_user()
     print("------->", token)
-    url = "http://0.0.0.0:8080/add_page_content"
+    url = "http://0.0.0.0:8080/post/add_page_content"
     data = {
         "is_secret": False,
         "is_published": True, 
@@ -66,19 +62,20 @@ def test_add_page_by_content():
     assert response.status_code == 200
 
     page_id = response.json()["result"][0]["post_id"]
-    url = "http://0.0.0.0:8080/page/{}".format(page_id)
+    url = "http://0.0.0.0:8080/post/{}".format(page_id)
     response = requests.get(url)
     assert response.status_code == 200
 
+@pytest.mark.order3
 def test_add_page_by_page():
     try:
-        detele_user()
+        delete_user()
     except:
         pass
     assert register_user().status_code == 200
 
     token = login_user()
-    url = "http://0.0.0.0:8080/add_page"
+    url = "http://0.0.0.0:8080/post/add_page"
 
     data = {
 	    "post_path": "test.c",
@@ -87,18 +84,19 @@ def test_add_page_by_page():
     }
     response = requests.post(url, json=data)
     assert response.status_code == 200
-    detele_user()
+    delete_user()
     
 
+@pytest.mark.order4
 def test_update_likes():
     try:
-        detele_user()
+        delete_user()
     except:
         pass
     register_user()
     token = login_user()
     print("------->", token)
-    url = "http://0.0.0.0:8080/add_page_content"
+    url = "http://0.0.0.0:8080/post/add_page_content"
     data = {
         "is_secret": False,
         "is_published": True, 
@@ -113,14 +111,14 @@ def test_update_likes():
     assert response.status_code == 200
 
     page_id = response.json()["result"][0]["post_id"]
-    url = "http://0.0.0.0:8080/page/{}".format(page_id)
+    url = "http://0.0.0.0:8080/post/{}".format(page_id)
     response = requests.get(url)
     assert response.status_code == 200
 
     with open("test.c", "w") as f:
         f.write(page_id)
 
-    url = "http://0.0.0.0:8080/update_likes"
+    url = "http://0.0.0.0:8080/post/update_likes"
     data = {
         "post_id": page_id,
         "likes": 100,
@@ -129,8 +127,8 @@ def test_update_likes():
     response = requests.put(url, json=data)
     assert response.status_code == 200
 
-    url = "http://0.0.0.0:8080/page/{}".format(page_id)
+    url = "http://0.0.0.0:8080/post/{}".format(page_id)
     response = requests.get(url)
     assert response.status_code == 200
     assert response.json()["result"][0]["likes"] == "101"
-
+    delete_user()
