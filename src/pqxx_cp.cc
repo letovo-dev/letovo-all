@@ -20,7 +20,7 @@ namespace cp {
 		return res_str;
 	}
 
-	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection) : connection(std::move(connection)){};
+	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection) : connection(std::move(connection)) {};
 
 	void connection_manager::prepare(const std::string& name, const std::string& definition) {
 		std::scoped_lock lock(prepares_mutex);

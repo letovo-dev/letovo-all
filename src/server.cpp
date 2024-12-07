@@ -1,9 +1,11 @@
 #include <restinio/all.hpp>
 #include "rapidjson/document.h"
 #include <iostream>
+#include "./letovo-wiki/page_server.h"
 
 // server functions
 #include "auth.h"
+#include "config.h"
 
 using namespace restinio;
 
@@ -28,9 +30,25 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
     
     hi(router, logger_ptr);
-    enable_reg(router, pool_ptr, logger_ptr);
-    enable_auth(router, pool_ptr, logger_ptr);
-    am_i_authed(router, pool_ptr, logger_ptr);
+
+    page::get_page_content(router, pool_ptr, logger_ptr);
+    page::get_page_author(router, pool_ptr, logger_ptr);
+    page::add_page_by_content(router, pool_ptr, logger_ptr);
+    page::add_page_by_page(router, pool_ptr, logger_ptr);
+    page::update_likes(router, pool_ptr, logger_ptr);
+    page::enable_delete(router, pool_ptr, logger_ptr);
+
+    page::get_favourite_posts(router, pool_ptr, logger_ptr);
+    page::post_add_favourite_post(router, pool_ptr, logger_ptr);
+    page::delete_favourite_post(router, pool_ptr, logger_ptr);
+
+    auth::enable_reg(router, pool_ptr, logger_ptr);
+    auth::enable_auth(router, pool_ptr, logger_ptr);
+    auth::add_userrights(router, pool_ptr, logger_ptr);
+    auth::am_i_authed(router, pool_ptr, logger_ptr);
+    auth::am_i_admin(router, pool_ptr, logger_ptr);
+    auth::enable_delete(router, pool_ptr, logger_ptr);
+
     // enable_all_actives(router, pool_ptr);
 
     return router;
@@ -40,23 +58,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
 
 int main()
 {
-    // create connection pool with sql config
-    std::ifstream config_file("SqlConnectionConfig.json");
-    std::string json((std::istreambuf_iterator<char>(config_file)), std::istreambuf_iterator<char>());
-
-    rapidjson::Document sql_config;
-
-    sql_config.Parse(json.c_str());
-    
-    cp::connection_options options;
-
-    options.user = sql_config["user"].GetString();
-    options.password = sql_config["password"].GetString();
-    options.dbname = sql_config["dbname"].GetString();
-    options.hostaddr = sql_config["host"].GetString();
-    options.connections_count = 1;
-
-    std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(options);
+    std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(Config::giveMe().sql_config);
 
     auto router = create(pool_ptr);
 

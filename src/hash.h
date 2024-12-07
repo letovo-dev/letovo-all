@@ -17,4 +17,6 @@ namespace hashing {
     std::string hash_from_string(const std::string& input);
 
     std::string string_from_hash(const std::string& hash);
+
+    bool defele_from_hash(const std::string& hash);
 }
