@@ -35,4 +35,13 @@ namespace hashing {
         }
         return "Hash not found";
     }
+
+    bool defele_from_hash(const std::string& hash) {
+        auto it = hash_table.find(hash);
+        if (it != hash_table.end()) {
+            hash_table.erase(it);
+            return true;
+        }
+        return false;
+    }
 }

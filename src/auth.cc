@@ -3,10 +3,9 @@
 #include <iostream>
 
 namespace auth {    
-    bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr) { 
+    std::string get_username(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr) {
         auto decoded = hashing::string_from_hash(token);
 
-        // if user in db true, else false 
         cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1);");
 
         auto tx = cp::tx(*pool_ptr, get_user);
@@ -14,9 +13,13 @@ namespace auth {
         pqxx::result result = get_user(decoded);
 
         if(result.empty()) {
-            return false;
+            return "";
         }
-        return true;
+        return decoded;
+    }
+
+    bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr) { 
+        return get_username(token, pool_ptr) != "";
     }
 
     bool is_authed_by_body(std::string req_body, std::shared_ptr<cp::connection_pool> pool_ptr) {
@@ -104,15 +107,17 @@ namespace auth {
                 std::string passwordHeader = new_body["password"].GetString();
 
                 try {
-                    // create password hash, write info to db
                     std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
 
-                    cp::query add_user("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
+                    cp::query add_user("INSERT INTO \"user\" (username, passwdhash, userrights, jointime) VALUES($1, $2, '', now());");
 
                     auto tx = cp::tx(*pool_ptr, add_user);
-
-                    pqxx::result result = add_user(std::stoul(passwordHash) % 10000, loginHeader, passwordHash);      
-
+                    try {
+                        pqxx::result result = add_user(loginHeader, passwordHash);      
+                    } catch (const pqxx::unique_violation& e) {
+                        logger_ptr->warn( [endpoint, loginHeader, e]{return fmt::format("user {} already exists: {}", loginHeader, e.what());});
+                        return req->create_response(restinio::status_forbidden()).set_body("username is ocupied").done();
+                    }
                     tx.commit();
 
                     auto token = hashing::hash_from_string(loginHeader); 
@@ -130,7 +135,7 @@ namespace auth {
     }
 
     void am_i_authed(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiauthed/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto){
+        router.get()->http_get(R"(/auth/amiauthed/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto) {
             std::string token = url::get_last_url_arg(req->header().path());
 
             if(token.empty()) {
@@ -145,7 +150,7 @@ namespace auth {
     }
 
     void am_i_admin(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiadmin/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto){
+        router.get()->http_get(R"(/auth/amiadmin/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto) {
             std::string token = url::get_last_url_arg(req->header().path());
 
             if(token.empty()) {
@@ -160,7 +165,7 @@ namespace auth {
     }
 
     void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_delete(R"(/auth/delete/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto){
+        router.get()->http_delete(R"(/auth/delete/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token = url::get_last_url_arg(req->header().path());
 
             if(token.empty()) {
@@ -175,6 +180,7 @@ namespace auth {
                     auto tx = cp::tx(*pool_ptr, delete_user);
                     delete_user(username);
                     tx.commit();
+                    hashing::defele_from_hash(token);
                 } catch(const char* error_message) {logger_ptr->error( [username, error_message]{return fmt::format("error on delete user from {} {}", username, error_message);});}
                 
                 logger_ptr->info( [username]{return fmt::format("user {} deleted", username);});
@@ -187,7 +193,7 @@ namespace auth {
     }
 
     void add_userrights(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_put(R"(/auth/add_userrights/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto){
+        router.get()->http_put(R"(/auth/add_userrights/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token = url::get_last_url_arg(req->header().path());
 
             if(token.empty()) {
@@ -219,5 +225,81 @@ namespace auth {
         });
     }
 
+    void change_username(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_put(R"(/auth/change_username/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token = url::get_last_url_arg(req->header().path());
+
+            if(token.empty()) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+
+            if(!is_authed(token, pool_ptr)) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            std::string username = hashing::string_from_hash(token);
+
+            rapidjson::Document new_body;
+            new_body.Parse(req->body().c_str());
+
+            if (new_body.HasMember("new_username")) {
+                std::string new_username = new_body["new_username"].GetString();
+                try {    
+                    cp::query change_username("UPDATE \"user\" SET \"username\"=($1) WHERE \"username\"=($2);");
+                    auto tx = cp::tx(*pool_ptr, change_username);
+                    change_username(new_username, username);
+                    tx.commit();
+                    std::string new_token = hashing::hash_from_string(new_username);
+                    logger_ptr->info( [username, new_username]{return fmt::format("user {} changed username to {}", username, new_username);});
+                    return req->create_response().set_body("{\"token\": \"" + new_token + "\"}").done();
+                } catch (const pqxx::unique_violation& e) {
+                    logger_ptr->info( [username, new_username]{return fmt::format("username {} is already taken", new_username);});
+                    return req->create_response(restinio::status_forbidden()).set_body("username is occupied").done();
+                }
+            }
+            else {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+        });
+    }
+    void change_password(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_put(R"(/auth/change_password/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token = url::get_last_url_arg(req->header().path());
+
+            if(token.empty()) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+
+            std::string username = hashing::string_from_hash(token);
+
+            rapidjson::Document new_body;
+            new_body.Parse(req->body().c_str());
+
+            bool unlogin = false;
+
+            if(new_body.HasMember("unlogin")) {
+                unlogin = new_body["unlogin"].GetBool();
+            }
+
+            if (new_body.HasMember("new_password")) {
+                std::string new_password = new_body["new_password"].GetString();
+
+                cp::query change_password("UPDATE \"user\" SET \"passwdhash\"=($1) WHERE \"username\"=($2);");
+                auto tx = cp::tx(*pool_ptr, change_password);
+                change_password(std::to_string(std::hash<std::string>{}(new_password)), username);
+                tx.commit();
+                
+                if(unlogin) {
+                    hashing::defele_from_hash(token);
+                }
+
+                logger_ptr->info( [username]{return fmt::format("user {} changed password", username);});
+                return req->create_response().set_body("ok").done();
+            }
+            else {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+        });
+    }
 
 }

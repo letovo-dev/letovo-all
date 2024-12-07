@@ -45,6 +45,8 @@ build/*
 .vscode/*
 
 *test*.c*
+*test*.h*
+*test*.md*
 
 
 __pycache__

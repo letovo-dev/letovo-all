@@ -1,0 +1,5 @@
+{
+    "adress": "0.0.0.0",
+    "port": 8080,
+    "thread_pool_size": 7
+}
