@@ -4,10 +4,18 @@
 #include <fstream>
 #include "rapidjson/document.h"
 
+class ServerConfig
+{
+    public:
+        std::string adress;
+        int port;
+        int thread_pool_size;
+};
 class Config
 {
     public:
         cp::connection_options sql_config;
+        ServerConfig server_config;
 
         static Config& giveMe()
         {
@@ -32,6 +40,12 @@ class Config
             sql_config.dbname = config_map["dbname"].GetString();
             sql_config.hostaddr = config_map["host"].GetString();
             sql_config.connections_count = 1;
+
+            config_map.Parse(GetJson("./ServerConfig.json").c_str());
+
+            server_config.adress = config_map["adress"].GetString();
+            server_config.port = config_map["port"].GetInt();
+            server_config.thread_pool_size = config_map["thread_pool_size"].GetInt();
         }                     
 
     public:
@@ -43,5 +57,3 @@ class Config
 };
 
 #endif // CONFIG_H
-
-
