@@ -1,11 +1,24 @@
-#include <restinio/core.hpp>
+#include <restinio/all.hpp>
+#include <restinio/tls.hpp>
 #include "rapidjson/document.h"
 #include <iostream>
-#include "./letovo-wiki/assist_funcs.h"
-#include "auth.h"
 #include "./letovo-wiki/page_server.h"
+
+// do i need this?
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+
+// server functions
+#include "auth.h"
 #include "config.h"
+
+#include <filesystem>
+namespace fs = std::filesystem;
+
 using namespace restinio;
+
+namespace rr = restinio::router;
+using router_t = rr::express_router_t<>;
 
 
 
@@ -60,21 +73,49 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
 
 int main()
 {
+    using namespace std::chrono;
+
     std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(Config::giveMe().sql_config);
 
     auto router = create(pool_ptr);
 
-    struct traits: public default_traits_t
-    {
-        using request_handler_t = restinio::router::express_router_t<>;
-    };
+    std::string certs_dir = Config::giveMe().server_config.certs_path;
+
+    using traits_t =
+        restinio::single_thread_tls_traits_t<
+            restinio::asio_timer_manager_t,
+            restinio::single_threaded_ostream_logger_t,
+            restinio::router::express_router_t<> >;
+
+    namespace asio_ns = restinio::asio_ns;
+
+    asio_ns::ssl::context tls_context{ asio_ns::ssl::context::sslv23 };
+    tls_context.set_options(
+        asio_ns::ssl::context::default_workarounds
+        | asio_ns::ssl::context::no_sslv2
+        | asio_ns::ssl::context::single_dh_use );
+
+    // list_path(certs_dir);
+
+    tls_context.use_certificate_chain_file( certs_dir + "/server.pem" );
+    tls_context.use_private_key_file(
+        certs_dir + "/key.pem",
+        asio_ns::ssl::context::pem );
+    tls_context.use_tmp_dh_file( certs_dir + "/dh2048.pem" );
+
+
+    using traits_t =
+        restinio::single_thread_tls_traits_t<
+            restinio::asio_timer_manager_t,
+            restinio::single_threaded_ostream_logger_t,
+            router_t >;
     
     restinio::run(
-			restinio::on_thread_pool<traits>(Config::giveMe().server_config.thread_pool_size)
+			restinio::on_thread_pool<traits_t>(Config::giveMe().server_config.thread_pool_size)
 				.address( Config::giveMe().server_config.adress )
                 .port( Config::giveMe().server_config.port )
 				.request_handler( move(router))
+                .tls_context( std::move(tls_context) )
     );
     return 0;
-
 }
