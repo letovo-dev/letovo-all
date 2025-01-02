@@ -10,6 +10,7 @@ class ServerConfig
         std::string adress;
         int port;
         int thread_pool_size;
+        std::string certs_path;
 };
 class Config
 {
@@ -46,6 +47,7 @@ class Config
             server_config.adress = config_map["adress"].GetString();
             server_config.port = config_map["port"].GetInt();
             server_config.thread_pool_size = config_map["thread_pool_size"].GetInt();
+            server_config.certs_path = config_map["certs_path"].GetString();
         }                     
 
     public:

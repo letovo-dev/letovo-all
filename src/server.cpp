@@ -29,7 +29,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create() {
 std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::connection_pool> pool_ptr) {
     auto router = std::make_unique<router::express_router_t<>>();
 
-    auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
+    auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();    
 
     auth::am_i_authed(router, pool_ptr, logger_ptr);
     auth::am_i_admin(router, pool_ptr, logger_ptr);
