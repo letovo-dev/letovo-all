@@ -18,6 +18,7 @@ namespace cp
 	struct query;
 
 	std::string serialize(pqxx::result res);
+	std::string serialize(pqxx::row res);
 
 	struct basic_connection final {
 		basic_connection(connection_pool& pool);

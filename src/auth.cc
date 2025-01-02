@@ -48,6 +48,22 @@ namespace auth {
         return true;
     }
 
+    bool is_active(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_user("SELECT active FROM \"user\" WHERE \"username\"=($1) and \"active\"=true;");
+
+        auto tx = cp::tx(*pool_ptr, get_user);
+        
+        pqxx::result result = get_user(username);
+
+        if(result.empty()) {
+            return false;
+        }
+        return true;
+    }
+
+}
+
+namespace auth::server {
     void enable_auth(std::unique_ptr<restinio::router::express_router_t<>>& router, 
                     std::shared_ptr<cp::connection_pool> pool_ptr, 
                     std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
@@ -160,6 +176,18 @@ namespace auth {
                 return req->create_response(restinio::status_ok()).done();
             } else {
                 return req->create_response(restinio::status_unauthorized()).set_body("no").done();
+            }
+        });
+    }
+
+    void is_user_active(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/auth/isactive/:username(.*))", [pool_ptr](auto req, auto) {
+            std::string username = url::get_last_url_arg(req->header().path());
+
+            if(auth::is_active(username, pool_ptr)) {
+                return req->create_response(restinio::status_ok()).set_body("yes").done();
+            } else {
+                return req->create_response(restinio::status_ok()).set_body("no").done();
             }
         });
     }
@@ -301,5 +329,4 @@ namespace auth {
             }
         });
     }
-
 }

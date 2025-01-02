@@ -20,6 +20,24 @@ namespace cp {
 		return res_str;
 	}
 
+	std::string serialize(pqxx::row row) {
+		// TODO: it can be better
+		if (row.empty()) {
+			return "{\"result\": []}";
+		}
+		std::string res_str = "{\"result\": [";
+		res_str += '{';
+		for (auto const &field: row) {
+			res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
+		}
+		res_str[res_str.length() - 1] = '}';
+		res_str += ',';
+		
+		res_str[res_str.length() - 1] = ']';
+		res_str += "}";
+		return res_str;
+	}
+
 	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection) : connection(std::move(connection)) {};
 
 	void connection_manager::prepare(const std::string& name, const std::string& definition) {
