@@ -110,17 +110,30 @@ namespace user {
         return true;
     }
 
-    int create_role(std::string role, std::string department, int rang,std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query create_role("INSERT INTO \"roles\" (rolename, department, rang) VALUES($1, $2, $3) returning \"roleid\";");
+    int create_role(std::string role, std::string department, int rang, int payment, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query create_role("INSERT INTO \"roles\" (rolename, department, rang, payment) VALUES($1, $2, $3, $4) returning \"roleid\";");
         auto tx = cp::tx(*pool_ptr, create_role);
         pqxx::result result;
         try {        
-            result = create_role(role, department, rang);
+            result = create_role(role, department, rang, payment);
         } catch (const pqxx::unique_violation& e) {
             return -1;
         }
         tx.commit();
         return result[0]["roleid"].as<int>();
+    }
+
+    pqxx::result department_roles(std::string department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_department_roles("SELECT * FROM \"roles\" WHERE department=($1);");
+
+        auto tx = cp::tx(*pool_ptr, get_department_roles);
+        
+        pqxx::result result = get_department_roles(department);
+
+        if(result.empty()) {
+            return {};
+        }
+        return result;
     }
 }
 
@@ -209,21 +222,36 @@ namespace user::server {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
-            std::string department = new_body["department"].GetString(), role = new_body["role"].GetString();
-            logger_ptr->info( []{return "here";});
-            // int rang = new_body["rang"].GetInt();
-            int rang = new_body.HasMember("rang") ? new_body["rang"].GetInt() : -1;
-            logger_ptr->info( [department, role, rang]{return fmt::format("new role = {} {} {}", department, role, rang);});
-
+            int payment = new_body.HasMember("payment") ? new_body["payment"].GetInt() : 0;
 
             if (new_body.HasMember("role") && new_body.HasMember("department") && new_body.HasMember("rang")) {
-                int roleid = user::create_role(new_body["role"].GetString(), new_body["department"].GetString(), new_body["rang"].GetInt(), pool_ptr);
+                int roleid = user::create_role(new_body["role"].GetString(), new_body["department"].GetString(), new_body["rang"].GetInt(), payment, pool_ptr);
                 logger_ptr->info( [roleid]{return fmt::format("created role with roleid = {}", roleid);});
                 return req->create_response().set_body("ok").done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
             return req->create_response(restinio::status_internal_server_error()).done();
+        });
+    }
+
+    void department_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
+        router.get()->http_get(R"(/user/department_roles/:department(.*))", [pool_ptr, logger_ptr](auto req, auto params) {
+            auto qrl = req->header().path();
+
+            std::string department = url::get_last_url_arg(qrl);
+            logger_ptr->info( [department]{return fmt::format("department = {}", department);});
+
+            if(department == "department_roles" || department.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            pqxx::result result = user::department_roles(department, pool_ptr);
+            
+            if(result.empty()) {
+                return req->create_response(restinio::status_bad_gateway()).done();
+            }
+            return req->create_response().set_body(cp::serialize(result)).done();
         });
     }
 }

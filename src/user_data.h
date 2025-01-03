@@ -28,7 +28,10 @@ namespace user {
     // do we even need this?
     bool delete_user_role(std::string username, std::string role, std::string department, std::shared_ptr<cp::connection_pool> pool_ptr);
 
-    int create_role(std::string role, std::string department, int rang,std::shared_ptr<cp::connection_pool> pool_ptr);
+    int create_role(std::string role, std::string department, int rang, int payment,std::shared_ptr<cp::connection_pool> pool_ptr);
+
+    pqxx::result department_roles(std::string department, std::shared_ptr<cp::connection_pool> pool_ptr);
+
 }
 
 
@@ -42,4 +45,6 @@ namespace user::server {
     void delete_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void create_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    void department_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 }

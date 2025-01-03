@@ -124,12 +124,12 @@ namespace auth::server {
 
                 try {
                     std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
-
-                    cp::query add_user("INSERT INTO \"user\" (username, passwdhash, userrights, jointime) VALUES($1, $2, '', now());");
+                    std::string userid = std::to_string(std::hash<std::string>{}(loginHeader)).substr(0, 5);
+                    cp::query add_user("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
 
                     auto tx = cp::tx(*pool_ptr, add_user);
                     try {
-                        pqxx::result result = add_user(loginHeader, passwordHash);      
+                        pqxx::result result = add_user(userid, loginHeader, passwordHash);      
                     } catch (const pqxx::unique_violation& e) {
                         logger_ptr->warn( [endpoint, loginHeader, e]{return fmt::format("user {} already exists: {}", loginHeader, e.what());});
                         return req->create_response(restinio::status_forbidden()).set_body("username is ocupied").done();
