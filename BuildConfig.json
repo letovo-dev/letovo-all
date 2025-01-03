@@ -11,6 +11,7 @@
                         "hash.cc", 
                         "letovo-wiki/assist_funcs.cc", 
                         "letovo-wiki/page_server.cc", 
-                        "url_parser.cc"
+                        "url_parser.cc",
+                        "user_data.cc"
                     ]
 }
