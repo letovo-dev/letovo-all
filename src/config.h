@@ -2,7 +2,6 @@
 #define CONFIG_H
 
 #include <fstream>
-#include "pqxx_cp.h"
 #include "rapidjson/document.h"
 
 class ServerConfig
@@ -41,7 +40,7 @@ class Config
             sql_config.password = config_map["password"].GetString();
             sql_config.dbname = config_map["dbname"].GetString();
             sql_config.hostaddr = config_map["host"].GetString();
-            sql_config.connections_count = config_map["connections"].GetInt();
+            sql_config.connections_count = 1;
 
             config_map.Parse(GetJson("./ServerConfig.json").c_str());
 
