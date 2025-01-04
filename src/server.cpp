@@ -9,8 +9,9 @@
 #include <fmt/ostream.h>
 
 // server functions
-#include "auth.h"
-#include "config.h"
+#include "./basic/auth.h"
+#include "./basic/config.h"
+#include "./basic/user_data.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -44,27 +45,32 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
 
     auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();    
 
-    auth::am_i_authed(router, pool_ptr, logger_ptr);
-    auth::am_i_admin(router, pool_ptr, logger_ptr);
+    page::server::get_page_content(router, pool_ptr, logger_ptr);
+    page::server::get_page_author(router, pool_ptr, logger_ptr);
+    page::server::add_page_by_content(router, pool_ptr, logger_ptr);
+    page::server::add_page_by_page(router, pool_ptr, logger_ptr);
+    page::server::update_likes(router, pool_ptr, logger_ptr);
+    page::server::enable_delete(router, pool_ptr, logger_ptr);
 
-    auth::enable_reg(router, pool_ptr, logger_ptr);
-    auth::enable_auth(router, pool_ptr, logger_ptr);
-    auth::add_userrights(router, pool_ptr, logger_ptr);
-    auth::enable_delete(router, pool_ptr, logger_ptr);
-    auth::change_password(router, pool_ptr, logger_ptr);
-    auth::change_username(router, pool_ptr, logger_ptr);
+    page::server::get_favourite_posts(router, pool_ptr, logger_ptr);
+    page::server::post_add_favourite_post(router, pool_ptr, logger_ptr);
+    page::server::delete_favourite_post(router, pool_ptr, logger_ptr);
 
-    page::get_page_content(router, pool_ptr, logger_ptr);
-    page::get_page_author(router, pool_ptr, logger_ptr);
-    page::add_page_by_content(router, pool_ptr, logger_ptr);
-    page::add_page_by_page(router, pool_ptr, logger_ptr);
-    page::update_likes(router, pool_ptr, logger_ptr);
-    page::enable_delete(router, pool_ptr, logger_ptr);
+    auth::server::enable_reg(router, pool_ptr, logger_ptr);
+    auth::server::enable_auth(router, pool_ptr, logger_ptr);
+    auth::server::add_userrights(router, pool_ptr, logger_ptr);
+    auth::server::am_i_authed(router, pool_ptr, logger_ptr);
+    auth::server::am_i_admin(router, pool_ptr, logger_ptr);
+    auth::server::enable_delete(router, pool_ptr, logger_ptr);
+    auth::server::is_user_active(router, pool_ptr, logger_ptr);
 
-    page::get_favourite_posts(router, pool_ptr, logger_ptr);
-    page::post_add_favourite_post(router, pool_ptr, logger_ptr);
-    page::delete_favourite_post(router, pool_ptr, logger_ptr);
-
+    user::server::user_info(router, pool_ptr, logger_ptr);
+    user::server::user_roles(router, pool_ptr, logger_ptr);
+    user::server::add_user_role(router, pool_ptr, logger_ptr);
+    user::server::delete_user_role(router, pool_ptr, logger_ptr);
+    user::server::create_role(router, pool_ptr, logger_ptr);
+    user::server::department_roles(router, pool_ptr, logger_ptr);
+    user::server::department_name(router, pool_ptr, logger_ptr);
     // enable_all_actives(router, pool_ptr);
 
     return router;

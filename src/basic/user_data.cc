@@ -14,7 +14,7 @@ namespace user {
         return result[0];
     }
 
-    int role_id(std::string role, std::string department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    int role_id(std::string role, int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
         cp::query get_role_id("select roleid from \"roles\" where rolename=($1) and department=($2);");
 
         auto tx = cp::tx(*pool_ptr, get_role_id);
@@ -81,7 +81,7 @@ namespace user {
     }
 
 
-    bool add_user_role(std::string username, std::string role, std::string department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    bool add_user_role(std::string username, std::string role, int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
         int role_id = user::role_id(role, department, pool_ptr);
         cp::query add_user_role("INSERT INTO \"useroles\" (username, roleid) VALUES($1, $2);");
         cp::query change_user_role("UPDATE \"user\" SET role=($1) WHERE username=($2);");
@@ -110,7 +110,7 @@ namespace user {
         return true;
     }
 
-    int create_role(std::string role, std::string department, int rang, int payment, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    int create_role(std::string role, int department, int rang, int payment, std::shared_ptr<cp::connection_pool> pool_ptr) {
         cp::query create_role("INSERT INTO \"roles\" (rolename, department, rang, payment) VALUES($1, $2, $3, $4) returning \"roleid\";");
         auto tx = cp::tx(*pool_ptr, create_role);
         pqxx::result result;
@@ -123,8 +123,8 @@ namespace user {
         return result[0]["roleid"].as<int>();
     }
 
-    pqxx::result department_roles(std::string department, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_department_roles("SELECT * FROM \"roles\" WHERE department=($1);");
+    pqxx::result department_roles(int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_department_roles("SELECT * FROM \"roles\" WHERE departmentid=($1) order by rang;");
 
         auto tx = cp::tx(*pool_ptr, get_department_roles);
         
@@ -134,6 +134,19 @@ namespace user {
             return {};
         }
         return result;
+    }
+
+    std::string department_name(int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_department_name("SELECT departmentname FROM \"department\" WHERE departmentid=($1);");
+
+        auto tx = cp::tx(*pool_ptr, get_department_name);
+        
+        pqxx::result result = get_department_name(department);
+
+        if(result.empty()) {
+            return "";
+        }
+        return result[0]["departmentname"].as<std::string>();
     }
 }
 
@@ -197,7 +210,7 @@ namespace user::server {
                 user::add_user_role(new_body["username"].GetString(), new_body["role_id"].GetInt(), pool_ptr);
                 return req->create_response().set_body("ok").done();
             } else if(new_body.HasMember("role") && new_body.HasMember("department")) {
-                user::add_user_role(new_body["username"].GetString(), new_body["role"].GetString(), new_body["department"].GetString(), pool_ptr);
+                user::add_user_role(new_body["username"].GetString(), new_body["role"].GetString(), new_body["department"].GetInt(), pool_ptr);
                 return req->create_response().set_body("ok").done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -225,7 +238,7 @@ namespace user::server {
             int payment = new_body.HasMember("payment") ? new_body["payment"].GetInt() : 0;
 
             if (new_body.HasMember("role") && new_body.HasMember("department") && new_body.HasMember("rang")) {
-                int roleid = user::create_role(new_body["role"].GetString(), new_body["department"].GetString(), new_body["rang"].GetInt(), payment, pool_ptr);
+                int roleid = user::create_role(new_body["role"].GetString(), new_body["department"].GetInt(), new_body["rang"].GetInt(), payment, pool_ptr);
                 logger_ptr->info( [roleid]{return fmt::format("created role with roleid = {}", roleid);});
                 return req->create_response().set_body("ok").done();
             } else {
@@ -236,22 +249,46 @@ namespace user::server {
     }
 
     void department_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
-        router.get()->http_get(R"(/user/department_roles/:department(.*))", [pool_ptr, logger_ptr](auto req, auto params) {
+        router.get()->http_get(R"(/user/department/roles/:department([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             auto qrl = req->header().path();
 
             std::string department = url::get_last_url_arg(qrl);
             logger_ptr->info( [department]{return fmt::format("department = {}", department);});
 
-            if(department == "department_roles" || department.empty()) {
+            if(department == "roles" || department.empty()) {
                 return req->create_response(restinio::status_bad_request()).done();
             }
 
-            pqxx::result result = user::department_roles(department, pool_ptr);
+            int department_id = std::stoi(department);
+
+            pqxx::result result = user::department_roles(department_id, pool_ptr);
             
             if(result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
             return req->create_response().set_body(cp::serialize(result)).done();
+        });
+    }
+
+    void department_name(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
+        router.get()->http_get(R"(/user/department/name/:department([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            auto qrl = req->header().path();
+
+            std::string department = url::get_last_url_arg(qrl);
+            logger_ptr->info( [department]{return fmt::format("department = {}", department);});
+
+            if(department == "name" || department.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            int department_id = std::stoi(department);
+
+            std::string result = user::department_name(department_id, pool_ptr);
+            
+            if(result.empty()) {
+                return req->create_response(restinio::status_bad_gateway()).done();
+            }
+            return req->create_response().set_body(result).done();
         });
     }
 }

@@ -79,7 +79,7 @@ namespace cp
 
 
 	struct connection_manager {
-		connection_manager(std::unique_ptr<pqxx::connection>& connection);
+		connection_manager(std::unique_ptr<pqxx::connection>& connection, const std::string connection_string);
 		connection_manager(const connection_manager&) = delete;
 		connection_manager& operator=(const connection_manager&) = delete;
 
@@ -90,6 +90,7 @@ namespace cp
 		std::unordered_set<std::string> prepares{};
 		std::mutex prepares_mutex{};
 		std::unique_ptr<pqxx::connection> connection{};
+		const std::string connection_string{};
 	};
 
 
@@ -158,7 +159,6 @@ namespace cp
 		mutable std::optional<query_manager> manager{};
 
     };
-
 
 
 	template<typename... Args>

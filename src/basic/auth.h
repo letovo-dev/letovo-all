@@ -16,7 +16,7 @@ namespace auth {
     
     bool is_authed(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr);
     bool is_admin(std::string token, std::shared_ptr<cp::connection_pool> pool_ptr);
-
+    bool is_admin_by_uname(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr);
     bool is_authed_by_body(std::string req_body, std::shared_ptr<cp::connection_pool> pool_ptr);
 }
 namespace auth::server {

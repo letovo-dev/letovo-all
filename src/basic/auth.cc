@@ -1,4 +1,4 @@
-#include "auth.h"
+#include "./auth.h"
 
 #include <iostream>
 
@@ -41,6 +41,19 @@ namespace auth {
         auto tx = cp::tx(*pool_ptr, get_user);
         
         pqxx::result result = get_user(decoded, "admin");
+
+        if(result.empty()) {
+            return false;
+        }
+        return true;
+    }
+
+    bool is_admin_by_uname(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"userrights\"=($2);");
+
+        auto tx = cp::tx(*pool_ptr, get_user);
+        
+        pqxx::result result = get_user(username, "admin");
 
         if(result.empty()) {
             return false;
