@@ -1,4 +1,4 @@
-#include "auth.h"
+#include "./auth.h"
 
 #include <iostream>
 
@@ -48,6 +48,35 @@ namespace auth {
         return true;
     }
 
+    bool is_admin_by_uname(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"userrights\"=($2);");
+
+        auto tx = cp::tx(*pool_ptr, get_user);
+        
+        pqxx::result result = get_user(username, "admin");
+
+        if(result.empty()) {
+            return false;
+        }
+        return true;
+    }
+
+    bool is_active(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_user("SELECT active FROM \"user\" WHERE \"username\"=($1) and \"active\"=true;");
+
+        auto tx = cp::tx(*pool_ptr, get_user);
+        
+        pqxx::result result = get_user(username);
+
+        if(result.empty()) {
+            return false;
+        }
+        return true;
+    }
+
+}
+
+namespace auth::server {
     void enable_auth(std::unique_ptr<restinio::router::express_router_t<>>& router, 
                     std::shared_ptr<cp::connection_pool> pool_ptr, 
                     std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
@@ -108,12 +137,12 @@ namespace auth {
 
                 try {
                     std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
-
-                    cp::query add_user("INSERT INTO \"user\" (username, passwdhash, userrights, jointime) VALUES($1, $2, '', now());");
+                    std::string userid = std::to_string(std::hash<std::string>{}(loginHeader)).substr(0, 5);
+                    cp::query add_user("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());");
 
                     auto tx = cp::tx(*pool_ptr, add_user);
                     try {
-                        pqxx::result result = add_user(loginHeader, passwordHash);      
+                        pqxx::result result = add_user(userid, loginHeader, passwordHash);      
                     } catch (const pqxx::unique_violation& e) {
                         logger_ptr->warn( [endpoint, loginHeader, e]{return fmt::format("user {} already exists: {}", loginHeader, e.what());});
                         return req->create_response(restinio::status_forbidden()).set_body("username is ocupied").done();
@@ -160,6 +189,18 @@ namespace auth {
                 return req->create_response(restinio::status_ok()).done();
             } else {
                 return req->create_response(restinio::status_unauthorized()).set_body("no").done();
+            }
+        });
+    }
+
+    void is_user_active(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/auth/isactive/:username(.*))", [pool_ptr](auto req, auto) {
+            std::string username = url::get_last_url_arg(req->header().path());
+
+            if(auth::is_active(username, pool_ptr)) {
+                return req->create_response(restinio::status_ok()).set_body("yes").done();
+            } else {
+                return req->create_response(restinio::status_ok()).set_body("no").done();
             }
         });
     }
@@ -301,5 +342,4 @@ namespace auth {
             }
         });
     }
-
 }

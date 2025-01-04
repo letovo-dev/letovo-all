@@ -20,13 +20,33 @@ namespace cp {
 		return res_str;
 	}
 
-	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection) : connection(std::move(connection)) {};
+	std::string serialize(pqxx::row row) {
+		// TODO: it can be better
+		if (row.empty()) {
+			return "{\"result\": []}";
+		}
+		std::string res_str = "{\"result\": [";
+		res_str += '{';
+		for (auto const &field: row) {
+			res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
+		}
+		res_str[res_str.length() - 1] = '}';
+		res_str += ',';
+		
+		res_str[res_str.length() - 1] = ']';
+		res_str += "}";
+		return res_str;
+	}
+
+	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection, const std::string connection_string) : connection(std::move(connection)), connection_string(connection_string) {};
 
 	void connection_manager::prepare(const std::string& name, const std::string& definition) {
 		std::scoped_lock lock(prepares_mutex);
 		if (prepares.contains(name))
 			return;
-
+		if(!connection -> is_open()) {
+			connection = std::make_unique<pqxx::connection>(connection_string);
+		}
 		connection->prepare(name, definition);
 		prepares.insert(name);
 	}
@@ -36,7 +56,7 @@ namespace cp {
 				const auto connect_string = std::format("dbname = {} user = {} password = {} hostaddr = {} port = {}", options.dbname, options.user, options.password, options.hostaddr, options.port);
 				try {
 					auto connection = std::make_unique<pqxx::connection>(connect_string);
-					auto manager = std::make_unique<connection_manager>(connection);
+					auto manager = std::make_unique<connection_manager>(connection, connect_string);
 					connections.push(std::move(manager));
 				} catch(...) {
 					throw ("Connection failed. Check your internet and sql config");
@@ -62,6 +82,10 @@ namespace cp {
 			// if we have something here, we can borrow it from the queue
 			auto manager = std::move(connections.front());
 			connections.pop();
+			
+			// тут
+			
+
 			return manager;
 	}
 

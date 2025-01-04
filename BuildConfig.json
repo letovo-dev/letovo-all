@@ -6,11 +6,13 @@
         "letovo-wiki": "https://github.com/letovo-dev/letovo-wiki.git"
 },
     "build_files": [ 
-                        "auth.cc", 
-                        "pqxx_cp.cc", 
-                        "hash.cc", 
+                        "./basic/auth.cc", 
+                        "./basic/pqxx_cp.cc", 
+                        "./basic/hash.cc", 
                         "letovo-wiki/assist_funcs.cc", 
                         "letovo-wiki/page_server.cc", 
-                        "url_parser.cc"
+                        "./basic/url_parser.cc",
+                        "./basic/user_data.cc",
+                        "./market/transactions.cc"
                     ]
 }
