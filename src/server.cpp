@@ -2,7 +2,10 @@
 #include <restinio/tls.hpp>
 #include "rapidjson/document.h"
 #include <iostream>
+
 #include "./letovo-wiki/page_server.h"
+
+#include "./market/transactions.h"
 
 // do i need this?
 #include <fmt/format.h>
@@ -21,29 +24,26 @@ using namespace restinio;
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
 
-
-
-std::unique_ptr<restinio::router::express_router_t<>> create() {
-    auto router = std::make_unique<router::express_router_t<>>();
-    router->http_get(
+void hi(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    router.get()->http_get(
         "/hi",
-        [](auto req, auto) {
-            rapidjson::Document new_body;
-            new_body.Parse(req->body().c_str());
+        [logger_ptr](auto req, auto) {
+
             asio_ns::ip::tcp::endpoint endpoint = req->remote_endpoint();
 
-            std::cout<<"header: "<<' '<<req->header().query()<<std::endl;
+            logger_ptr->info( []{return fmt::format("hi recieved");});
             
-            std::cout<<new_body["test"].GetString()<<" endpoint: "<<endpoint.address().to_string()<<std::endl;
-            return req->create_response().set_body(new_body["test"].GetString()).done();
+            std::cout<<"endpoint: "<<endpoint.address().to_string()<<std::endl;
+            return req->create_response().set_body(endpoint.address().to_string()).done();
     }); 
-    return router;
 }
 
 std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::connection_pool> pool_ptr) {
     auto router = std::make_unique<router::express_router_t<>>();
 
-    auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();    
+    auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
+    
+    hi(router, logger_ptr);
 
     page::server::get_page_content(router, pool_ptr, logger_ptr);
     page::server::get_page_author(router, pool_ptr, logger_ptr);
@@ -71,7 +71,10 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     user::server::create_role(router, pool_ptr, logger_ptr);
     user::server::department_roles(router, pool_ptr, logger_ptr);
     user::server::department_name(router, pool_ptr, logger_ptr);
-    // enable_all_actives(router, pool_ptr);
+
+    transactions::server::transfer(router, pool_ptr, logger_ptr);
+    transactions::server::get_balance(router, pool_ptr, logger_ptr);
+    transactions::server::get_transactions(router, pool_ptr, logger_ptr);
 
     return router;
 }
@@ -100,8 +103,6 @@ int main()
         asio_ns::ssl::context::default_workarounds
         | asio_ns::ssl::context::no_sslv2
         | asio_ns::ssl::context::single_dh_use );
-
-    // list_path(certs_dir);
 
     tls_context.use_certificate_chain_file( certs_dir + "/server.pem" );
     tls_context.use_private_key_file(
