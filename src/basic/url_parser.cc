@@ -1,6 +1,11 @@
 #include "url_parser.h"
 #include <iostream>
 namespace url{
+    bool is_number(const std::string& s) {
+        return !s.empty() && std::find_if(s.begin(), 
+            s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+    }
+
     int last_int_from_url_path(restinio::string_view_t path) {
         return std::stoi(get_last_url_arg(path));  
     }

@@ -1,0 +1,10 @@
+#pragma once
+#include <restinio/all.hpp>
+#include "pqxx_cp.h"
+#include <pqxx/pqxx>
+#include <unordered_set> 
+#include "rapidjson/document.h" 
+#include "asio/ip/detail/endpoint.hpp"
+#include "hash.h"
+#include "auth.h"
+#include <vector>   

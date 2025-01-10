@@ -13,6 +13,7 @@
                         "letovo-wiki/page_server.cc", 
                         "./basic/url_parser.cc",
                         "./basic/user_data.cc",
-                        "./market/transactions.cc"
+                        "./market/transactions.cc",
+                        "./basic/checks.cc"
                     ]
 }
