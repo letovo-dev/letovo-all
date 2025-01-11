@@ -66,6 +66,7 @@ while getopts 'toifd:h' OPTION; do
 done
 
 if [ $run_flag = true ]; then
+    python3 ./docs/search_methods.py
     export MAIN_FILE="$work_file"
     export BUILD_FILES="$build_files"
     echo "running $work_file"
