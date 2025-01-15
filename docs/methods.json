@@ -1,0 +1,227 @@
+{
+    "/post/:id(\\d+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/post/author/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/post/add_page_content": {
+        "method": "post",
+        "fields": {}
+    },
+    "/post/add_page": {
+        "method": "post",
+        "fields": {
+            "post_path": "String",
+            "text": "String"
+        }
+    },
+    "/post/update_likes": {
+        "method": "put",
+        "fields": {
+            "likes": "Int",
+            "post_id": "Int"
+        }
+    },
+    "/post/delete/:token([a-zA-Z0-9]+)/:id(\\d+)": {
+        "method": "delete",
+        "fields": {}
+    },
+    "/post/favourite/:token([a-zA-Z0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/post/favourite": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "post_id": "Int"
+        }
+    },
+    "/post/favourite/:token([a-zA-Z0-9]+)/:id(\\d+)": {
+        "method": "delete",
+        "fields": {}
+    },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/add": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/delete": {
+        "method": "delete",
+        "fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/tree/:tree_id([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/info/:achivement_id([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/create": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "name": "String",
+            "tree_id": "Int",
+            "level": "Int",
+            "pic": "String",
+            "description": "String",
+            "stages": "Int"
+        }
+    },
+    "/user/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/user/add_role": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "username": "String",
+            "role_id": "Int",
+            "role": "String",
+            "department": "Int"
+        }
+    },
+    "/user/delete_role": {
+        "method": "delete",
+        "fields": {}
+    },
+    "/user/create_role": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "payment": "Int",
+            "role": "String",
+            "department": "Int",
+            "rang": "Int"
+        }
+    },
+    "/user/department/roles/:department([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/user/department/name/:department([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/user/set_department": {
+        "method": "put",
+        "fields": {
+            "token": "String",
+            "department": "String",
+            "username": "String"
+        }
+    },
+    "/user/department/roles": {
+        "method": "get",
+        "fields": {}
+    },
+    "/user/department/start/:department(.*)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/auth/login": {
+        "method": "post",
+        "fields": {
+            "login": "String",
+            "password": "String"
+        }
+    },
+    "/auth/reg": {
+        "method": "post",
+        "fields": {
+            "login": "String",
+            "password": "String"
+        }
+    },
+    "/auth/amiauthed/:token([a-zA-Z0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/auth/amiadmin/:token([a-zA-Z0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/auth/isactive/:username(.*)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/auth/isuser/:username(.*)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/auth/delete/:token([a-zA-Z0-9]+)": {
+        "method": "delete",
+        "fields": {}
+    },
+    "/auth/add_userrights/:token([a-zA-Z0-9]+)": {
+        "method": "put",
+        "fields": {
+            "username": "String",
+            "rights": "String"
+        }
+    },
+    "/auth/change_username/:token([a-zA-Z0-9]+)": {
+        "method": "put",
+        "fields": {
+            "new_username": "String"
+        }
+    },
+    "/auth/change_password/:token([a-zA-Z0-9]+)": {
+        "method": "put",
+        "fields": {
+            "unlogin": "Bool",
+            "new_password": "String"
+        }
+    },
+    "/all_actives": {
+        "method": "get",
+        "fields": {}
+    },
+    "/add_bid": {
+        "method": "post",
+        "fields": {
+            "buy": "String",
+            "userid": "String",
+            "activeid": "String",
+            "bidprice": "String",
+            "ammount": "String"
+        }
+    },
+    "/transactions/send": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "receiver": "String",
+            "amount": "Int"
+        }
+    },
+    "/transactions/balance/:token([a-zA-Z0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/transactions/get/:token([a-zA-Z0-9]+)": {
+        "method": "get",
+        "fields": {}
+    }
+}

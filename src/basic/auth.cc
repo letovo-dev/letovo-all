@@ -48,6 +48,19 @@ namespace auth {
         return true;
     }
 
+    bool is_user(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1);");
+
+        auto tx = cp::tx(*pool_ptr, get_user);
+        
+        pqxx::result result = get_user(username);
+
+        if(result.empty()) {
+            return false;
+        }
+        return true;
+    }
+
     bool is_admin_by_uname(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
         cp::query get_user("SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"userrights\"=($2);");
 
@@ -201,6 +214,20 @@ namespace auth::server {
                 return req->create_response(restinio::status_ok()).set_body("yes").done();
             } else {
                 return req->create_response(restinio::status_ok()).set_body("no").done();
+            }
+        });
+    }
+
+    void is_user(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/auth/isuser/:username(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string username = url::get_last_url_arg(req->header().path());
+
+            logger_ptr->info( [username]{return fmt::format("is user request for {}", username);});
+
+            if(auth::is_user(username, pool_ptr)) {
+                return req->create_response(restinio::status_ok()).set_body("yes").done();
+            } else {
+                return req->create_response(restinio::status_non_authoritative_information()).set_body("no").done();
             }
         });
     }

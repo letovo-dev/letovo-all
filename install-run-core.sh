@@ -3,6 +3,7 @@
 test_file="test.cpp"
 work_file="server.cpp"
 build_files=""
+checks_flag=true
 run_flag=true
 logging=true
 
@@ -26,7 +27,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'toifd:h' OPTION; do
+while getopts 'toifds:h' OPTION; do
     case "$OPTION" in
         i) 
             ehco "installing"
@@ -48,6 +49,10 @@ while getopts 'toifd:h' OPTION; do
             echo "console output"
             logging=false
             ;;
+        s)
+            echo "skip pre-run checks"
+            checks_flag=false
+            ;;
         h)
             echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o]"
             echo "Options:"
@@ -56,6 +61,7 @@ while getopts 'toifd:h' OPTION; do
             echo "  -t: run test file"
             echo "  -d: run with debug keys"
             echo "  -o: console output"
+            echo "  -s: skip pre-run checks"
             exit 0
             ;;
         ?)
@@ -66,6 +72,7 @@ while getopts 'toifd:h' OPTION; do
 done
 
 if [ $run_flag = true ]; then
+    python3 ./docs/search_methods.py
     export MAIN_FILE="$work_file"
     export BUILD_FILES="$build_files"
     echo "running $work_file"

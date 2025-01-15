@@ -3,18 +3,18 @@
 #include "rapidjson/document.h"
 #include <iostream>
 
-#include "./letovo-wiki/page_server.h"
-
-#include "./market/transactions.h"
-
 // do i need this?
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+
+#include "./basic/checks.h"
 
 // server functions
 #include "./basic/auth.h"
 #include "./basic/config.h"
 #include "./basic/user_data.h"
+#include "./market/transactions.h"
+#include "./letovo-wiki/page_server.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -37,6 +37,7 @@ void hi(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shar
             return req->create_response().set_body(endpoint.address().to_string()).done();
     }); 
 }
+
 
 std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::connection_pool> pool_ptr) {
     auto router = std::make_unique<router::express_router_t<>>();
@@ -71,6 +72,8 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     user::server::create_role(router, pool_ptr, logger_ptr);
     user::server::department_roles(router, pool_ptr, logger_ptr);
     user::server::department_name(router, pool_ptr, logger_ptr);
+    user::server::set_users_department(router, pool_ptr, logger_ptr);
+    user::server::all_departments(router, pool_ptr, logger_ptr);
 
     transactions::server::transfer(router, pool_ptr, logger_ptr);
     transactions::server::get_balance(router, pool_ptr, logger_ptr);
@@ -85,6 +88,8 @@ int main()
     using namespace std::chrono;
 
     std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(Config::giveMe().sql_config);
+
+    pre_run_checks::do_checks(pool_ptr);
 
     auto router = create(pool_ptr);
 
