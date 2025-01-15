@@ -44,6 +44,46 @@
         "method": "delete",
         "fields": {}
     },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/add": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/delete": {
+        "method": "delete",
+        "fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/tree/:tree_id([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/info/:achivement_id([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/create": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "name": "String",
+            "tree_id": "Int",
+            "level": "Int",
+            "pic": "String",
+            "description": "String",
+            "stages": "Int"
+        }
+    },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
         "fields": {}

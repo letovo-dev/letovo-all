@@ -11,4 +11,6 @@ namespace url{
     std::string get_last_url_arg(restinio::string_view_t path);
 
     std::vector<std::string> spilt_url_path(restinio::string_view_t path, const std::string delimiter);
+
+    bool validate_pic_path(const std::string& pic_path);
 }

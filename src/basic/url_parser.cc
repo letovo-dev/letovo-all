@@ -34,5 +34,16 @@ namespace url{
         return tokens;
     }
     
+    bool validate_pic_path(const std::string& pic_path) {
+        bool format = pic_path.find(".png") != std::string::npos || pic_path.find(".jpg") != std::string::npos || pic_path.find(".jpeg") != std::string::npos;
+        bool path = true;
+        std::string start = "/img/";
+        for(int i = 0; i < start.size(); i++) {
+            if(pic_path[i] != start[i]) {
+                path = false;
+            }
+        }
+        return format && path;
+    }
 }
 

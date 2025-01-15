@@ -14,6 +14,7 @@
                         "./basic/url_parser.cc",
                         "./basic/user_data.cc",
                         "./market/transactions.cc",
-                        "./basic/checks.cc"
+                        "./basic/checks.cc",
+                        "./basic/achivements.cc"
                     ]
 }

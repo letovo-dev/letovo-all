@@ -296,7 +296,7 @@ namespace user::server {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
 
-            if (new_body.HasMember("token") && !auth::is_admin(new_body["token"].GetString(), pool_ptr)) {
+            if (!auth::is_admin(new_body["token"].GetString(), pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (new_body.HasMember("role_id")) {
