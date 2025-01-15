@@ -38,15 +38,16 @@ namespace user {
 
     int best_users_role_by_department(std::string username, int department, std::shared_ptr<cp::connection_pool> pool_ptr);
 
-    void set_users_department(std::string username, int department, std::shared_ptr<cp::connection_pool> pool_ptr);
+    int set_users_department(std::string username, int department, std::shared_ptr<cp::connection_pool> pool_ptr);
 
-    void set_users_department(std::string username, std::string department, std::shared_ptr<cp::connection_pool> pool_ptr);
+    int set_users_department(std::string username, std::string department, std::shared_ptr<cp::connection_pool> pool_ptr);
 
     int starter_role(int department, std::shared_ptr<cp::connection_pool> pool_ptr);
 
+    int starter_role(std::string department, std::shared_ptr<cp::connection_pool> pool_ptr);
+
     pqxx::result all_departments(std::shared_ptr<cp::connection_pool> pool_ptr);
 
-    int starter_role(std::string department, std::shared_ptr<cp::connection_pool> pool_ptr);
 }
 
 
@@ -68,4 +69,6 @@ namespace user::server {
     void set_users_department(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void all_departments(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    void starter_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 }

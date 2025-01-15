@@ -85,14 +85,18 @@
         "fields": {}
     },
     "/user/set_department": {
-        "method": "post",
+        "method": "put",
         "fields": {
             "token": "String",
-            "username": "String",
-            "department": "String"
+            "department": "String",
+            "username": "String"
         }
     },
     "/user/department/roles": {
+        "method": "get",
+        "fields": {}
+    },
+    "/user/department/start/:department(.*)": {
         "method": "get",
         "fields": {}
     },
@@ -119,6 +123,10 @@
         "fields": {}
     },
     "/auth/isactive/:username(.*)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/auth/isuser/:username(.*)": {
         "method": "get",
         "fields": {}
     },
