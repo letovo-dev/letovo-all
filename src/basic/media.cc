@@ -67,6 +67,29 @@ namespace media {
             return "";
         }
     }
+
+    std::vector<std::string> get_all_files(std::string path) {
+        std::vector<std::string> files;
+        for (const auto & entry : std::filesystem::directory_iterator(path)) {
+            files.push_back(entry.path());
+        }
+        return files;
+    }
+
+    // not tested
+    bool can_i_read(std::string token, std::string file_name, std::shared_ptr<cp::connection_pool> pool_ptr) {
+        std::string username = hashing::string_from_hash(token);
+        cp::query get_user("SELECT * FROM \"user\" left join \"file_rights\" on \"user\".role = \"file_rights\" where \"user\".username = ($1) and \"file_rights\".file_path = ($2);");
+
+        auto tx = cp::tx(*pool_ptr, get_user);
+        
+        pqxx::result result = get_user(username, file_name);
+
+        if(result.empty()) {
+            return false;
+        }
+        return true;
+    }
 }
 
 namespace media::server {

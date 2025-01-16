@@ -9,6 +9,7 @@
 #include "auth.h"
 #include "comment.h"
 #include <vector>   
+#include <unordered_set>
 #include <unordered_map>
 
 namespace media {
@@ -23,8 +24,14 @@ namespace media {
     std::string get_file_type(std::string file_name);
 
     std::string check_if_file_exists(std::string file_name);
+
+    std::vector<std::string> get_all_files(std::string path);
+
+    bool can_i_read(std::string token, std::string file_name, std::shared_ptr<cp::connection_pool> pool_ptr);
 }
 
 namespace media::server {
     void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    void get_all_files(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 }
