@@ -84,6 +84,10 @@
             "stages": "Int"
         }
     },
+    "/media/get/:filename(.*)": {
+        "method": "get",
+        "fields": {}
+    },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
         "fields": {}

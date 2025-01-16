@@ -19,6 +19,15 @@ namespace url{
         return "";
     }
 
+    std::string get_string_after(restinio::string_view_t path, const std::string& delimiter) {
+        std::string s = {path.begin(), path.end()};
+        size_t pos = s.find(delimiter);
+        if (pos != std::string::npos) {
+            return s.substr(pos + delimiter.size());
+        }
+        return "";
+    }
+
     std::vector<std::string> spilt_url_path(restinio::string_view_t path, const std::string delimiter) {
         std::string s = {path.begin(), path.end()};
         std::vector<std::string> tokens;

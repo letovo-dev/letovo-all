@@ -15,6 +15,7 @@
                         "./basic/user_data.cc",
                         "./market/transactions.cc",
                         "./basic/checks.cc",
-                        "./basic/achivements.cc"
+                        "./basic/achivements.cc",
+                        "./basic/media.cc"
                     ]
 }
