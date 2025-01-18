@@ -84,6 +84,10 @@
             "stages": "Int"
         }
     },
+    "/media/get/:filename(.*)": {
+        "method": "get",
+        "fields": {}
+    },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
         "fields": {}
@@ -151,7 +155,8 @@
         "method": "post",
         "fields": {
             "login": "String",
-            "password": "String"
+            "password": "String",
+            "temp_token": "String"
         }
     },
     "/auth/amiauthed/:token([a-zA-Z0-9]+)": {
@@ -192,6 +197,13 @@
         "fields": {
             "unlogin": "Bool",
             "new_password": "String"
+        }
+    },
+    "/auth/add_user": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "input": "String"
         }
     },
     "/all_actives": {

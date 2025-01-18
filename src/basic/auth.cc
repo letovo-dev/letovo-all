@@ -143,10 +143,15 @@ namespace auth::server {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
-            if (new_body.HasMember("login") && new_body.HasMember("password"))
+            if (new_body.HasMember("login") && new_body.HasMember("password") /*&& new_body.HasMember("temp_token")*/)
             {
                 std::string loginHeader = new_body["login"].GetString();
                 std::string passwordHeader = new_body["password"].GetString();
+                // TODO: discuss, may be better to reg new user each time by hands and then create qr code to change username and password
+                // std::string temp_token = new_body["temp_token"].GetString();
+                // if(!hashing::check_new_user(temp_token)) {
+                //     return req->create_response(restinio::status_unauthorized()).done();
+                // }
 
                 try {
                     std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
@@ -163,16 +168,14 @@ namespace auth::server {
                     tx.commit();
 
                     auto token = hashing::hash_from_string(loginHeader); 
+                    logger_ptr->info( [endpoint, loginHeader]{return fmt::format("new user with ip {} username {}", endpoint, loginHeader);});
+                
+                    return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
                 }
                 catch(const char* error_message) {logger_ptr->error( [endpoint, error_message]{return fmt::format("error from {} {}", endpoint, error_message);});}
-                logger_ptr->info( [endpoint, loginHeader]{return fmt::format("new user with ip {} username {}", endpoint, loginHeader);});
                 
-                return req->create_response().set_body("ok").done();
             }
-            else
-            {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
-            }
+            return req->create_response(restinio::status_non_authoritative_information()).done();
         });
     }
 
@@ -365,6 +368,24 @@ namespace auth::server {
                 return req->create_response().set_body("ok").done();
             }
             else {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+        });
+    }
+
+    void add_new_user(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_post("/auth/add_user", [pool_ptr, logger_ptr](auto req, auto) {
+            rapidjson::Document new_body;
+            new_body.Parse(req->body().c_str());
+
+            if (!new_body.HasMember("token") || !auth::is_admin(new_body["token"].GetString(), pool_ptr)) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if (new_body.HasMember("input")) {
+                std::string input = new_body["input"].GetString();
+                hashing::add_new_user(input);                
+                return req->create_response().set_body("ok").done();
+            } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
         });

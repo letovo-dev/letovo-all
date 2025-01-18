@@ -13,6 +13,7 @@
 #include "./basic/auth.h"
 #include "./basic/config.h"
 #include "./basic/user_data.h"
+#include "./basic/achivements.h"
 #include "./market/transactions.h"
 #include "./letovo-wiki/page_server.h"
 
@@ -64,6 +65,10 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     auth::server::am_i_admin(router, pool_ptr, logger_ptr);
     auth::server::enable_delete(router, pool_ptr, logger_ptr);
     auth::server::is_user_active(router, pool_ptr, logger_ptr);
+    auth::server::is_user(router, pool_ptr, logger_ptr);
+    auth::server::add_new_user(router, pool_ptr, logger_ptr);
+    auth::server::change_username(router, pool_ptr, logger_ptr);
+    auth::server::change_password(router, pool_ptr, logger_ptr);
 
     user::server::user_info(router, pool_ptr, logger_ptr);
     user::server::user_roles(router, pool_ptr, logger_ptr);
@@ -74,11 +79,19 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     user::server::department_name(router, pool_ptr, logger_ptr);
     user::server::set_users_department(router, pool_ptr, logger_ptr);
     user::server::all_departments(router, pool_ptr, logger_ptr);
+    user::server::starter_role(router, pool_ptr, logger_ptr);
 
     transactions::server::transfer(router, pool_ptr, logger_ptr);
     transactions::server::get_balance(router, pool_ptr, logger_ptr);
     transactions::server::get_transactions(router, pool_ptr, logger_ptr);
 
+    achivements::server::user_achivemets(router, pool_ptr, logger_ptr);
+    achivements::server::add_achivement(router, pool_ptr, logger_ptr);
+    achivements::server::delete_achivement(router, pool_ptr, logger_ptr);
+    achivements::server::achivements_tree(router, pool_ptr, logger_ptr);
+    achivements::server::achivement_info(router, pool_ptr, logger_ptr);
+    achivements::server::create_achivement(router, pool_ptr, logger_ptr);
+    
     return router;
 }
 

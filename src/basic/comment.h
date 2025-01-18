@@ -11,6 +11,8 @@ class Comment
     public:
         const std::string no_money = comment("No money?");
 
+        const std::string no_access = comment("Hacking much?");
+
         static Comment& giveMe()
         {
             static Comment instance; // Guaranteed to be destroyed.
