@@ -2,6 +2,8 @@
 
 int EXPIRATION_TIME = 86400; 
 std::unordered_map<std::string, std::pair<std::string, time_t>> hash_table;
+std::unordered_set<std::string> new_users;
+
 namespace hashing {
     string hash_from_string(const string& input) {
         unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -43,5 +45,28 @@ namespace hashing {
             return true;
         }
         return false;
+    }
+
+    bool check_new_user(const std::string& hash) {
+        bool exists = new_users.find(hash) != new_users.end();
+        if (exists) {
+            new_users.erase(hash);
+        }
+        return exists;
+    }
+
+    void add_new_user(const std::string& input) {
+        unsigned char hash[SHA256_DIGEST_LENGTH];
+        SHA256(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), hash);
+
+        // Convert hash to hex string
+        stringstream ss;
+        for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+            ss << hex << setw(2) << setfill('0') << static_cast<int>(hash[i]);
+        }
+
+        string hashString = ss.str();
+
+        new_users.insert(hashString);
     }
 }
