@@ -128,6 +128,14 @@ namespace cp {
 		return r;
 	}
 	
+	pqxx::result AsyncConnection::execute(const std::string &sql) {
+		if (!con -> is_open()) {
+			con = std::make_shared<pqxx::connection>(connect_string);
+		}
+		pqxx::work w(*con);
+		pqxx::result r = w.exec(sql);
+		return r;
+	}
 
 	ConnectionsManager::ConnectionsManager(const connection_options &options, int numberOfConnections) : options(options), numberOfConnections(numberOfConnections) {}
 

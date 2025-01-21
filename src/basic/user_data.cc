@@ -1,12 +1,14 @@
 #include "user_data.h"
 
 namespace user {
-    pqxx::row role(int role_id, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_role("select * from \"roles\" where roleid=($1);");
+    pqxx::row role(int role_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_role);
-        
-        pqxx::result result = get_role(role_id);
+        std::vector<int> params = {role_id};
+
+        pqxx::result result = con -> execute_params("select * from \"roles\" where roleid=($1);", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return {};
@@ -14,12 +16,14 @@ namespace user {
         return result[0];
     }
 
-    int role_id(std::string role, int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_role_id("select roleid from \"roles\" where rolename=($1) and department=($2);");
+    int role_id(std::string role, int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_role_id);
-        
-        pqxx::result result = get_role_id(role, department);
+        std::vector<std::string> params = {role, std::to_string(department)};
+
+        pqxx::result result = con -> execute_params("select roleid from \"roles\" where rolename=($1) and departmentid=($2);", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return -1;
@@ -27,12 +31,14 @@ namespace user {
         return result[0]["roleid"].as<int>();
     }
 
-    pqxx::row user_role(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_user_role("select \"roles\".departmentid, \"roles\".rolename from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);");
+    pqxx::row user_role(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_user_role);
-        
-        pqxx::result result = get_user_role(username);
+        std::vector<std::string> params = {username};
+
+        pqxx::result result = con -> execute_params("select \"roles\".departmentid, \"roles\".rolename from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return {};
@@ -40,12 +46,14 @@ namespace user {
         return result[0];
     }
 
-    pqxx::row user_info(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_user_info("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"roles\".departmentid, \"roles\".rolename from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);");
+    pqxx::row user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_user_info);
-        
-        pqxx::result result = get_user_info(username);
+        std::vector<std::string> params = {username};
+
+        pqxx::result result = con -> execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"roles\".departmentid, \"roles\".rolename from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return {};
@@ -54,12 +62,14 @@ namespace user {
         return result[0];
     }
 
-    pqxx::result user_roles(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_user_roles("select * from \"useroles\" where username=($1);");
+    pqxx::result user_roles(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_user_roles);
-        
-        pqxx::result result = get_user_roles(username);
+        std::vector<std::string> params = {username};
+
+        pqxx::result result = con -> execute_params("select * from \"useroles\" where username=($1);" , params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return {};
@@ -67,13 +77,15 @@ namespace user {
         return result;
     }
 
-    pqxx::result best_user_roles(std::string username, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    pqxx::result best_user_roles(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         // TODO: not working
-        cp::query get_user_roles("SELECT distinct \"useroles\".username , \"roles\".rolename , \"roles\".departmentid, \"roles\".rang FROM \"roles\" left join \"useroles\" on \"roles\".roleid = \"useroles\".roleid WHERE \"roles\".rang = (SELECT MAX(rang) FROM roles WHERE departmentid = \"roles\".departmentid) and \"useroles\".username = ($1);");
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_user_roles);
-        
-        pqxx::result result = get_user_roles(username);
+        std::vector<std::string> params = {username};
+
+        pqxx::result result = con -> execute_params("SELECT distinct \"useroles\".username , \"roles\".rolename , \"roles\".departmentid, \"roles\".rang FROM \"roles\" left join \"useroles\" on \"roles\".roleid = \"useroles\".roleid WHERE \"roles\".rang = (SELECT MAX(rang) FROM roles WHERE departmentid = \"roles\".departmentid) and \"useroles\".username = ($1);", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return {};
@@ -82,54 +94,47 @@ namespace user {
     }
 
 
-    bool add_user_role(std::string username, std::string role, int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    bool add_user_role(std::string username, std::string role, int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         int role_id = user::role_id(role, department, pool_ptr);
-        cp::query add_user_role("INSERT INTO \"useroles\" (username, roleid) VALUES($1, $2);");
-        cp::query change_user_role("UPDATE \"user\" SET role=($1) WHERE username=($2);");
-        auto tx = cp::tx(*pool_ptr, add_user_role, change_user_role);
-        try {        
-            add_user_role(username, role_id);
-            change_user_role(role_id, username);
+
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {username, std::to_string(role_id)};
+        try {
+            con->execute_params("INSERT INTO \"useroles\" (roleid, username) VALUES($1, $2);", params, true);
+            con->execute_params("UPDATE \"user\" SET role=($1) WHERE username=($2);", params, true);
         } catch (const pqxx::unique_violation& e) {
+            pool_ptr -> returnConnection(std::move(con));
             return false;
         }
-        tx.commit();
+        pool_ptr -> returnConnection(std::move(con));
         return true;
     }
 
-    bool add_user_role(std::string username, int role_id, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query add_user_role("INSERT INTO \"useroles\" (username, roleid) VALUES($1, $2);");
-        cp::query change_user_role("UPDATE \"user\" SET role=($1) WHERE username=($2);");
-        auto tx = cp::tx(*pool_ptr, add_user_role, change_user_role);
-        try {        
-            add_user_role(username, role_id);
-            change_user_role(role_id, username);
-        } catch (const pqxx::unique_violation& e) {
-            return false;
-        }
-        tx.commit();
-        return true;
-    }
+    int create_role(std::string role, int department, int rang, int payment, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-    int create_role(std::string role, int department, int rang, int payment, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query create_role("INSERT INTO \"roles\" (rolename, department, rang, payment) VALUES($1, $2, $3, $4) returning \"roleid\";");
-        auto tx = cp::tx(*pool_ptr, create_role);
+        std::vector<std::string> params = {role, std::to_string(department), std::to_string(rang), std::to_string(payment)};
+
         pqxx::result result;
         try {        
-            result = create_role(role, department, rang, payment);
+            result = con -> execute_params("INSERT INTO \"roles\" (rolename, department, rang, payment) VALUES($1, $2, $3, $4) returning \"roleid\";", params, true);
         } catch (const pqxx::unique_violation& e) {
+            pool_ptr -> returnConnection(std::move(con));
             return -1;
         }
-        tx.commit();
+        pool_ptr -> returnConnection(std::move(con));
         return result[0]["roleid"].as<int>();
     }
 
-    pqxx::result department_roles(int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_department_roles("SELECT * FROM \"roles\" WHERE departmentid=($1) order by rang;");
+    pqxx::result department_roles(int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_department_roles);
-        
-        pqxx::result result = get_department_roles(department);
+        std::vector<int> params = {department};
+
+        pqxx::result result = con -> execute_params("SELECT * FROM \"roles\" WHERE departmentid=($1) order by rang;", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return {};
@@ -137,12 +142,14 @@ namespace user {
         return result;
     }
 
-    std::string department_name(int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_department_name("SELECT departmentname FROM \"department\" WHERE departmentid=($1);");
+    std::string department_name(int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_department_name);
-        
-        pqxx::result result = get_department_name(department);
+        std::vector<int> params = {department};
+
+        pqxx::result result = con -> execute_params("SELECT departmentname FROM \"department\" WHERE departmentid=($1);", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return "";
@@ -150,12 +157,14 @@ namespace user {
         return result[0]["departmentname"].as<std::string>();
     }
     
-    int department_id(std::string department, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query get_department_id("SELECT departmentid FROM \"department\" WHERE departmentname=($1);");
+    int department_id(std::string department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_department_id);
-        
-        pqxx::result result = get_department_id(department);
+        std::vector<std::string> params = {department};
+
+        pqxx::result result = con -> execute_params("SELECT departmentid FROM \"department\" WHERE departmentname=($1);", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return -1;
@@ -163,17 +172,18 @@ namespace user {
         return result[0]["departmentid"].as<int>();
     }
 
-    int best_users_role_by_department(std::string username, int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    int best_users_role_by_department(std::string username, int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         if(department_name(department, pool_ptr) == "") {
             return -1;
-        }        
-        cp::query best_role = cp::query("select \"roles\".roleid from \"useroles\" left join \"roles\" on \"useroles\".roleid = \"roles\".roleid where \"useroles\".username = ($1) and \"roles\".departmentid=($2) and \"roles\".rang = (SELECT MAX(\"roles\".rang) FROM \"roles\" left join \"useroles\" on \"roles\".roleid = \"useroles\".roleid WHERE \"roles\".departmentid = ($2) and \"useroles\".username = ($1));");
-
-        pqxx::result result; {
-            auto tx = cp::tx(*pool_ptr, best_role);
-            
-            result = best_role(username, department);
         }
+
+        auto con = std::move(pool_ptr->getConnection()); 
+
+        std::vector<std::string> params = {username, std::to_string(department)};
+
+        pqxx::result result = con -> execute_params("select \"roles\".roleid from \"useroles\" left join \"roles\" on \"useroles\".roleid = \"roles\".roleid where \"useroles\".username = ($1) and \"roles\".departmentid=($2) and \"roles\".rang = (SELECT MAX(\"roles\".rang) FROM \"roles\" left join \"useroles\" on \"roles\".roleid = \"useroles\".roleid WHERE \"roles\".departmentid = ($2) and \"useroles\".username = ($1));", params);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return user::starter_role(department, pool_ptr);
@@ -181,23 +191,23 @@ namespace user {
         return result[0]["roleid"].as<int>();
     }
 
-    int set_users_department(std::string username, int department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    int set_users_department(std::string username, int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         int best_users_role = best_users_role_by_department(username, department, pool_ptr);
         if (best_users_role == -1) {
             return -1;
         }
-        cp::query change_user_role("UPDATE \"user\" SET role=($1) WHERE username=($2);");
-        
-        auto tx = cp::tx(*pool_ptr, change_user_role);
+        auto con = std::move(pool_ptr->getConnection());
 
-        change_user_role(best_users_role, username);
+        std::vector<std::string> params = {username, std::to_string(department)};
 
-        tx.commit();
+        con->execute_params("UPDATE \"user\" SET role=($1) WHERE username=($2);", params, true);
+
+        pool_ptr -> returnConnection(std::move(con));
 
         return best_users_role;
     }
 
-    int set_users_department(std::string username, std::string department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    int set_users_department(std::string username, std::string department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         int department_id = user::department_id(department, pool_ptr);
         if(department_id == -1) {
             return -1;
@@ -205,12 +215,12 @@ namespace user {
         return set_users_department(username, department_id, pool_ptr);
     }
 
-    pqxx::result all_departments(std::shared_ptr<cp::connection_pool> pool_ptr) {
-        cp::query all_departments = cp::query("SELECT * FROM \"department\";");
+    pqxx::result all_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, all_departments);
-        
-        pqxx::result result = all_departments();
+        pqxx::result result = con->execute("SELECT * FROM \"department\";");
+
+        pool_ptr -> returnConnection(std::move(con));
 
         if(result.empty()) {
             return {};
@@ -219,12 +229,14 @@ namespace user {
     }
 
 
-    int starter_role(int department, std::shared_ptr<cp::connection_pool> pool_ptr) {        
-        cp::query starter_role = cp::query("select roleid from \"roles\" where departmentid=($1) and rang=0;");
+    int starter_role(int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {  
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, starter_role);
-        
-        pqxx::result result = starter_role(department);
+        std::vector<int> params = {department};
+
+        pqxx::result result = con->execute_params("select roleid from \"roles\" where departmentid=($1) and rang=0;", params);
+
+        pool_ptr->returnConnection(std::move(con));
 
         if(result.empty()) {
             return -1;
@@ -232,7 +244,7 @@ namespace user {
         return result[0]["roleid"].as<int>();
     }
     
-    int starter_role(std::string department, std::shared_ptr<cp::connection_pool> pool_ptr) {
+    int starter_role(std::string department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         int department_id = user::department_id(department, pool_ptr);
         if(department_id == -1) {
             return -1;
@@ -244,7 +256,7 @@ namespace user {
 
 
 namespace user::server {
-    void user_info(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void user_info(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/user/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             auto qrl = req->header().path();
 
@@ -263,7 +275,7 @@ namespace user::server {
         });
     }
 
-    void user_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void user_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         // TODO: not working as it should: shows only the last role, not all of them idk why
         router.get()->http_get(R"(/user/roles/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             auto qrl = req->header().path();
@@ -283,7 +295,7 @@ namespace user::server {
         });
     }
 
-    void add_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void add_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/user/add_role", [pool_ptr, logger_ptr](auto req, auto) {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
@@ -312,13 +324,13 @@ namespace user::server {
         });
     }
 
-    void delete_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
+    void delete_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
         router.get()->http_delete("/user/delete_role", [pool_ptr, logger_ptr](auto req, auto) {
             return req->create_response(restinio::status_not_implemented()).done();
         });
     }
 
-    void create_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
+    void create_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
         router.get()->http_post("/user/create_role", [pool_ptr, logger_ptr](auto req, auto) {
             
             rapidjson::Document new_body;
@@ -341,7 +353,7 @@ namespace user::server {
         });
     }
 
-    void department_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
+    void department_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
         router.get()->http_get(R"(/user/department/roles/:department([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             auto qrl = req->header().path();
 
@@ -363,7 +375,7 @@ namespace user::server {
         });
     }
 
-    void department_name(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
+    void department_name(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr){
         router.get()->http_get(R"(/user/department/name/:department([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             auto qrl = req->header().path();
 
@@ -385,7 +397,7 @@ namespace user::server {
         });
     }
 
-    void set_users_department(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void set_users_department(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put("/user/set_department", [pool_ptr, logger_ptr](auto req, auto) {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
@@ -419,7 +431,7 @@ namespace user::server {
         });
     }
 
-    void all_departments(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void all_departments(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get("/user/department/roles", [pool_ptr, logger_ptr](auto req, auto) {
             pqxx::result result = user::all_departments(pool_ptr);
             
@@ -430,7 +442,7 @@ namespace user::server {
         });
     }
 
-    void starter_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void starter_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/user/department/start/:department(.*))", [pool_ptr, logger_ptr](auto req, auto params) {
             auto qrl = req->header().path();
 
