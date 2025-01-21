@@ -32,14 +32,21 @@ namespace cp
 	};
 	class AsyncConnection {
 		public:
-			std::shared_ptr<pqxx::connection> conn;
+			std::shared_ptr<pqxx::connection> con;
 			std::string connect_string;
 			bool free;
-			AsyncConnection(const connection_options& options);
+			std::string name;
+			AsyncConnection(const connection_options& options, std::string name);
 			AsyncConnection(const AsyncConnection &db);
 			pqxx::result query(const std::string &sql);
-			void prepare(const std::string &name, const std::string &sql);
-			pqxx::result execute(const std::string &name);
+			void prepare(const std::string &sql);
+			void prepare(const std::string &_name, const std::string &sql);
+			pqxx::result execute_params(const std::string &sql, std::vector<std::string> &params, bool commit = false);
+			pqxx::result execute_params(const std::string &sql, std::vector<int> &params, bool commit = false);
+			pqxx::result execute_prepared(int &&args);
+			pqxx::result execute_prepared(const std::string &&args);
+			pqxx::result execute_prepared(const std::string &_name, int &&args);
+			pqxx::result execute_prepared(const std::string &_name, std::basic_string<char> &args);
 	};
 	class ConnectionsManager {
     public:
@@ -52,11 +59,9 @@ namespace cp
 
         ConnectionsManager(const connection_options &options, int numberOfConnections);
 		ConnectionsManager();
-		~ConnectionsManager();
 		void connect();
-		void disconnect();
-		std::unique_ptr<AsyncConnection> getDatabase();
-		void returnDatabase(std::unique_ptr<AsyncConnection> db_ptr);
+		std::unique_ptr<AsyncConnection> getConnection();
+		void returnConnection(std::unique_ptr<AsyncConnection> db_ptr);
 	};
 	
 	
