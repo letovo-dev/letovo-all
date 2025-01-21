@@ -1,6 +1,5 @@
 #include <restinio/all.hpp>
 #include <restinio/tls.hpp>
-#include "rapidjson/document.h"
 #include <iostream>
 
 // do i need this?
@@ -10,14 +9,12 @@
 #include "./basic/checks.h"
 
 // server functions
+#include "./letovo-wiki/page_server.h"
 #include "./basic/auth.h"
 #include "./basic/config.h"
 #include "./basic/user_data.h"
 #include "./basic/achivements.h"
 #include "./market/transactions.h"
-
-#include <filesystem>
-namespace fs = std::filesystem;
 
 using namespace restinio;
 
@@ -138,7 +135,7 @@ int main()
 			restinio::on_thread_pool<traits_t>(Config::giveMe().server_config.thread_pool_size)
 				.address( Config::giveMe().server_config.adress )
                 .port( Config::giveMe().server_config.port )
-				.request_handler( move(router))
+				.request_handler( std::move(router))
                 .tls_context( std::move(tls_context) )
     );
     return 0;
