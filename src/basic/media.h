@@ -11,6 +11,8 @@
 #include <vector>   
 #include <unordered_set>
 #include <unordered_map>
+#include <fstream>
+#include <filesystem>
 
 namespace media {
     #define file_static_path(file_name) "./letovo-wiki/static/" + file_name
