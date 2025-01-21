@@ -47,7 +47,7 @@ namespace cp
 			pqxx::result execute_prepared(const std::string &&args);
 			pqxx::result execute_prepared(const std::string &_name, int &&args);
 			pqxx::result execute_prepared(const std::string &_name, std::basic_string<char> &args);
-			pqxx::result execute(const std::string &sql);
+			pqxx::result execute(const std::string &sql, bool commit = false);
 	};
 	class ConnectionsManager {
     public:

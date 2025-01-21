@@ -6,7 +6,7 @@ namespace pre_run_checks {
         std::cout << "\033[0m";
     }
 
-    void check_departments(std::shared_ptr<cp::connection_pool> pool_ptr) {
+    void check_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
             pqxx::result all_deps = user::all_departments(pool_ptr);
             bool failed = false;
             for(auto row : all_deps) {
@@ -25,7 +25,7 @@ namespace pre_run_checks {
             }
         }
 
-    void do_checks(std::shared_ptr<cp::connection_pool> pool_ptr) {
+    void do_checks(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         std::cout << std::endl << "performing pre-run checks" << std::endl;
         check_departments(pool_ptr);
         pre_run_checks::print("All checks passed", 32);

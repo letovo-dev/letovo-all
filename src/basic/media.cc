@@ -77,13 +77,12 @@ namespace media {
     }
 
     // not tested
-    bool can_i_read(std::string token, std::string file_name, std::shared_ptr<cp::connection_pool> pool_ptr) {
-        std::string username = hashing::string_from_hash(token);
-        cp::query get_user("SELECT * FROM \"user\" left join \"file_rights\" on \"user\".role = \"file_rights\" where \"user\".username = ($1) and \"file_rights\".file_path = ($2);");
+    bool can_i_read(std::string token, std::string file_name, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
 
-        auto tx = cp::tx(*pool_ptr, get_user);
-        
-        pqxx::result result = get_user(username, file_name);
+        std::vector<std::string> params = {hashing::string_from_hash(token), file_name};
+
+        pqxx::result result = con->execute_params("SELECT * FROM \"user\" left join \"file_rights\" on \"user\".role = \"file_rights\" where \"user\".username = ($1) and \"file_rights\".file_path = ($2);", params);
 
         if(result.empty()) {
             return false;
@@ -93,7 +92,7 @@ namespace media {
 }
 
 namespace media::server {
-    void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::connection_pool> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/media/get/:filename(.*))", [pool_ptr, logger_ptr](auto req, auto) {
             auto qrl = req->header().path();
 

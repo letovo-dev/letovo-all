@@ -15,7 +15,6 @@
 #include "./basic/user_data.h"
 #include "./basic/achivements.h"
 #include "./market/transactions.h"
-#include "./letovo-wiki/page_server.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -40,7 +39,7 @@ void hi(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shar
 }
 
 
-std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::connection_pool> pool_ptr) {
+std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
     auto router = std::make_unique<router::express_router_t<>>();
 
     auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
@@ -100,7 +99,7 @@ int main()
 {
     using namespace std::chrono;
 
-    std::shared_ptr<cp::connection_pool> pool_ptr = std::make_shared<cp::connection_pool>(Config::giveMe().sql_config);
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr = std::make_shared<cp::ConnectionsManager>(Config::giveMe().sql_config);
 
     pre_run_checks::do_checks(pool_ptr);
 

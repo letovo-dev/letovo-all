@@ -128,12 +128,14 @@ namespace cp {
 		return r;
 	}
 	
-	pqxx::result AsyncConnection::execute(const std::string &sql) {
+	pqxx::result AsyncConnection::execute(const std::string &sql, bool commit) {
 		if (!con -> is_open()) {
 			con = std::make_shared<pqxx::connection>(connect_string);
 		}
 		pqxx::work w(*con);
 		pqxx::result r = w.exec(sql);
+		if(commit)
+			w.commit();
 		return r;
 	}
 
