@@ -10,7 +10,7 @@ namespace achivements {
 
         pool_ptr->returnConnection(std::move(con));
 
-        if(result.empty()) {
+        if (result.empty()) {
             return {};
         }
         return result;
@@ -20,7 +20,7 @@ namespace achivements {
         auto con = std::move(pool_ptr->getConnection());
 
         std::vector<std::string> params = {username, std::to_string(achivement_id)};
-        
+
         try {
             con->execute_params("INSERT INTO \"user_achivements\" (username, achivement_id, stage) VALUES ($1, $2, 1) ON CONFLICT (username, achivement_id) DO UPDATE SET stage = user_achivements.stage + 1;", params, true);
         } catch (...) {
@@ -36,10 +36,10 @@ namespace achivements {
         auto con = std::move(pool_ptr->getConnection());
 
         std::vector<std::string> params = {username, std::to_string(achivement_id)};
-        
+
         try {
             con->execute_params("DELETE FROM \"user_achivements\" WHERE username=($1) AND achivement_id=($2);", params, true);
-            
+
         } catch (...) {
             pool_ptr->returnConnection(std::move(con));
             return false;
@@ -52,12 +52,12 @@ namespace achivements {
         auto con = std::move(pool_ptr->getConnection());
 
         std::vector<int> params = {tree_id};
-        
+
         pqxx::result result = con->execute_params("SELECT * FROM \"achivements\" WHERE achivement_tree=($1) order by level DESC;", params);
 
         pool_ptr->returnConnection(std::move(con));
 
-        if(result.empty()) {
+        if (result.empty()) {
             return {};
         }
         return result;
@@ -72,7 +72,7 @@ namespace achivements {
 
         pool_ptr->returnConnection(std::move(con));
 
-        if(result.empty()) {
+        if (result.empty()) {
             return {};
         }
         return result;
@@ -90,11 +90,11 @@ namespace achivements {
             pool_ptr->returnConnection(std::move(con));
             return -1;
         }
-        
+
         pool_ptr->returnConnection(std::move(con));
         return id[0]["achivement_id"].as<int>();
     }
-}
+} // namespace achivements
 
 namespace achivements::server {
     void user_achivemets(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
@@ -103,13 +103,13 @@ namespace achivements::server {
 
             std::string username = url::get_last_url_arg(qrl);
 
-            if(username == "user" || username.empty()) {
+            if (username == "user" || username.empty()) {
                 return req->create_response(restinio::status_bad_request()).done();
             }
-            
+
             pqxx::result result = achivements::user_achivements(username, pool_ptr);
-            
-            if(result.empty()) {
+
+            if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
             return req->create_response().set_body(cp::serialize(result)).done();
@@ -158,15 +158,15 @@ namespace achivements::server {
 
             std::string tree_id = url::get_last_url_arg(qrl);
 
-            if(tree_id == "tree" || tree_id.empty()) {
+            if (tree_id == "tree" || tree_id.empty()) {
                 return req->create_response(restinio::status_bad_request()).done();
             }
 
             int id = std::stoi(tree_id);
 
             pqxx::result result = achivements::achivements_tree(id, pool_ptr);
-            
-            if(result.empty()) {
+
+            if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
             return req->create_response().set_body(cp::serialize(result)).done();
@@ -179,15 +179,15 @@ namespace achivements::server {
 
             std::string achivement_id = url::get_last_url_arg(qrl);
 
-            if(achivement_id == "info" || achivement_id.empty()) {
+            if (achivement_id == "info" || achivement_id.empty()) {
                 return req->create_response(restinio::status_bad_request()).done();
             }
 
             int id = std::stoi(achivement_id);
 
             pqxx::result result = achivements::achivement_info(id, pool_ptr);
-            
-            if(result.empty()) {
+
+            if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
             return req->create_response().set_body(cp::serialize(result)).done();
@@ -211,10 +211,10 @@ namespace achivements::server {
                 std::string pic = new_body["pic"].GetString();
                 std::string description = new_body["description"].GetString();
                 int stages = 1;
-                if(new_body.HasMember("stages")) {
+                if (new_body.HasMember("stages")) {
                     int stages = new_body["stages"].GetInt();
                 }
-                if(!url::validate_pic_path(pic)) {
+                if (!url::validate_pic_path(pic)) {
                     return req->create_response(restinio::status_bad_request()).done();
                 }
                 result = achivements::create_achivement(name, tree_id, level, pic, description, stages, pool_ptr);
@@ -228,4 +228,4 @@ namespace achivements::server {
             }
         });
     }
-}
+} // namespace achivements::server

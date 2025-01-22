@@ -2,6 +2,7 @@ import os
 import re
 import json
 
+
 def search_in_file(file_path):
     print("--")
     with open(file_path, 'r') as file:
@@ -18,7 +19,7 @@ def search_in_file(file_path):
             body_match = re.findall(body_pattern, line)
             if method_match:
                 if last != "":
-                    if last in res: 
+                    if last in res:
                         print(f"Duplicate method {last} in file {file_path}")
                     res[last] = {}
                     res[last]["method"] = last_method
@@ -35,11 +36,12 @@ def search_in_file(file_path):
         res[last]["fields"] = fields
     return res
 
+
 def search(directory):
     results = {}
     for root, _, files in os.walk(directory):
         for file in files:
-            if file[-3:] != ".cc" :
+            if file[-3:] != ".cc":
                 continue
             file_path = os.path.join(root, file)
             # try:

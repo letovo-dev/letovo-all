@@ -1,6 +1,6 @@
 #include "hash.h"
 
-int EXPIRATION_TIME = 86400; 
+int EXPIRATION_TIME = 86400;
 std::unordered_map<std::string, std::pair<std::string, time_t>> hash_table;
 std::unordered_set<std::string> new_users;
 
@@ -16,10 +16,10 @@ namespace hashing {
         }
 
         string hashString = ss.str();
-        
+
         // Store the hash and current time
         hash_table[hashString] = make_pair(input, time(nullptr));
-        
+
         return hashString;
     }
 
@@ -69,4 +69,4 @@ namespace hashing {
 
         new_users.insert(hashString);
     }
-}
+} // namespace hashing

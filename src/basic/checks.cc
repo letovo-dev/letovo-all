@@ -7,27 +7,28 @@ namespace pre_run_checks {
     }
 
     void check_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-            pqxx::result all_deps = user::all_departments(pool_ptr);
-            bool failed = false;
-            for(auto row : all_deps) {
-                std::string dep_name = row["departmentname"].as<std::string>();
-                int dep_id = row["departmentid"].as<int>();
-                int starter_role = user::starter_role(dep_id, pool_ptr);
-                if(starter_role == -1) {
-                    pre_run_checks::print("starter role not found for department '" + dep_name + '\'', 91);
-                    failed = true;
-                }
-            }
-            if(failed) {
-                throw std::runtime_error("starter role not found for some departments");
-            } else {
-                pre_run_checks::print("All departments have starter roles", 32);
+        pqxx::result all_deps = user::all_departments(pool_ptr);
+        bool failed = false;
+        for (auto row : all_deps) {
+            std::string dep_name = row["departmentname"].as<std::string>();
+            int dep_id = row["departmentid"].as<int>();
+            int starter_role = user::starter_role(dep_id, pool_ptr);
+            if (starter_role == -1) {
+                pre_run_checks::print("starter role not found for department '" + dep_name + '\'', 91);
+                failed = true;
             }
         }
+        if (failed) {
+            throw std::runtime_error("starter role not found for some departments");
+        } else {
+            pre_run_checks::print("All departments have starter roles", 32);
+        }
+    }
 
     void do_checks(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-        std::cout << std::endl << "performing pre-run checks" << std::endl;
+        std::cout << std::endl
+                  << "performing pre-run checks" << std::endl;
         check_departments(pool_ptr);
         pre_run_checks::print("All checks passed", 32);
     }
-}
+} // namespace pre_run_checks

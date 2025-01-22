@@ -9,4 +9,4 @@ namespace pre_run_checks {
     void check_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     void do_checks(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
-}
+} // namespace pre_run_checks

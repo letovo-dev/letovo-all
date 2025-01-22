@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from time import sleep
 import pytest
+
 logger = logging.getLogger(__name__)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
@@ -11,12 +12,10 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.setLevel(logging.INFO)
 
+
 def prepare_ping():
     url = "http://0.0.0.0:8080/auth/reg"
-    body = {
-        "login": "scv-7",
-        "password": "7"
-    }
+    body = {"login": "scv-7", "password": "7"}
     try:
         response = requests.post(url, json=body)
     except:
@@ -24,6 +23,7 @@ def prepare_ping():
     url = "http://0.0.0.0:8080/auth/login"
     response = requests.post(url, json=body)
     return response.json()["token"]
+
 
 @pytest.mark.order1
 def forever_ping():
@@ -44,8 +44,9 @@ def forever_ping():
             break
         sleep(3)
         logger.info(f"up for {datetime.now() - start}")
-     
+
     logger.error(f"Server was up {end - start}")
+
 
 @pytest.mark.order2
 def increasing_sleep_ping():
@@ -70,6 +71,7 @@ def increasing_sleep_ping():
         sleep(sleep_time)
     logger.info(f"was sleeping for {sleep_time} seconds")
     logger.info(f"Server was up {end - start}")
+
 
 if __name__ == "__main__":
     logger.info("Start pinging")

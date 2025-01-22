@@ -1,13 +1,13 @@
 #include "url_parser.h"
 #include <iostream>
-namespace url{
+namespace url {
     bool is_number(const std::string& s) {
-        return !s.empty() && std::find_if(s.begin(), 
-            s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+        return !s.empty() && std::find_if(s.begin(),
+                                          s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
     }
 
     int last_int_from_url_path(restinio::string_view_t path) {
-        return std::stoi(get_last_url_arg(path));  
+        return std::stoi(get_last_url_arg(path));
     }
 
     std::string get_last_url_arg(restinio::string_view_t path) {
@@ -42,17 +42,16 @@ namespace url{
 
         return tokens;
     }
-    
+
     bool validate_pic_path(const std::string& pic_path) {
         bool format = pic_path.find(".png") != std::string::npos || pic_path.find(".jpg") != std::string::npos || pic_path.find(".jpeg") != std::string::npos;
         bool path = true;
         std::string start = "/img/";
-        for(int i = 0; i < start.size(); i++) {
-            if(pic_path[i] != start[i]) {
+        for (int i = 0; i < start.size(); i++) {
+            if (pic_path[i] != start[i]) {
                 path = false;
             }
         }
         return format && path;
     }
-}
-
+} // namespace url
