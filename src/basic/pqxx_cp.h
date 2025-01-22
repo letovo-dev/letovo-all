@@ -1,173 +1,66 @@
 #pragma once
 
-#include <string>
-#include <unordered_set>
-#include <condition_variable>
-#include <mutex>
-#include <pqxx/pqxx>
-#include <queue>
-
+#include <curl/curl.h>
 #include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <vector>
+#include <pqxx/pqxx>
+// #include <format>
+#include <condition_variable>
+#include <string>
 
-namespace cp
-{
-
-	struct named_query;
-	struct connection_pool;
-	struct connection_manager;
-	struct query;
-
-	std::string serialize(pqxx::result res);
-	std::string serialize(pqxx::row res);
-
-	struct basic_connection final {
-		basic_connection(connection_pool& pool);
-
-		~basic_connection();
-
-		pqxx::connection& get() const;
-
-		operator pqxx::connection&();
-		operator const pqxx::connection&() const;
-
-		pqxx::connection* operator->();
-		const pqxx::connection* operator->() const;
-
-		void prepare(std::string_view name, std::string_view definition);
-
-		basic_connection(const basic_connection&) = delete;
-		basic_connection& operator=(const basic_connection&) = delete;
-
-	private:
-		connection_pool& pool;
-		std::unique_ptr<connection_manager> manager;
-	};
-
-	struct basic_transaction {
-		void prepare_one(const query& q);
-
-		void prepare_one(const named_query& q);
-
-
-		template<typename... Queries>
-		void prepare(Queries&&... queries) {
-			(prepare_one(std::forward<Queries>(queries)), ...);
-		}
-
-		template<typename... Queries>
-		basic_transaction(connection_pool& pool, Queries&&... queries) : connection(pool), transaction(connection.get()) {
-			prepare(std::forward<Queries>(queries)...);
-		}
-
-		basic_transaction(const basic_transaction&) = delete;
-		basic_transaction& operator=(const basic_transaction&) = delete;
-
-		pqxx::result exec(std::string_view q);
-		void commit();
-		void abort();
-
-		pqxx::work& get();
-		operator pqxx::work&();
-
-		friend struct query_manager;
-		friend struct connection_pool;
-
-	private:
-		basic_connection connection;
-		pqxx::work transaction;
-	};
-
-
-	struct connection_manager {
-		connection_manager(std::unique_ptr<pqxx::connection>& connection, const std::string connection_string);
-		connection_manager(const connection_manager&) = delete;
-		connection_manager& operator=(const connection_manager&) = delete;
-
-		void prepare(const std::string& name, const std::string& definition);
-		friend struct basic_connection;
-
-	private:
-		std::unordered_set<std::string> prepares{};
-		std::mutex prepares_mutex{};
-		std::unique_ptr<pqxx::connection> connection{};
-		const std::string connection_string{};
-	};
-
+namespace cp {
+    std::string serialize(pqxx::result res);
+    std::string serialize(pqxx::row res);
 
     struct connection_options {
-		std::string dbname{};
-		std::string user{};
-		std::string password{};
-		std::string hostaddr{};
-		int16_t port = 5432;
+        std::string dbname{};
+        std::string user{};
+        std::string password{};
+        std::string hostaddr{};
+        std::string port = "5432";
 
-		int connections_count = 8;
-	};
+        int connections_count = 8;
+    };
+    class AsyncConnection {
+    public:
+        std::shared_ptr<pqxx::connection> con;
+        std::string connect_string;
+        bool free;
+        std::string name;
+        AsyncConnection(const connection_options& options, std::string name);
+        AsyncConnection(const AsyncConnection& db);
+        pqxx::result query(const std::string& sql);
+        void prepare(const std::string& sql);
+        void prepare(const std::string& _name, const std::string& sql);
+        pqxx::result execute_params(const std::string& sql, std::vector<std::string>& params, bool commit = false);
+        pqxx::result execute_params(const std::string& sql, std::vector<int>& params, bool commit = false);
+        pqxx::result execute_prepared(int&& args);
+        pqxx::result execute_prepared(const std::string&& args);
+        pqxx::result execute_prepared(const std::string& _name, int&& args);
+        pqxx::result execute_prepared(const std::string& _name, std::basic_string<char>& args);
+        pqxx::result execute(const std::string& sql, bool commit = false);
+    };
+    class ConnectionsManager {
+    public:
+        connection_options options;
+        int numberOfConnections;
+        std::queue<std::unique_ptr<AsyncConnection>> connections;
+        std::thread worker;
+        std::mutex mtx;
+        std::condition_variable cv;
 
-
-	struct 	connection_pool {
-		connection_pool(const connection_options& options);
-
-		std::unique_ptr<connection_manager> borrow_connection();
-
-		void return_connection(std::unique_ptr<connection_manager>& manager);
-
-	private:
-		std::mutex connections_mutex{};
-		std::condition_variable connections_cond{};
-		std::queue<std::unique_ptr<connection_manager>> connections{};
-	};
-
-	struct query_manager {
-		query_manager(basic_transaction& transaction, std::string_view query_id);
-
-		template<typename... Args>
-		pqxx::result exec_prepared(Args&&... args);
-
-	private:
-		std::string query_id{};
-		basic_transaction& transaction_view;
-	};
-    
-
-	struct query {
-		query(std::string_view str);
-
-		const char* data() const;
-
-		operator std::string() const;
-
-		constexpr operator std::string_view() const;
-
-		template<typename... Args>
-		pqxx::result operator()(Args&&... args) {
-			return exec(std::forward<Args>(args)...);
-		}
-
-		template<typename... Args>
-		pqxx::result exec(Args&&... args) {
-			if (!manager.has_value())
-				throw std::runtime_error("attempt to execute a query without connection with a transaction");
-			return manager->exec_prepared(std::forward<Args>(args)...);
-		}
-
-		friend struct query_manager;
-		friend struct basic_transaction;
-
-	protected:
-		std::string str;
-		mutable std::optional<query_manager> manager{};
-
+        ConnectionsManager(const connection_options& options, int numberOfConnections);
+        ConnectionsManager(const connection_options& options);
+        ConnectionsManager();
+        void connect();
+        std::unique_ptr<AsyncConnection> getConnection();
+        void returnConnection(std::unique_ptr<AsyncConnection> db_ptr);
     };
 
-
-	template<typename... Args>
-	pqxx::result query_manager::exec_prepared(Args&&... args) {
-		return transaction_view.transaction.exec_prepared(query_id, std::forward<Args>(args)...);
-	}
-
-    template<typename... Queries>
-	basic_transaction tx(connection_pool& pool, Queries&&... queries) {
-		return basic_transaction(pool, std::forward<Queries>(queries)...);
-	}
-}
+} // namespace cp

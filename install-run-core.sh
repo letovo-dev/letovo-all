@@ -77,6 +77,7 @@ if [ $run_flag = true ]; then
     export BUILD_FILES="$build_files"
     echo "running $work_file"
     cd src
+    rm ./server_starter
     if [ $logging = true ]; then
         cmake . &>> ./launch_logs/build_"$(date '+%d-%m-%Y_%H:%M:%S')".log 2>&1
         cmake --build . 2>> ./launch_logs/build_"$(date '+%d-%m-%Y_%H:%M:%S')".log

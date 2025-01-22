@@ -1,161 +1,193 @@
 #include "pqxx_cp.h"
 
 namespace cp {
-	std::string serialize(pqxx::result res) {
-		// TODO: it can be better
-		if (res.empty()) {
-			return "{\"result\": []}";
-		}
-		std::string res_str = "{\"result\": [";
-		for (auto const &row: res) {
-			res_str += '{';
-			for (auto const &field: row) {
-				res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
-			}
-			res_str[res_str.length() - 1] = '}';
-			res_str += ',';
-		}
-		res_str[res_str.length() - 1] = ']';
-		res_str += "}";
-		return res_str;
-	}
+    std::string serialize(pqxx::result res) {
+        // TODO: it can be better
+        if (res.empty()) {
+            return "{\"result\": []}";
+        }
+        std::string res_str = "{\"result\": [";
+        for (auto const& row : res) {
+            res_str += '{';
+            for (auto const& field : row) {
+                res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
+            }
+            res_str[res_str.length() - 1] = '}';
+            res_str += ',';
+        }
+        res_str[res_str.length() - 1] = ']';
+        res_str += "}";
+        return res_str;
+    }
 
-	std::string serialize(pqxx::row row) {
-		// TODO: it can be better
-		if (row.empty()) {
-			return "{\"result\": []}";
-		}
-		std::string res_str = "{\"result\": [";
-		res_str += '{';
-		for (auto const &field: row) {
-			res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
-		}
-		res_str[res_str.length() - 1] = '}';
-		res_str += ',';
-		
-		res_str[res_str.length() - 1] = ']';
-		res_str += "}";
-		return res_str;
-	}
+    std::string serialize(pqxx::row row) {
+        // TODO: it can be better
+        if (row.empty()) {
+            return "{\"result\": []}";
+        }
+        std::string res_str = "{\"result\": [";
+        res_str += '{';
+        for (auto const& field : row) {
+            res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
+        }
+        res_str[res_str.length() - 1] = '}';
+        res_str += ',';
 
-	connection_manager::connection_manager(std::unique_ptr<pqxx::connection>& connection, const std::string connection_string) : connection(std::move(connection)), connection_string(connection_string) {};
+        res_str[res_str.length() - 1] = ']';
+        res_str += "}";
+        return res_str;
+    }
 
-	void connection_manager::prepare(const std::string& name, const std::string& definition) {
-		std::scoped_lock lock(prepares_mutex);
-		if (prepares.contains(name))
-			return;
-		if(!connection -> is_open()) {
-			connection = std::make_unique<pqxx::connection>(connection_string);
-		}
-		connection->prepare(name, definition);
-		prepares.insert(name);
-	}
+    AsyncConnection::AsyncConnection(const connection_options& options, std::string name)
+        : name(name)
+    {
+        connect_string = "dbname = " + options.dbname + " user = " + options.user + " password = " + options.password + " hostaddr = " + options.hostaddr + " port = " + options.port;
+        con = std::make_shared<pqxx::connection>(connect_string);
+    }
+    AsyncConnection::AsyncConnection(const AsyncConnection& db) {
+        connect_string = db.connect_string;
+        con = db.con;
+        name = db.name;
+    }
+    pqxx::result AsyncConnection::query(const std::string& sql) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec(sql);
+        return r;
+    }
+    void AsyncConnection::prepare(const std::string& sql) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        con->prepare(name, sql);
+    }
 
-	connection_pool::connection_pool(const connection_options& options) {
-			for (int i = 0; i < options.connections_count; ++i) {
-				const auto connect_string = std::format("dbname = {} user = {} password = {} hostaddr = {} port = {}", options.dbname, options.user, options.password, options.hostaddr, options.port);
-				try {
-					auto connection = std::make_unique<pqxx::connection>(connect_string);
-					auto manager = std::make_unique<connection_manager>(connection, connect_string);
-					connections.push(std::move(manager));
-				} catch(...) {
-					throw ("Connection failed. Check your internet and sql config");
-				}
-			}
-	}
+    void AsyncConnection::prepare(const std::string& _name, const std::string& sql) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        con->prepare(_name, sql);
+    }
 
-	void connection_pool::return_connection(std::unique_ptr<connection_manager>& manager) {
-			// return the borrowed connection
-			{
-				std::scoped_lock lock(connections_mutex);
-				connections.push(std::move(manager));
-			}
+    pqxx::result AsyncConnection::execute_prepared(int&& args) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec_prepared(name, args);
+        return r;
+    }
 
-			// notify that we're done
-			connections_cond.notify_one();
-		}
+    pqxx::result AsyncConnection::execute_prepared(const std::string&& args) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec_prepared(name, args);
+        return r;
+    }
 
-	std::unique_ptr<connection_manager> connection_pool::borrow_connection() {
-			std::unique_lock lock(connections_mutex);
-			connections_cond.wait(lock, [this]() { return !connections.empty(); });
+    pqxx::result AsyncConnection::execute_prepared(const std::string& _name, int&& args) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec_prepared(name, args);
+        return r;
+    }
 
-			// if we have something here, we can borrow it from the queue
-			auto manager = std::move(connections.front());
-			connections.pop();
-			
-			// тут
-			
+    pqxx::result AsyncConnection::execute_prepared(const std::string& _name, std::basic_string<char>& args) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec_prepared(name, args);
+        return r;
+    }
 
-			return manager;
-	}
+    pqxx::result AsyncConnection::execute_params(const std::string& sql, std::vector<std::string>& params, bool commit) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
+        if (commit) {
+            w.commit();
+        }
+        return r;
+    }
 
+    pqxx::result AsyncConnection::execute_params(const std::string& sql, std::vector<int>& params, bool commit) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
+        if (commit) {
+            w.commit();
+        }
+        return r;
+    }
 
-	basic_connection::basic_connection(connection_pool& pool) : pool(pool) {
-		manager = pool.borrow_connection();
-	}
+    pqxx::result AsyncConnection::execute(const std::string& sql, bool commit) {
+        if (!con->is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con);
+        pqxx::result r = w.exec(sql);
+        if (commit) {
+            w.commit();
+        }
+        return r;
+    }
 
-	basic_connection::~basic_connection() {
-		pool.return_connection(manager);
-	}
+    ConnectionsManager::ConnectionsManager(const connection_options& options)
+        : options(options)
+        , numberOfConnections(options.connections_count)
+    {
+    }
 
-	pqxx::connection& basic_connection::get() const { return *manager->connection; }
+    ConnectionsManager::ConnectionsManager(const connection_options& options, int numberOfConnections)
+        : options(options)
+        , numberOfConnections(numberOfConnections)
+    {
+    }
 
-	basic_connection::operator pqxx::connection&() { return get(); }
-	basic_connection::operator const pqxx::connection&() const { return get(); }
+    ConnectionsManager::ConnectionsManager() {
+    }
 
-	pqxx::connection* basic_connection::operator->() { return manager->connection.get(); }
-	const pqxx::connection* basic_connection::operator->() const { return manager->connection.get(); }
+    void ConnectionsManager::connect() {
+        for (int i = 0; i < numberOfConnections; i++) {
+            std::unique_ptr<AsyncConnection> db_ptr = std::make_unique<AsyncConnection>(options, std::to_string(i));
+            connections.push(std::move(db_ptr));
+        }
+    }
 
-	void basic_connection::prepare(std::string_view name, std::string_view definition) {
-		manager->prepare(std::string(name), std::string(definition));
-	}
+    std::unique_ptr<AsyncConnection> ConnectionsManager::getConnection() {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [this] { return !connections.empty(); });
+        if (!connections.empty()) {
+            // std::cout << "Database available" << std::endl;
+            std::unique_ptr<AsyncConnection> db_ptr = std::move(connections.front());
+            connections.pop();
+            lock.unlock();
+            cv.notify_one();
+            return db_ptr;
+        }
+        if (connections.empty()) {
+            throw std::runtime_error("queue empty");
+        }
+        throw std::runtime_error("No database available");
+    }
 
+    void ConnectionsManager::returnConnection(std::unique_ptr<AsyncConnection> db_ptr) {
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            connections.push(std::move(db_ptr));
+        }
+        cv.notify_one();
+    }
 
-	query_manager::query_manager(basic_transaction& transaction, std::string_view query_id) : transaction_view(transaction), query_id(query_id) {}
-	
-	query::query(std::string_view str) : str(str) {}
-
-	const char* query::data() const {
-			return str.data();
-		}
-
-		query::operator std::string() const {
-			return { str.begin(), str.end() };
-		}
-
-		constexpr query::operator std::string_view() const {
-			return { str.data(), str.size() };
-		}
-
-
-	struct named_query : query {
-		named_query(std::string_view name, std::string_view str) : query(str), name(name) {}
-
-		friend struct query_manager;
-		friend struct basic_transaction;
-
-	protected:
-		std::string name;
-	};
-
-	void basic_transaction::prepare_one(const query& q) {
-			const auto query_id = std::format("{:X}", std::hash<std::string_view>()(q));
-			connection.prepare(query_id, q);
-			q.manager.emplace(*this, query_id);
-	}
-	
-	void basic_transaction::prepare_one(const named_query& q) {
-			connection.prepare(q.name, q);
-			q.manager.emplace(*this, q.name);
-	}
-	
-	pqxx::result basic_transaction::exec(std::string_view q) { return transaction.exec(q); }
-	
-	void basic_transaction::commit() { transaction.commit(); }
-	
-	void basic_transaction::abort() { transaction.abort(); }
-
-	pqxx::work& basic_transaction::get() { return transaction; }
-	
-	basic_transaction::operator pqxx::work&() { return get(); }
-}
+} // namespace cp

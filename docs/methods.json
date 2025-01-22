@@ -21,8 +21,8 @@
     "/post/update_likes": {
         "method": "put",
         "fields": {
-            "likes": "Int",
-            "post_id": "Int"
+            "post_id": "Int",
+            "likes": "Int"
         }
     },
     "/post/delete/:token([a-zA-Z0-9]+)/:id(\\d+)": {
