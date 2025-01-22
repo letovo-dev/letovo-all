@@ -110,6 +110,22 @@ namespace user {
         return true;
     }
 
+
+    bool add_user_role(std::string username, int role_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {std::to_string(role_id), username};
+        try {
+            con->execute_params("INSERT INTO \"useroles\" (roleid, username) VALUES($1, $2);", params, true);
+            con->execute_params("UPDATE \"user\" SET role=($1) WHERE username=($2);", params, true);
+        } catch (const pqxx::unique_violation& e) {
+            pool_ptr->returnConnection(std::move(con));
+            return false;
+        }
+        pool_ptr->returnConnection(std::move(con));
+        return true;
+    }
+
     int create_role(std::string role, int department, int rang, int payment, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
 

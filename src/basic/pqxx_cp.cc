@@ -143,9 +143,15 @@ namespace cp {
         return r;
     }
 
-    ConnectionsManager::ConnectionsManager(const connection_options& options, int numberOfConnections)
+    ConnectionsManager::ConnectionsManager(const connection_options& options)
         : options(options)
         , numberOfConnections(options.connections_count)
+    {
+    }
+
+    ConnectionsManager::ConnectionsManager(const connection_options& options, int numberOfConnections)
+        : options(options)
+        , numberOfConnections(numberOfConnections)
     {
     }
 
