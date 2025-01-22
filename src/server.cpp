@@ -111,6 +111,8 @@ int main()
 
     std::shared_ptr<cp::ConnectionsManager> pool_ptr = std::make_shared<cp::ConnectionsManager>(Config::giveMe().sql_config);
 
+    pool_ptr -> connect();
+
     pre_run_checks::do_checks(pool_ptr);
 
     auto router = create(pool_ptr);

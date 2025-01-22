@@ -8,6 +8,7 @@ namespace pre_run_checks {
 
     void check_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         pqxx::result all_deps = user::all_departments(pool_ptr);
+        std::cout << "got all departments\n";
         bool failed = false;
         for (auto row : all_deps) {
             std::string dep_name = row["departmentname"].as<std::string>();
