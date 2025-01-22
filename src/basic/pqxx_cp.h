@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <curl/curl.h>
 #include <iostream>
 #include <memory>
@@ -59,6 +58,7 @@ namespace cp
 		std::condition_variable cv;
 
         ConnectionsManager(const connection_options &options, int numberOfConnections);
+        ConnectionsManager(const connection_options &options);
 		ConnectionsManager();
 		void connect();
 		std::unique_ptr<AsyncConnection> getConnection();

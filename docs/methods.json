@@ -44,6 +44,50 @@
         "method": "delete",
         "fields": {}
     },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/add": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/delete": {
+        "method": "delete",
+        "fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/tree/:tree_id([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/info/:achivement_id([0-9]+)": {
+        "method": "get",
+        "fields": {}
+    },
+    "/achivements/create": {
+        "method": "post",
+        "fields": {
+            "token": "String",
+            "name": "String",
+            "tree_id": "Int",
+            "level": "Int",
+            "pic": "String",
+            "description": "String",
+            "stages": "Int"
+        }
+    },
+    "/media/get/:filename(.*)": {
+        "method": "get",
+        "fields": {}
+    },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
         "fields": {}
@@ -99,46 +143,6 @@
     "/user/department/start/:department(.*)": {
         "method": "get",
         "fields": {}
-    },
-    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "fields": {}
-    },
-    "/achivements/add": {
-        "method": "post",
-        "fields": {
-            "token": "String",
-            "username": "String",
-            "achivement_id": "Int"
-        }
-    },
-    "/achivements/delete": {
-        "method": "delete",
-        "fields": {
-            "token": "String",
-            "username": "String",
-            "achivement_id": "Int"
-        }
-    },
-    "/achivements/tree/:tree_id([0-9]+)": {
-        "method": "get",
-        "fields": {}
-    },
-    "/achivements/info/:achivement_id([0-9]+)": {
-        "method": "get",
-        "fields": {}
-    },
-    "/achivements/create": {
-        "method": "post",
-        "fields": {
-            "token": "String",
-            "name": "String",
-            "tree_id": "Int",
-            "level": "Int",
-            "pic": "String",
-            "description": "String",
-            "stages": "Int"
-        }
     },
     "/auth/login": {
         "method": "post",
@@ -202,9 +206,19 @@
             "input": "String"
         }
     },
-    "/media/get/:filename(.*)": {
+    "/all_actives": {
         "method": "get",
         "fields": {}
+    },
+    "/add_bid": {
+        "method": "post",
+        "fields": {
+            "buy": "String",
+            "userid": "String",
+            "activeid": "String",
+            "bidprice": "String",
+            "ammount": "String"
+        }
     },
     "/transactions/send": {
         "method": "post",
@@ -221,19 +235,5 @@
     "/transactions/get/:token([a-zA-Z0-9]+)": {
         "method": "get",
         "fields": {}
-    },
-    "/all_actives": {
-        "method": "get",
-        "fields": {}
-    },
-    "/add_bid": {
-        "method": "post",
-        "fields": {
-            "buy": "String",
-            "userid": "String",
-            "activeid": "String",
-            "bidprice": "String",
-            "ammount": "String"
-        }
     }
 }
