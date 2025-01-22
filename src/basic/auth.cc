@@ -86,7 +86,7 @@ namespace auth {
 
     bool auth(std::string username, std::string password, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         std::string passwordHash = std::to_string(std::hash<std::string>{}(password));
-        std::vector<std::string> params = {username, password};
+        std::vector<std::string> params = {username, passwordHash};
 
         auto con = std::move(pool_ptr->getConnection());
 
