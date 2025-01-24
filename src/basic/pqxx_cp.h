@@ -51,19 +51,19 @@ namespace cp {
     };
     class ConnectionsManager {
     public:
-        connection_options options;
-        int numberOfConnections;
-        std::queue<std::unique_ptr<AsyncConnection>> connections;
-        std::thread worker;
-        std::mutex mtx;
-        std::condition_variable cv;
-
         ConnectionsManager(const connection_options& options, int numberOfConnections);
         ConnectionsManager(const connection_options& options);
         ConnectionsManager();
         void connect();
         std::unique_ptr<AsyncConnection> getConnection();
         void returnConnection(std::unique_ptr<AsyncConnection> db_ptr);
+    private:
+        connection_options options;
+        int numberOfConnections;
+        std::queue<std::unique_ptr<AsyncConnection>> connections;
+        std::thread worker;
+        std::mutex mtx;
+        std::condition_variable cv;
     };
 
 } // namespace cp
