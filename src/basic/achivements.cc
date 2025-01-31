@@ -106,7 +106,7 @@ namespace achivements::server {
             if (username == "user" || username.empty()) {
                 return req->create_response(restinio::status_bad_request()).done();
             }
-
+            
             pqxx::result result = achivements::user_achivements(username, pool_ptr);
 
             if (result.empty()) {
