@@ -1,80 +1,99 @@
 {
     "/post/:id(\\d+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/post/author/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/post/add_page_content": {
         "method": "post",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/post/add_page": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "post_path": "String",
             "text": "String"
-        }
+        },
+        "header_fields": []
     },
     "/post/update_likes": {
         "method": "put",
-        "fields": {
+        "body_fields": {
             "post_id": "Int",
             "likes": "Int"
-        }
+        },
+        "header_fields": []
     },
-    "/post/delete/:token([a-zA-Z0-9]+)/:id(\\d+)": {
+    "/post/delete/:id(\\d+)": {
         "method": "delete",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     },
-    "/post/favourite/:token([a-zA-Z0-9]+)": {
+    "/post/favourite/": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     },
     "/post/favourite": {
         "method": "post",
-        "fields": {
-            "token": "String",
+        "body_fields": {
             "post_id": "Int"
-        }
+        },
+        "header_fields": [
+            "token"
+        ]
     },
-    "/post/favourite/:token([a-zA-Z0-9]+)/:id(\\d+)": {
+    "/post/favourite/:id(\\d+)": {
         "method": "delete",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/achivements/add": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "username": "String",
             "achivement_id": "Int"
-        }
+        },
+        "header_fields": []
     },
     "/achivements/delete": {
         "method": "delete",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "username": "String",
             "achivement_id": "Int"
-        }
+        },
+        "header_fields": []
     },
     "/achivements/tree/:tree_id([0-9]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/achivements/info/:achivement_id([0-9]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/achivements/create": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "name": "String",
             "tree_id": "Int",
@@ -82,158 +101,202 @@
             "pic": "String",
             "description": "String",
             "stages": "Int"
-        }
+        },
+        "header_fields": []
     },
     "/media/get/:filename(.*)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/roles/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/add_role": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "username": "String",
             "role_id": "Int",
             "role": "String",
             "department": "Int"
-        }
+        },
+        "header_fields": []
     },
     "/user/delete_role": {
         "method": "delete",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/create_role": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "payment": "Int",
             "role": "String",
             "department": "Int",
             "rang": "Int"
-        }
+        },
+        "header_fields": []
     },
     "/user/department/roles/:department([0-9]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/department/name/:department([0-9]+)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/set_department": {
         "method": "put",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "department": "String",
             "username": "String"
-        }
+        },
+        "header_fields": []
     },
     "/user/department/roles": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/department/start/:department(.*)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/auth/login": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "login": "String",
             "password": "String"
-        }
+        },
+        "header_fields": []
     },
     "/auth/reg": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "login": "String",
             "password": "String",
             "temp_token": "String"
-        }
+        },
+        "header_fields": []
     },
     "/auth/amiauthed/": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     },
     "/auth/amiadmin/": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     },
     "/auth/isactive/:username(.*)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/auth/isuser/:username(.*)": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/auth/delete/": {
         "method": "delete",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     },
     "/auth/add_userrights/": {
         "method": "put",
-        "fields": {
+        "body_fields": {
             "username": "String",
             "rights": "String"
-        }
+        },
+        "header_fields": [
+            "token"
+        ]
     },
     "/auth/change_username/": {
         "method": "put",
-        "fields": {
+        "body_fields": {
             "new_username": "String"
-        }
+        },
+        "header_fields": [
+            "token"
+        ]
     },
     "/auth/change_password/": {
         "method": "put",
-        "fields": {
+        "body_fields": {
             "unlogin": "Bool",
             "new_password": "String"
-        }
+        },
+        "header_fields": [
+            "token"
+        ]
     },
     "/auth/add_user": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "input": "String"
-        }
+        },
+        "header_fields": []
     },
     "/all_actives": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": []
     },
     "/add_bid": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "buy": "String",
             "userid": "String",
             "activeid": "String",
             "bidprice": "String",
             "ammount": "String"
-        }
+        },
+        "header_fields": []
     },
     "/transactions/send": {
         "method": "post",
-        "fields": {
+        "body_fields": {
             "token": "String",
             "receiver": "String",
             "amount": "Int"
-        }
+        },
+        "header_fields": []
     },
-    "/transactions/balance/:token([a-zA-Z0-9]+)": {
+    "/transactions/balance/": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     },
-    "/transactions/get/:token([a-zA-Z0-9]+)": {
+    "/transactions/get/": {
         "method": "get",
-        "fields": {}
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     }
 }
