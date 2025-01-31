@@ -159,11 +159,11 @@
             "temp_token": "String"
         }
     },
-    "/auth/amiauthed/:token([a-zA-Z0-9]+)": {
+    "/auth/amiauthed/": {
         "method": "get",
         "fields": {}
     },
-    "/auth/amiadmin/:token([a-zA-Z0-9]+)": {
+    "/auth/amiadmin/": {
         "method": "get",
         "fields": {}
     },
@@ -175,24 +175,24 @@
         "method": "get",
         "fields": {}
     },
-    "/auth/delete/:token([a-zA-Z0-9]+)": {
+    "/auth/delete/": {
         "method": "delete",
         "fields": {}
     },
-    "/auth/add_userrights/:token([a-zA-Z0-9]+)": {
+    "/auth/add_userrights/": {
         "method": "put",
         "fields": {
             "username": "String",
             "rights": "String"
         }
     },
-    "/auth/change_username/:token([a-zA-Z0-9]+)": {
+    "/auth/change_username/": {
         "method": "put",
         "fields": {
             "new_username": "String"
         }
     },
-    "/auth/change_password/:token([a-zA-Z0-9]+)": {
+    "/auth/change_password/": {
         "method": "put",
         "fields": {
             "unlogin": "Bool",

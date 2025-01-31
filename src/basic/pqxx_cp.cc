@@ -43,72 +43,81 @@ namespace cp {
     {
         connect_string = "dbname = " + options.dbname + " user = " + options.user + " password = " + options.password + " hostaddr = " + options.hostaddr + " port = " + options.port;
         con = std::make_shared<pqxx::connection>(connect_string);
+        last_used = std::chrono::system_clock::now();
     }
     AsyncConnection::AsyncConnection(const AsyncConnection& db) {
         connect_string = db.connect_string;
         con = db.con;
         name = db.name;
+        last_used = std::chrono::system_clock::now();
     }
     pqxx::result AsyncConnection::query(const std::string& sql) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
         pqxx::result r = w.exec(sql);
+        last_used = std::chrono::system_clock::now();
         return r;
     }
     void AsyncConnection::prepare(const std::string& sql) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         con->prepare(name, sql);
+        last_used = std::chrono::system_clock::now();
     }
 
     void AsyncConnection::prepare(const std::string& _name, const std::string& sql) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         con->prepare(_name, sql);
+        last_used = std::chrono::system_clock::now();
     }
 
     pqxx::result AsyncConnection::execute_prepared(int&& args) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
         pqxx::result r = w.exec_prepared(name, args);
+        last_used = std::chrono::system_clock::now();
         return r;
     }
 
     pqxx::result AsyncConnection::execute_prepared(const std::string&& args) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
         pqxx::result r = w.exec_prepared(name, args);
+        last_used = std::chrono::system_clock::now();
         return r;
     }
 
     pqxx::result AsyncConnection::execute_prepared(const std::string& _name, int&& args) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
         pqxx::result r = w.exec_prepared(name, args);
+        last_used = std::chrono::system_clock::now();
         return r;
     }
 
     pqxx::result AsyncConnection::execute_prepared(const std::string& _name, std::basic_string<char>& args) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
         pqxx::result r = w.exec_prepared(name, args);
+        last_used = std::chrono::system_clock::now();
         return r;
     }
 
     pqxx::result AsyncConnection::execute_params(const std::string& sql, std::vector<std::string>& params, bool commit) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
@@ -116,11 +125,12 @@ namespace cp {
         if (commit) {
             w.commit();
         }
+        last_used = std::chrono::system_clock::now();
         return r;
     }
 
     pqxx::result AsyncConnection::execute_params(const std::string& sql, std::vector<int>& params, bool commit) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
@@ -128,11 +138,12 @@ namespace cp {
         if (commit) {
             w.commit();
         }
+        last_used = std::chrono::system_clock::now();
         return r;
     }
 
     pqxx::result AsyncConnection::execute(const std::string& sql, bool commit) {
-        if (!con->is_open()) {
+        if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
         pqxx::work w(*con);
@@ -140,7 +151,12 @@ namespace cp {
         if (commit) {
             w.commit();
         }
+        last_used = std::chrono::system_clock::now();
         return r;
+    }
+
+    bool AsyncConnection::is_open() {
+        return last_used + std::chrono::seconds(60) > std::chrono::system_clock::now();
     }
 
     ConnectionsManager::ConnectionsManager(const connection_options& options)

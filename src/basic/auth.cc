@@ -240,8 +240,13 @@ namespace auth::server {
     }
 
     void am_i_authed(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiauthed/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto) {
-            std::string token = url::get_last_url_arg(req->header().path());
+        router.get()->http_get(R"(/auth/amiauthed/)", [pool_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
 
             if (token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -255,8 +260,13 @@ namespace auth::server {
     }
 
     void am_i_admin(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiadmin/:token([a-zA-Z0-9]+))", [pool_ptr](auto req, auto) {
-            std::string token = url::get_last_url_arg(req->header().path());
+        router.get()->http_get(R"(/auth/amiadmin/)", [pool_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
 
             if (token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -296,8 +306,13 @@ namespace auth::server {
     }
 
     void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_delete(R"(/auth/delete/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
-            std::string token = url::get_last_url_arg(req->header().path());
+        router.get()->http_delete(R"(/auth/delete/)", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
 
             if (token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -319,8 +334,13 @@ namespace auth::server {
     }
 
     void add_userrights(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_put(R"(/auth/add_userrights/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
-            std::string token = url::get_last_url_arg(req->header().path());
+        router.get()->http_put(R"(/auth/add_userrights/)", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
 
             if (token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -351,8 +371,13 @@ namespace auth::server {
     }
 
     void change_username(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_put(R"(/auth/change_username/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
-            std::string token = url::get_last_url_arg(req->header().path());
+        router.get()->http_put(R"(/auth/change_username/)", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
 
             if (token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -381,8 +406,13 @@ namespace auth::server {
         });
     }
     void change_password(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_put(R"(/auth/change_password/:token([a-zA-Z0-9]+))", [pool_ptr, logger_ptr](auto req, auto) {
-            std::string token = url::get_last_url_arg(req->header().path());
+        router.get()->http_put(R"(/auth/change_password/)", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("token");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
 
             if (token.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
