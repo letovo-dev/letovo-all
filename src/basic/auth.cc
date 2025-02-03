@@ -177,7 +177,7 @@ namespace auth::server {
                 std::string loginHeader = new_body["login"].GetString();
                 std::string passwordHeader = new_body["password"].GetString();
 
-                bool authed = auth(loginHeader, passwordHeader, pool_ptr);
+                bool authed = auth::auth(loginHeader, passwordHeader, pool_ptr);
 
                 if (!authed) {
                     logger_ptr->info([endpoint] { return fmt::format("empty headers from {}", endpoint); });
