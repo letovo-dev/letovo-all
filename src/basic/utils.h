@@ -5,7 +5,7 @@
 #include <string>
 #include <stdexcept>
 #include <iostream>
-#include "../market/actives_db.h"
+#include "../market/actives.h"
 #include <mutex>
 #include <condition_variable>
 
@@ -23,6 +23,8 @@ namespace actives::deals {
 
         bid() {};
     };
+
+    std::string serialaze(const std::vector<bid>&);
 }
 
 namespace utils {
@@ -61,7 +63,11 @@ namespace utils {
 
             std::shared_ptr<LinkedListNode> top();
 
-            void delBid(int bid_id);
+            actives::deals::bid delBid(int bid_id);
+
+            actives::deals::bid findBid(int bid_id);
+
+            std::vector<actives::deals::bid> byUser(std::string user_name);
 
             bool empty();
 
@@ -70,4 +76,5 @@ namespace utils {
             LinkedList(std::vector<int>);
             LinkedList();
     };
+
 }

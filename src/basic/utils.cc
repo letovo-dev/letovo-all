@@ -1,5 +1,25 @@
 #include "utils.h"
 
+
+namespace actives::deals {
+    std::string serialaze(const std::vector<bid>& bids) {
+        std::string res = "{\"result\": {";
+
+        for(bid b : bids) {
+            res += std::to_string(b.bid_id) + ": {\"price\": " + std::to_string(b.price) + ", \"owner\": \"" + b.owner + "\", \"active\": {";
+            if(b.active.activeId != 0) {
+                res += "\"activeId\": " + std::to_string(b.active.activeId);
+            } else {
+                res += "\"activeTicker\": \"" + b.active.activeTicker + "\"";
+            }
+            res += "}, \"amount\": " + std::to_string(b.amount) + ", \"resolved\": " + std::to_string(b.resolved) + "},";
+        }
+        res.pop_back();
+        res += "}}";
+        return res;
+    }
+}
+
 namespace utils {
     LinkedListNode::LinkedListNode(std::shared_ptr<LinkedListNode> n) {
         val = 0;
@@ -161,7 +181,28 @@ namespace utils {
         return  l;
     }
     
-    void LinkedList::delBid(int bid_id) {
+    actives::deals::bid LinkedList::findBid(int bid_id) {
+        actives::deals::bid found;
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [this] { return !busy; });
+        busy = true;
+        std::shared_ptr<LinkedListNode> current = this->first;
+        while(current != nullptr) {
+            if(current->bidVal.bid_id == bid_id) {
+                found = current->bidVal;
+                break;
+            }
+            current = current->child;
+        }
+        busy = false;
+        lock.unlock();
+        cv.notify_one();
+        return found;
+    }
+
+    actives::deals::bid LinkedList::delBid(int bid_id) {
+        actives::deals::bid found;
+
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, [this] { return !busy; });
         busy = true;
@@ -174,14 +215,35 @@ namespace utils {
                 if(current->child != nullptr) {
                     current->child->parent = current->parent;
                 }
-                return;
+                found = current->bidVal;
+                break;
             }
             current = current->child;
         }
         busy = false;
         lock.unlock();
         cv.notify_one();
+        return found;
     }
+
+    std::vector<actives::deals::bid> LinkedList::byUser(std::string user_name) {
+        std::vector<actives::deals::bid> found;
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [this] { return !busy; });
+        busy = true;
+        std::shared_ptr<LinkedListNode> current = this->first;
+        while(current != nullptr) {
+            if(current->bidVal.owner == user_name) {
+                found.push_back(current->bidVal);
+            }
+            current = current->child;
+        }
+        busy = false;
+        lock.unlock();
+        cv.notify_one();
+        return found;
+    }
+
 
     bool LinkedList::empty() {
         return this->first == nullptr;
