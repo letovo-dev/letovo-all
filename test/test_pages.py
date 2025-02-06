@@ -1,28 +1,26 @@
 import requests
 import pytest
+# from login_funcs import register_user, login_user, delete_user
 
-
-def register_user():
+def registration():
+    return login()
     url = "https://0.0.0.0:8080/auth/reg"
     data = {"login": "test", "password": "test"}
-    return requests.post(url, json=data, verify=False)
+    response = requests.post(url, json=data, verify=False)
+    return response
 
-
-def login_user():
+def login():
     url = "https://0.0.0.0:8080/auth/login/"
     data = {"login": "test", "password": "test"}
     response = requests.post(url, json=data, verify=False)
-    return response.json()["token"]
+    return response
 
-
-def delete_user():
-    url = "https://0.0.0.0:8080/auth/login/"
-    data = {"login": "test", "password": "test"}
-    response = requests.post(url, json=data, verify=False)
+def delete():
+    return login()
     token = response.json()["token"]
     url = "https://0.0.0.0:8080/auth/delete/{}".format(token)
     response = requests.delete(url, verify=False)
-    assert response.status_code == 200
+    return response
 
 
 @pytest.mark.order1
@@ -35,11 +33,11 @@ def test_get_page_content():
 @pytest.mark.order2
 def test_add_page_by_content():
     try:
-        delete_user(login_user())
+        delete(login())
     except:
         pass
-    register_user()
-    token = login_user()
+    registration()
+    token = login()
     print("------->", token)
     url = "https://0.0.0.0:8080/post/add_page_content"
     data = {
@@ -64,10 +62,10 @@ def test_add_page_by_content():
 @pytest.mark.order3
 def test_add_page_by_page():
     try:
-        delete_user()
+        delete()
     except:
         pass
-    assert register_user().status_code == 200
+    assert registration().status_code == 200
 
     token = login_user()
     url = "https://0.0.0.0:8080/post/add_page"
@@ -75,17 +73,17 @@ def test_add_page_by_page():
     data = {"post_path": "test.c", "text": "text text", "token": "{}".format(token)}
     response = requests.post(url, json=data, verify=False)
     assert response.status_code == 200
-    delete_user()
+    delete()
 
 
 @pytest.mark.order4
 def test_update_likes():
     try:
-        delete_user()
+        delete()
     except:
         pass
-    register_user()
-    token = login_user()
+    registration()
+    token = login()
     print("------->", token)
     url = "https://0.0.0.0:8080/post/add_page_content"
     data = {
@@ -118,4 +116,4 @@ def test_update_likes():
     response = requests.get(url, verify=False)
     assert response.status_code == 200
     assert response.json()["result"][0]["likes"] == "101"
-    delete_user()
+    delete()

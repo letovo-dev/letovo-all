@@ -105,7 +105,9 @@ namespace auth {
 
         auto con = std::move(pool_ptr->getConnection());
         try {
-            con->execute_params("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());", params, true);
+            std::cout << "here\n";
+            con->execute_params("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, 0, now());", params, true);
+            std::cout << "here 2\n";
         } catch (const pqxx::unique_violation& e) {
             return false;
         }
@@ -221,12 +223,13 @@ namespace auth::server {
                 try {
                     std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
                     std::string userid = std::to_string(std::hash<std::string>{}(loginHeader)).substr(0, 5);
-
+                    
+                    logger_ptr -> info([userid] { return fmt::format("new user id {}", userid); });
+                    logger_ptr -> info([passwordHash] { return fmt::format("new user password hash {}", passwordHash); });
                     if (!auth::reg(userid, loginHeader, passwordHash, pool_ptr)) {
                         logger_ptr->warn([endpoint, loginHeader] { return fmt::format("user {} already exists", loginHeader); });
                         return req->create_response(restinio::status_forbidden()).set_body("username is ocupied").done();
                     }
-
                     auto token = hashing::hash_from_string(loginHeader);
                     logger_ptr->info([endpoint, loginHeader] { return fmt::format("new user with ip {} username {}", endpoint, loginHeader); });
 
