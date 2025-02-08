@@ -100,6 +100,19 @@ namespace auth {
         return true;
     }
 
+    pqxx::result user_info(std::string username, std::string password, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        std::string passwordHash = std::to_string(std::hash<std::string>{}(password));
+        std::vector<std::string> params = {username, passwordHash};
+
+        auto con = std::move(pool_ptr->getConnection());
+
+        pqxx::result result = con->execute_params("SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"passwdhash\"=($2);", params);
+
+        pool_ptr->returnConnection(std::move(con));
+
+        return result;
+    }
+
     bool reg(std::string username, std::string password_hash, std::string userid, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         std::vector<std::string> params = {userid, username, password_hash};
 
@@ -177,9 +190,9 @@ namespace auth::server {
                 std::string loginHeader = new_body["login"].GetString();
                 std::string passwordHeader = new_body["password"].GetString();
 
-                bool authed = auth::auth(loginHeader, passwordHeader, pool_ptr);
+                auto user = auth::user_info(loginHeader, passwordHeader, pool_ptr);
 
-                if (!authed) {
+                if (user.empty()) {
                     logger_ptr->info([endpoint] { return fmt::format("empty headers from {}", endpoint); });
 
                     return req->create_response(restinio::status_unauthorized()).append_header_date_field().connection_close().done();
@@ -187,7 +200,10 @@ namespace auth::server {
                 } else {
                     auto token = hashing::hash_from_string(loginHeader);
 
-                    return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
+                    return req->create_response()
+                        .set_body(cp::serialize(user))
+                        .append_header("Bearer", token)
+                        .done();
                 }
             }
 
@@ -230,7 +246,10 @@ namespace auth::server {
                     auto token = hashing::hash_from_string(loginHeader);
                     logger_ptr->info([endpoint, loginHeader] { return fmt::format("new user with ip {} username {}", endpoint, loginHeader); });
 
-                    return req->create_response().set_body("{\"token\": \"" + token + "\"}").done();
+                    return req->create_response()
+                        .set_body(cp::serialize(auth::user_info(loginHeader, pool_ptr)))
+                        .append_header("Bearer", token)
+                        .done();
                 } catch (const char* error_message) {
                     logger_ptr->error([endpoint, error_message] { return fmt::format("error from {} {}", endpoint, error_message); });
                 }
