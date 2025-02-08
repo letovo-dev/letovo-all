@@ -106,7 +106,7 @@ namespace auth {
 
         auto con = std::move(pool_ptr->getConnection());
 
-        pqxx::result result = con->execute_params("SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"passwdhash\"=($2);", params);
+        pqxx::result result = con->execute_params("SELECT userid, username, userrights, jointime, avatar_pic, active, role, balance FROM \"user\" WHERE \"username\"=($1) AND \"passwdhash\"=($2);", params);
 
         pool_ptr->returnConnection(std::move(con));
 
@@ -202,7 +202,7 @@ namespace auth::server {
 
                     return req->create_response()
                         .set_body(cp::serialize(user))
-                        .append_header("Bearer", token)
+                        .append_header("Authorization", token)
                         .done();
                 }
             }
@@ -247,8 +247,8 @@ namespace auth::server {
                     logger_ptr->info([endpoint, loginHeader] { return fmt::format("new user with ip {} username {}", endpoint, loginHeader); });
 
                     return req->create_response()
-                        .set_body(cp::serialize(auth::user_info(loginHeader, pool_ptr)))
-                        .append_header("Bearer", token)
+                        .set_body(cp::serialize(auth::user_info(loginHeader, passwordHeader, pool_ptr)))
+                        .append_header("Authorization", token)
                         .done();
                 } catch (const char* error_message) {
                     logger_ptr->error([endpoint, error_message] { return fmt::format("error from {} {}", endpoint, error_message); });
