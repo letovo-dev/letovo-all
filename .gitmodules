@@ -4,9 +4,9 @@
 [submodule "src/letovo-soc-net"]
 	path = src/letovo-soc-net
 	url = https://github.com/letovo-dev/letovo-soc-net.git
-[submodule "src/letovo-wiki"]
-	path = src/letovo-wiki
-	url = https://github.com/letovo-dev/letovo-wiki.git
 [submodule "src/letovo-secrets"]
 	path = src/letovo-secrets
 	url = https://github.com/letovo-dev/letovo-secrets.git
+[submodule "src/letovo-all-frontend"]
+	path = src/letovo-all-frontend
+	url = git@github.com:letovo-dev/letovo-all-frontend.git

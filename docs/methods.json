@@ -30,30 +30,25 @@
         },
         "header_fields": []
     },
-    "/post/delete/:id(\\d+)": {
+    "/post/delete/:token([a-zA-Z0-9]+)/:id(\\d+)": {
         "method": "delete",
         "body_fields": {},
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
     },
-    "/post/favourite/": {
+    "/post/favourite/:token([a-zA-Z0-9]+)": {
         "method": "get",
         "body_fields": {},
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
     },
     "/post/favourite": {
         "method": "post",
         "body_fields": {
+            "token": "String",
             "post_id": "Int"
         },
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
     },
-    "/post/favourite/:id(\\d+)": {
+    "/post/favourite/:token([a-zA-Z0-9]+)/:id(\\d+)": {
         "method": "delete",
         "body_fields": {},
         "header_fields": []
@@ -260,21 +255,66 @@
         },
         "header_fields": []
     },
-    "/all_actives": {
+    "/actives/all_actives": {
         "method": "get",
         "body_fields": {},
         "header_fields": []
     },
-    "/add_bid": {
+    "/actives/active": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": [
+            "active_id",
+            "active_ticker"
+        ]
+    },
+    "/actives/history": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": [
+            "active_id",
+            "active_ticker"
+        ]
+    },
+    "/actives/user_actives": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": [
+            "user_name"
+        ]
+    },
+    "/actives/user_history": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": [
+            "user_name"
+        ]
+    },
+    "/deals/add_bid": {
         "method": "post",
         "body_fields": {
-            "buy": "String",
-            "userid": "String",
-            "activeid": "String",
-            "bidprice": "String",
-            "ammount": "String"
+            "token": "String",
+            "price": "Int",
+            "amount": "Int",
+            "active": "String"
         },
         "header_fields": []
+    },
+    "/deals/remove_bid": {
+        "method": "delete",
+        "body_fields": {
+            "token": "String",
+            "price": "Int",
+            "bid_id": "Int"
+        },
+        "header_fields": []
+    },
+    "/deals/users_bids": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
     },
     "/transactions/send": {
         "method": "post",
