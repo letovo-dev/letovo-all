@@ -55,7 +55,7 @@ while getopts 'ptoifds:h' OPTION; do
             ;;
         p)
             echo "pulling changes from git"
-            git pull
+            git pull origin main
             ;;
         h)
             echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o]"
