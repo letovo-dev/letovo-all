@@ -7,3 +7,6 @@
 [submodule "src/letovo-secrets"]
 	path = src/letovo-secrets
 	url = https://github.com/letovo-dev/letovo-secrets.git
+[submodule "src/letovo-all-frontend"]
+	path = src/letovo-all-frontend
+	url = git@github.com:letovo-dev/letovo-all-frontend.git
