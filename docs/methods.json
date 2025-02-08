@@ -1,4 +1,39 @@
 {
+    "/transactions/send": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "receiver": "String",
+            "amount": "Int"
+        },
+        "header_fields": []
+    },
+    "/transactions/balance/:token([a-zA-Z0-9]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/transactions/get/:token([a-zA-Z0-9]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/all_actives": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/add_bid": {
+        "method": "post",
+        "body_fields": {
+            "buy": "String",
+            "userid": "String",
+            "activeid": "String",
+            "bidprice": "String",
+            "ammount": "String"
+        },
+        "header_fields": []
+    },
     "/post/:id(\\d+)": {
         "method": "get",
         "body_fields": {},
@@ -30,148 +65,26 @@
         },
         "header_fields": []
     },
-    "/post/delete/:id(\\d+)": {
+    "/post/delete/:token([a-zA-Z0-9]+)/:id(\\d+)": {
         "method": "delete",
         "body_fields": {},
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
     },
-    "/post/favourite/": {
+    "/post/favourite/:token([a-zA-Z0-9]+)": {
         "method": "get",
         "body_fields": {},
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
     },
     "/post/favourite": {
         "method": "post",
         "body_fields": {
+            "token": "String",
             "post_id": "Int"
         },
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
     },
-    "/post/favourite/:id(\\d+)": {
+    "/post/favourite/:token([a-zA-Z0-9]+)/:id(\\d+)": {
         "method": "delete",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/add": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "username": "String",
-            "achivement_id": "Int"
-        },
-        "header_fields": []
-    },
-    "/achivements/delete": {
-        "method": "delete",
-        "body_fields": {
-            "token": "String",
-            "username": "String",
-            "achivement_id": "Int"
-        },
-        "header_fields": []
-    },
-    "/achivements/tree/:tree_id([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/info/:achivement_id([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/create": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "name": "String",
-            "tree_id": "Int",
-            "level": "Int",
-            "pic": "String",
-            "description": "String",
-            "stages": "Int"
-        },
-        "header_fields": []
-    },
-    "/media/get/:filename(.*)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/add_role": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "username": "String",
-            "role_id": "Int",
-            "role": "String",
-            "department": "Int"
-        },
-        "header_fields": []
-    },
-    "/user/delete_role": {
-        "method": "delete",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/create_role": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "payment": "Int",
-            "role": "String",
-            "department": "Int",
-            "rang": "Int"
-        },
-        "header_fields": []
-    },
-    "/user/department/roles/:department([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/department/name/:department([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/set_department": {
-        "method": "put",
-        "body_fields": {
-            "token": "String",
-            "department": "String",
-            "username": "String"
-        },
-        "header_fields": []
-    },
-    "/user/department/roles": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/department/start/:department(.*)": {
-        "method": "get",
         "body_fields": {},
         "header_fields": []
     },
@@ -260,43 +173,121 @@
         },
         "header_fields": []
     },
-    "/all_actives": {
+    "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
         "body_fields": {},
         "header_fields": []
     },
-    "/add_bid": {
-        "method": "post",
-        "body_fields": {
-            "buy": "String",
-            "userid": "String",
-            "activeid": "String",
-            "bidprice": "String",
-            "ammount": "String"
-        },
+    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "body_fields": {},
         "header_fields": []
     },
-    "/transactions/send": {
+    "/user/add_role": {
         "method": "post",
         "body_fields": {
             "token": "String",
-            "receiver": "String",
-            "amount": "Int"
+            "username": "String",
+            "role_id": "Int",
+            "role": "String",
+            "department": "Int"
         },
         "header_fields": []
     },
-    "/transactions/balance/": {
-        "method": "get",
+    "/user/delete_role": {
+        "method": "delete",
         "body_fields": {},
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
     },
-    "/transactions/get/": {
+    "/user/create_role": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "payment": "Int",
+            "role": "String",
+            "department": "Int",
+            "rang": "Int"
+        },
+        "header_fields": []
+    },
+    "/user/department/roles/:department([0-9]+)": {
         "method": "get",
         "body_fields": {},
-        "header_fields": [
-            "token"
-        ]
+        "header_fields": []
+    },
+    "/user/department/name/:department([0-9]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/user/set_department": {
+        "method": "put",
+        "body_fields": {
+            "token": "String",
+            "department": "String",
+            "username": "String"
+        },
+        "header_fields": []
+    },
+    "/user/department/roles": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/user/department/start/:department(.*)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/media/get/:filename(.*)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/achivements/add": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        },
+        "header_fields": []
+    },
+    "/achivements/delete": {
+        "method": "delete",
+        "body_fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        },
+        "header_fields": []
+    },
+    "/achivements/tree/:tree_id([0-9]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/achivements/info/:achivement_id([0-9]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/achivements/create": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "name": "String",
+            "tree_id": "Int",
+            "level": "Int",
+            "pic": "String",
+            "description": "String",
+            "stages": "Int"
+        },
+        "header_fields": []
     }
 }
