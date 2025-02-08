@@ -76,6 +76,7 @@ if [ $run_flag = true ]; then
     export MAIN_FILE="$work_file"
     export BUILD_FILES="$build_files"
     echo "running $work_file"
+    echo "backend server should be avaluable on localhost/api"
     cd src
     rm ./server_starter
     if [ $logging = true ]; then
@@ -113,7 +114,11 @@ else
        sudo apt-get install build-essential
        sudo apt-get install librestinio-dev
     fi
-    
+    echo "install nginx"
+    sudo $pack_manager nginx
+    sudo "prepare nginx"
+    sudo cp ./docs/nginx.conf /etc/nginx/nginx.conf
+    sudo systemctl restart nginx
     echo "install cmake"
     sudo $pack_manager cmake 
     echo "install jq"

@@ -1,58 +1,4 @@
 {
-    "/post/:id(\\d+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/author/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/add_page_content": {
-        "method": "post",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/add_page": {
-        "method": "post",
-        "body_fields": {
-            "post_path": "String",
-            "text": "String"
-        },
-        "header_fields": []
-    },
-    "/post/update_likes": {
-        "method": "put",
-        "body_fields": {
-            "post_id": "Int",
-            "likes": "Int"
-        },
-        "header_fields": []
-    },
-    "/post/delete/:token([a-zA-Z0-9]+)/:id(\\d+)": {
-        "method": "delete",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/favourite/:token([a-zA-Z0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/favourite": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "post_id": "Int"
-        },
-        "header_fields": []
-    },
-    "/post/favourite/:token([a-zA-Z0-9]+)/:id(\\d+)": {
-        "method": "delete",
-        "body_fields": {},
-        "header_fields": []
-    },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
         "body_fields": {},
@@ -101,6 +47,65 @@
     },
     "/media/get/:filename(.*)": {
         "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/post/:id(\\d+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/post/author/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/post/add_page_content": {
+        "method": "post",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/post/add_page": {
+        "method": "post",
+        "body_fields": {
+            "post_path": "String",
+            "text": "String"
+        },
+        "header_fields": []
+    },
+    "/post/update_likes": {
+        "method": "put",
+        "body_fields": {
+            "post_id": "Int",
+            "likes": "Int"
+        },
+        "header_fields": []
+    },
+    "/post/delete/:id(\\d+)": {
+        "method": "delete",
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
+    },
+    "/post/favourite/": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": [
+            "token"
+        ]
+    },
+    "/post/favourite": {
+        "method": "post",
+        "body_fields": {
+            "post_id": "Int"
+        },
+        "header_fields": [
+            "token"
+        ]
+    },
+    "/post/favourite/:id(\\d+)": {
+        "method": "delete",
         "body_fields": {},
         "header_fields": []
     },
