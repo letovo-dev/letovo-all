@@ -100,19 +100,6 @@ namespace auth {
         return true;
     }
 
-    pqxx::result user_info(std::string username, std::string password, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-        std::string passwordHash = std::to_string(std::hash<std::string>{}(password));
-        std::vector<std::string> params = {username, passwordHash};
-
-        auto con = std::move(pool_ptr->getConnection());
-
-        pqxx::result result = con->execute_params("SELECT userid, username, userrights, jointime, avatar_pic, active, role, balance FROM \"user\" WHERE \"username\"=($1) AND \"passwdhash\"=($2);", params);
-
-        pool_ptr->returnConnection(std::move(con));
-
-        return result;
-    }
-
     bool reg(std::string username, std::string password_hash, std::string userid, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         std::vector<std::string> params = {userid, username, password_hash};
 
@@ -190,13 +177,10 @@ namespace auth::server {
                 std::string loginHeader = new_body["login"].GetString();
                 std::string passwordHeader = new_body["password"].GetString();
 
-                auto user = auth::user_info(loginHeader, passwordHeader, pool_ptr);
+                auto user = user::user_info(loginHeader, pool_ptr);
 
-                if (user.empty()) {
-                    logger_ptr->info([endpoint] { return fmt::format("empty headers from {}", endpoint); });
-
+                if (!auth::auth(loginHeader, passwordHeader, pool_ptr)) {
                     return req->create_response(restinio::status_unauthorized()).append_header_date_field().connection_close().done();
-
                 } else {
                     auto token = hashing::hash_from_string(loginHeader);
 
@@ -247,7 +231,7 @@ namespace auth::server {
                     logger_ptr->info([endpoint, loginHeader] { return fmt::format("new user with ip {} username {}", endpoint, loginHeader); });
 
                     return req->create_response()
-                        .set_body(cp::serialize(auth::user_info(loginHeader, passwordHeader, pool_ptr)))
+                        .set_body(cp::serialize(user::user_info(loginHeader, pool_ptr)))
                         .append_header("Authorization", token)
                         .done();
                 } catch (const char* error_message) {
@@ -271,9 +255,9 @@ namespace auth::server {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
             if (auth::is_authed(token, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
             } else {
-                return req->create_response(restinio::status_unauthorized()).set_body("no").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
             }
         });
     }
@@ -291,9 +275,9 @@ namespace auth::server {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
             if (auth::is_admin(token, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
             } else {
-                return req->create_response(restinio::status_unauthorized()).set_body("no").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
             }
         });
     }
@@ -303,9 +287,9 @@ namespace auth::server {
             std::string username = url::get_last_url_arg(req->header().path());
 
             if (auth::is_active(username, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).set_body("yes").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
             } else {
-                return req->create_response(restinio::status_ok()).set_body("no").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
             }
         });
     }
@@ -317,9 +301,9 @@ namespace auth::server {
             logger_ptr->info([username] { return fmt::format("is user request for {}", username); });
 
             if (auth::is_user(username, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).set_body("yes").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
             } else {
-                return req->create_response(restinio::status_non_authoritative_information()).set_body("no").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
             }
         });
     }
