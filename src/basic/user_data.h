@@ -11,13 +11,13 @@
 #include <vector>
 
 namespace user {
-    pqxx::row role(int role_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+    pqxx::result role(int role_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     int role_id(std::string role, int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
-    pqxx::row user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+    pqxx::result user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
-    pqxx::row user_role(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+    pqxx::result user_role(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     pqxx::result user_roles(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 

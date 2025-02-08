@@ -8,11 +8,7 @@ namespace cp {
         }
         std::string res_str = "{\"result\": [";
         for (auto const& row : res) {
-            res_str += '{';
-            for (auto const& field : row) {
-                res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
-            }
-            res_str[res_str.length() - 1] = '}';
+            res_str += cp::serialize(row);
             res_str += ',';
         }
         res_str[res_str.length() - 1] = ']';
@@ -23,18 +19,14 @@ namespace cp {
     std::string serialize(pqxx::row row) {
         // TODO: it can be better
         if (row.empty()) {
-            return "{\"result\": []}";
+            return "{}";
         }
-        std::string res_str = "{\"result\": [";
-        res_str += '{';
+        std::string res_str = "{";
         for (auto const& field : row) {
             res_str += '"' + std::string(field.name()) + "\": \"" + std::string(field.c_str()) + "\",";
         }
-        res_str[res_str.length() - 1] = '}';
-        res_str += ',';
 
-        res_str[res_str.length() - 1] = ']';
-        res_str += "}";
+        res_str[res_str.length() - 1] = '}';
         return res_str;
     }
 

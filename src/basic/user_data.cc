@@ -1,7 +1,7 @@
 #include "user_data.h"
 
 namespace user {
-    pqxx::row role(int role_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+    pqxx::result role(int role_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
 
         std::vector<int> params = {role_id};
@@ -13,7 +13,7 @@ namespace user {
         if (result.empty()) {
             return {};
         }
-        return result[0];
+        return result;
     }
 
     int role_id(std::string role, int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
@@ -31,7 +31,7 @@ namespace user {
         return result[0]["roleid"].as<int>();
     }
 
-    pqxx::row user_role(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+    pqxx::result user_role(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
 
         std::vector<std::string> params = {username};
@@ -43,10 +43,10 @@ namespace user {
         if (result.empty()) {
             return {};
         }
-        return result[0];
+        return result;
     }
 
-    pqxx::row user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+    pqxx::result user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
 
         std::vector<std::string> params = {username};
@@ -59,7 +59,7 @@ namespace user {
             return {};
         }
 
-        return result[0];
+        return result;
     }
 
     pqxx::result user_roles(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
@@ -278,7 +278,7 @@ namespace user::server {
                 return req->create_response(restinio::status_bad_request()).done();
             }
 
-            pqxx::row result = user::user_info(username, pool_ptr);
+            pqxx::result result = user::user_info(username, pool_ptr);
 
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
@@ -404,7 +404,7 @@ namespace user::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(result).done();
+            return req->create_response().set_body("{\"result\": [{\"department\": \"" + result + "\"}]}").done();
         });
     }
 
