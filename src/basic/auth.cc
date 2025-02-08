@@ -243,7 +243,7 @@ namespace auth::server {
         router.get()->http_get(R"(/auth/amiauthed/)", [pool_ptr](auto req, auto) {
             std::string token;
             try {
-                token = req -> header().get_field("token");
+                token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -263,7 +263,7 @@ namespace auth::server {
         router.get()->http_get(R"(/auth/amiadmin/)", [pool_ptr](auto req, auto) {
             std::string token;
             try {
-                token = req -> header().get_field("token");
+                token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -309,7 +309,7 @@ namespace auth::server {
         router.get()->http_delete(R"(/auth/delete/)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
-                token = req -> header().get_field("token");
+                token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -337,7 +337,7 @@ namespace auth::server {
         router.get()->http_put(R"(/auth/add_userrights/)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
-                token = req -> header().get_field("token");
+                token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -374,7 +374,7 @@ namespace auth::server {
         router.get()->http_put(R"(/auth/change_username/)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
-                token = req -> header().get_field("token");
+                token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -409,7 +409,7 @@ namespace auth::server {
         router.get()->http_put("/auth/change_password/", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
-                token = req -> header().get_field("token");
+                token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }

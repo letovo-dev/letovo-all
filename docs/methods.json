@@ -85,14 +85,14 @@
         "method": "delete",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/post/favourite/": {
         "method": "get",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/post/favourite": {
@@ -101,7 +101,7 @@
             "post_id": "Int"
         },
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/post/favourite/:id(\\d+)": {
@@ -196,14 +196,14 @@
         "method": "get",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/auth/amiadmin/": {
         "method": "get",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/auth/isactive/:username(.*)": {
@@ -220,7 +220,7 @@
         "method": "delete",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/auth/add_userrights/": {
@@ -230,7 +230,7 @@
             "rights": "String"
         },
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/auth/change_username/": {
@@ -239,7 +239,7 @@
             "new_username": "String"
         },
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/auth/change_password/": {
@@ -249,7 +249,7 @@
             "new_password": "String"
         },
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/auth/add_user": {
@@ -318,7 +318,7 @@
         "method": "get",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/transactions/send": {
@@ -334,14 +334,14 @@
         "method": "get",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     },
     "/transactions/get/": {
         "method": "get",
         "body_fields": {},
         "header_fields": [
-            "token"
+            "Bearer"
         ]
     }
 }
