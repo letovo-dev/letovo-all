@@ -27,7 +27,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'toifds:h' OPTION; do
+while getopts 'ptoifds:h' OPTION; do
     case "$OPTION" in
         i) 
             ehco "installing"
@@ -53,9 +53,14 @@ while getopts 'toifds:h' OPTION; do
             echo "skip pre-run checks"
             checks_flag=false
             ;;
+        p)
+            echo "pulling changes from git"
+            git pull
+            ;;
         h)
             echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o]"
             echo "Options:"
+            echo "  -p: pull changes from git before launch"
             echo "  -i: install dependencies"
             echo "  -f: set work file"
             echo "  -t: run test file"
