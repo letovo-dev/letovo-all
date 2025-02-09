@@ -96,7 +96,10 @@ namespace page::server {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
 
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response()
+                .set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             
         });
     }
@@ -117,7 +120,10 @@ namespace page::server {
             if(result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
             
         });
     }
@@ -168,7 +174,10 @@ namespace page::server {
                     assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::any_cast<std::string>(new_map["author"]), std::to_string(post_id), logger_ptr);
                 else 
                     assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::to_string(post_id), logger_ptr);
-                return req->create_response().set_body(cp::serialize(page::get_page_content(post_id, pool_ptr))).done();
+                return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(page::get_page_content(post_id, pool_ptr)))
+                .done();
             }
             else {
                 logger_ptr->info( [endpoint]{return fmt::format("bad request from {}, not enough args", endpoint);});
@@ -200,7 +209,10 @@ namespace page::server {
                 int post_id = page::add_page_by_page(path, new_body["text"].GetString(), pool_ptr, logger_ptr);
                 logger_ptr->info( [endpoint, path]{return fmt::format("page added from {} to {}", endpoint, path);});
                 assist::create_file(path, new_body["text"].GetString(), logger_ptr);
-                return req->create_response().set_body(cp::serialize(page::get_page_content(post_id, pool_ptr))).done();
+                return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(page::get_page_content(post_id, pool_ptr)))
+                .done();
 
             }
             else return req->create_response(restinio::status_non_authoritative_information()).done();
@@ -247,7 +259,10 @@ namespace page::server {
             page::delete_page(post_id,pool_ptr, logger_ptr);
             
             logger_ptr->info( [post_id]{return fmt::format("page deleted with id {}", post_id);});
-            return req->create_response().set_body("ok").done();
+            return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("ok")
+                .done();
             
         });
     }
@@ -273,7 +288,10 @@ namespace page::server {
             if(result.empty()) {
                 return req->create_response(restinio::status_ok()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
             
         });
     }
@@ -334,7 +352,10 @@ namespace page::server {
             page::delete_favourite_post(post_id, username, pool_ptr, logger_ptr);
             
             logger_ptr->info( [post_id]{return fmt::format("favourite post deleted with id {}", post_id);});
-            return req->create_response().set_body("ok").done();
+            return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("ok")
+                .done();
             
         });
     }

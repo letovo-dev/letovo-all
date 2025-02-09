@@ -45,6 +45,8 @@ build/*
 .vscode/*
 
 *test*.c*
+*test*.js
+*test*.ts
 *test*.h*
 *test*.md*
 

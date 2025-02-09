@@ -283,7 +283,10 @@ namespace user::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
         });
     }
 
@@ -303,7 +306,10 @@ namespace user::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
         });
     }
 
@@ -325,10 +331,16 @@ namespace user::server {
             }
             if (new_body.HasMember("role_id")) {
                 user::add_user_role(new_body["username"].GetString(), new_body["role_id"].GetInt(), pool_ptr);
-                return req->create_response().set_body("ok").done();
+                return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("ok")
+                .done();
             } else if (new_body.HasMember("role") && new_body.HasMember("department")) {
                 user::add_user_role(new_body["username"].GetString(), new_body["role"].GetString(), new_body["department"].GetInt(), pool_ptr);
-                return req->create_response().set_body("ok").done();
+                return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("ok")
+                .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -356,7 +368,10 @@ namespace user::server {
             if (new_body.HasMember("role") && new_body.HasMember("department") && new_body.HasMember("rang")) {
                 int roleid = user::create_role(new_body["role"].GetString(), new_body["department"].GetInt(), new_body["rang"].GetInt(), payment, pool_ptr);
                 logger_ptr->info([roleid] { return fmt::format("created role with roleid = {}", roleid); });
-                return req->create_response().set_body("ok").done();
+                return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("ok")
+                .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -382,7 +397,10 @@ namespace user::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
         });
     }
 
@@ -404,7 +422,10 @@ namespace user::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body("{\"result\": [{\"department\": \"" + result + "\"}]}").done();
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body("{\"result\": [{\"department\": \"" + result + "\"}]}")
+                .done();
         });
     }
 
@@ -434,7 +455,10 @@ namespace user::server {
                 if (result == -1) {
                     return req->create_response(restinio::status_bad_request()).done();
                 }
-                return req->create_response().set_body("ok").done();
+                return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("ok")
+                .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -449,7 +473,10 @@ namespace user::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
         });
     }
 
@@ -472,7 +499,10 @@ namespace user::server {
             if (result == -1) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(std::to_string(result)).done();
+            return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body(std::to_string(result))
+                .done();
         });
     }
 } // namespace user::server

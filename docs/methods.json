@@ -192,14 +192,14 @@
         },
         "header_fields": []
     },
-    "/auth/amiauthed/": {
+    "/auth/amiauthed": {
         "method": "get",
         "body_fields": {},
         "header_fields": [
             "Bearer"
         ]
     },
-    "/auth/amiadmin/": {
+    "/auth/amiadmin": {
         "method": "get",
         "body_fields": {},
         "header_fields": [
@@ -216,14 +216,14 @@
         "body_fields": {},
         "header_fields": []
     },
-    "/auth/delete/": {
+    "/auth/delete": {
         "method": "delete",
         "body_fields": {},
         "header_fields": [
             "Bearer"
         ]
     },
-    "/auth/add_userrights/": {
+    "/auth/add_userrights": {
         "method": "put",
         "body_fields": {
             "username": "String",
@@ -233,7 +233,7 @@
             "Bearer"
         ]
     },
-    "/auth/change_username/": {
+    "/auth/change_username": {
         "method": "put",
         "body_fields": {
             "new_username": "String"

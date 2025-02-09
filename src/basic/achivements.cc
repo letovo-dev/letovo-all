@@ -112,7 +112,9 @@ namespace achivements::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response().set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
         });
     }
 
@@ -130,7 +132,9 @@ namespace achivements::server {
             }
 
             achivements::add_achivement(new_body["username"].GetString(), new_body["achivement_id"].GetInt(), pool_ptr);
-            return req->create_response().set_body("ok").done();
+            return req->create_response().set_body("ok")
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .done();
         });
     }
 
@@ -148,7 +152,9 @@ namespace achivements::server {
             }
 
             achivements::delete_achivement(new_body["username"].GetString(), new_body["achivement_id"].GetInt(), pool_ptr);
-            return req->create_response().set_body("ok").done();
+            return req->create_response().set_body("ok")
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .done();
         });
     }
 
@@ -169,7 +175,9 @@ namespace achivements::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response().set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
         });
     }
 
@@ -190,7 +198,9 @@ namespace achivements::server {
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
-            return req->create_response().set_body(cp::serialize(result)).done();
+            return req->create_response().set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
         });
     }
 
@@ -222,7 +232,9 @@ namespace achivements::server {
                     return req->create_response(restinio::status_bad_request()).done();
                 }
                 std::string response = fmt::format("{{\"achivement_id\":{}}}", result);
-                return req->create_response().set_body(response).done();
+                return req->create_response().set_body(response)
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }

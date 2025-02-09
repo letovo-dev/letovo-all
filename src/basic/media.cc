@@ -100,16 +100,25 @@ namespace media::server {
             std::string file_path = media::check_if_file_exists(filename);
 
             if (file_path.empty() || file_path == "get") {
-                return req->create_response(restinio::status_not_found()).set_body("empty file name").done();
+                return req->create_response(restinio::status_not_found())
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body("empty file name")
+                .done();
             }
 
             if (filename.find("..") != std::string::npos || filename[0] == '/') {
-                return req->create_response(restinio::status_forbidden()).set_body(Comment::giveMe().no_access).done();
+                return req->create_response(restinio::status_forbidden())
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(Comment::giveMe().no_access)
+                .done();
             }
 
             std::string file_type = media::get_file_type(filename);
             if (media::content_types.find(file_type) == media::content_types.end()) {
-                return req->create_response(restinio::status_not_found()).set_body("uncnown file type").done();
+                return req->create_response(restinio::status_not_found())
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body("uncnown file type")
+                .done();
             }
             std::string content_type = content_type(file_type);
 

@@ -187,6 +187,7 @@ namespace auth::server {
                     return req->create_response()
                         .set_body(cp::serialize(user))
                         .append_header("Authorization", token)
+                        .append_header("Content-Type", "application/json; charset=utf-8")
                         .done();
                 }
             }
@@ -224,7 +225,10 @@ namespace auth::server {
 
                     if (!auth::reg(userid, loginHeader, passwordHash, pool_ptr)) {
                         logger_ptr->warn([endpoint, loginHeader] { return fmt::format("user {} already exists", loginHeader); });
-                        return req->create_response(restinio::status_forbidden()).set_body("username is ocupied").done();
+                        return req->create_response(restinio::status_forbidden())
+                            .append_header("Content-Type", "application/json; charset=utf-8")
+                            .set_body("{status: \"username is ocupied\"}")
+                            .done();
                     }
 
                     auto token = hashing::hash_from_string(loginHeader);
@@ -243,7 +247,7 @@ namespace auth::server {
     }
 
     void am_i_authed(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiauthed/)", [pool_ptr](auto req, auto) {
+        router.get()->http_get(R"(/auth/amiauthed)", [pool_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -255,15 +259,19 @@ namespace auth::server {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
             if (auth::is_authed(token, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             } else {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             }
         });
     }
 
     void am_i_admin(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiadmin/)", [pool_ptr](auto req, auto) {
+        router.get()->http_get(R"(/auth/amiadmin)", [pool_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -275,9 +283,13 @@ namespace auth::server {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
             if (auth::is_admin(token, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             } else {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             }
         });
     }
@@ -287,9 +299,13 @@ namespace auth::server {
             std::string username = url::get_last_url_arg(req->header().path());
 
             if (auth::is_active(username, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             } else {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             }
         });
     }
@@ -301,15 +317,19 @@ namespace auth::server {
             logger_ptr->info([username] { return fmt::format("is user request for {}", username); });
 
             if (auth::is_user(username, pool_ptr)) {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             } else {
-                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}").done();
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
             }
         });
     }
 
     void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_delete(R"(/auth/delete/)", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_delete(R"(/auth/delete)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -326,7 +346,9 @@ namespace auth::server {
             if (auth::is_authed(token, pool_ptr)) {
                 if (auth::delete_user(username, pool_ptr)) {
                     logger_ptr->info([username] { return fmt::format("user {} deleted", username); });
-                    return req->create_response().set_body("ok").done();
+                    return req->create_response().set_body("ok")
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .done();
                 } else {
                     return req->create_response(restinio::status_internal_server_error()).done();
                 }
@@ -337,7 +359,7 @@ namespace auth::server {
     }
 
     void add_userrights(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_put(R"(/auth/add_userrights/)", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_put(R"(/auth/add_userrights)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -352,7 +374,10 @@ namespace auth::server {
             std::string username = hashing::string_from_hash(token);
 
             if (!auth::is_admin(token, pool_ptr)) {
-                return req->create_response(restinio::status_unauthorized()).set_body("ты даже не гражданин!").done();
+                return req->create_response(restinio::status_unauthorized())
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body("{status: \"ты даже не гражданин!\"}")
+                .done();
             }
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
@@ -363,7 +388,9 @@ namespace auth::server {
 
                 if (auth::add_userrights(user, rights, pool_ptr)) {
                     logger_ptr->info([username, user, rights] { return fmt::format("user {} added rights {} to {}", username, rights, user); });
-                    return req->create_response().set_body("ok").done();
+                    return req->create_response().set_body("ok")
+                    .append_header("Content-Type", "application/json; charset=utf-8")
+                    .done();
                 } else {
                     return req->create_response(restinio::status_internal_server_error()).done();
                 }
@@ -374,7 +401,7 @@ namespace auth::server {
     }
 
     void change_username(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_put(R"(/auth/change_username/)", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_put(R"(/auth/change_username)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -402,7 +429,9 @@ namespace auth::server {
                 }
                 std::string new_token = hashing::hash_from_string(new_username);
                 logger_ptr->info([username, new_username] { return fmt::format("user {} changed username to {}", username, new_username); });
-                return req->create_response().set_body("{\"token\": \"" + new_token + "\"}").done();
+                return req->create_response().set_body("{\"token\": \"" + new_token + "\"}")
+                    .append_header("Content-Type", "application/json; charset=utf-8")
+                    .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -443,7 +472,9 @@ namespace auth::server {
                 }
 
                 logger_ptr->info([username] { return fmt::format("user {} changed password", username); });
-                return req->create_response().set_body("ok").done();
+                return req->create_response().set_body("ok")
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
@@ -461,7 +492,9 @@ namespace auth::server {
             if (new_body.HasMember("input")) {
                 std::string input = new_body["input"].GetString();
                 hashing::add_new_user(input);
-                return req->create_response().set_body("ok").done();
+                return req->create_response().set_body("ok")
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
