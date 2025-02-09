@@ -27,6 +27,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -108,6 +109,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -138,6 +140,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -193,6 +196,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -218,6 +222,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -319,6 +324,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -398,6 +404,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -422,6 +429,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -463,6 +471,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -481,6 +490,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -510,7 +520,7 @@
         },
         "response": {}
     },
-    "/auth/amiauthed/": {
+    "/auth/amiauthed": {
         "request": {
             "method": "get",
             "body_fields": {},
@@ -526,13 +536,14 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
             "body": null
         }
     },
-    "/auth/amiadmin/": {
+    "/auth/amiadmin": {
         "request": {
             "method": "get",
             "body_fields": {},
@@ -548,6 +559,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -568,6 +580,7 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
@@ -588,13 +601,14 @@
             "headers": [
                 "Server",
                 "Date",
+                "Content-Type",
                 "Content-Length",
                 "Connection"
             ],
             "body": null
         }
     },
-    "/auth/delete/": {
+    "/auth/delete": {
         "request": {
             "method": "delete",
             "body_fields": {},
@@ -604,7 +618,7 @@
         },
         "response": {}
     },
-    "/auth/add_userrights/": {
+    "/auth/add_userrights": {
         "request": {
             "method": "put",
             "body_fields": {
@@ -617,7 +631,7 @@
         },
         "response": {}
     },
-    "/auth/change_username/": {
+    "/auth/change_username": {
         "request": {
             "method": "put",
             "body_fields": {
