@@ -1,7 +1,7 @@
 #include "pqxx_cp.h"
 
 namespace cp {
-    std::string serialize(pqxx::result res) {
+    std::string serialize(const pqxx::result &res) {
         // TODO: it can be better
         if (res.empty()) {
             return "{\"result\": []}";
@@ -16,7 +16,7 @@ namespace cp {
         return res_str;
     }
 
-    std::string serialize(pqxx::row row) {
+    std::string serialize(const pqxx::row &row) {
         // TODO: it can be better
         if (row.empty()) {
             return "{}";
@@ -27,6 +27,19 @@ namespace cp {
         }
 
         res_str[res_str.length() - 1] = '}';
+        return res_str;
+    }
+
+    std::string serialize(const std::vector<std::string> &vec) {
+        if(vec.empty()) {
+            return "{}";
+        }
+        std::string res_str = "{\"result\": [";
+        for (auto const& field : vec) {
+            res_str += '"' + field + "\",";
+        }
+        res_str[res_str.length() - 1] = ']';
+        res_str += "}";
         return res_str;
     }
 

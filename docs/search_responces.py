@@ -56,8 +56,10 @@ if __name__ == "__main__":
         if response:
             result[url]["response"]["status_code"] = response.status_code
             if response.text != "":
-                print(response.text)
-                result[url]["response"]["text"] = json.loads(response.text.replace('\\', ''))
+                if "json" in response.headers["Content-Type"]:
+                    result[url]["response"]["text"] = json.loads(response.text.replace('\\', ''))
+                elif "text" in response.headers["Content-Type"] :
+                    result[url]["response"]["text"] = response.text
             if response.headers != "" and response.headers != None and len(response.headers) != 0:
                 result[url]["response"]["headers"] = list(response.headers.keys())
             if response.request.body != "":

@@ -13,10 +13,9 @@
 #include <unordered_map>
 #include <fstream>
 #include <filesystem>
+#include "config.h"
 
 namespace media {
-#define file_static_path(file_name) "./letovo-wiki/static/" + file_name
-
     extern std::unordered_map<std::string, std::string> content_types;
 
 #define content_type(file_name) content_types[file_name]

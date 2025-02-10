@@ -59,9 +59,10 @@ namespace media {
     }
 
     std::string check_if_file_exists(std::string file_name) {
-        std::ifstream file(file_static_path(file_name));
+        std::string full_path = Config::giveMe().pages_config.media_path.absolute + file_name;
+        std::ifstream file(full_path);
         if (file.good()) {
-            return file_static_path(file_name);
+            return full_path;
         } else {
             return "";
         }
@@ -94,26 +95,24 @@ namespace media::server {
     void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/media/get/:filename(.*))", [pool_ptr, logger_ptr](auto req, auto) {
             auto qrl = req->header().path();
-
-            std::string filename = url::get_string_after(req->header().path(), "/media/get/");
-
-            std::string file_path = media::check_if_file_exists(filename);
+            std::string relative_filename = url::get_string_after(req->header().path(), "/media/get/");
+            std::string file_path = media::check_if_file_exists(relative_filename);
 
             if (file_path.empty() || file_path == "get") {
                 return req->create_response(restinio::status_not_found())
                 .append_header("Content-Type", "application/json; charset=utf-8")
-                .set_body("empty file name")
+                .set_body("empty or wrong file name")
                 .done();
             }
 
-            if (filename.find("..") != std::string::npos || filename[0] == '/') {
+            if (relative_filename.find("..") != std::string::npos || relative_filename[0] == '/') {
                 return req->create_response(restinio::status_forbidden())
                 .append_header("Content-Type", "application/json; charset=utf-8")
                 .set_body(Comment::giveMe().no_access)
                 .done();
             }
 
-            std::string file_type = media::get_file_type(filename);
+            std::string file_type = media::get_file_type(relative_filename);
             if (media::content_types.find(file_type) == media::content_types.end()) {
                 return req->create_response(restinio::status_not_found())
                 .append_header("Content-Type", "application/json; charset=utf-8")
@@ -121,11 +120,10 @@ namespace media::server {
                 .done();
             }
             std::string content_type = content_type(file_type);
-
+            logger_ptr->info([file_path] { return fmt::format("requested file {}", file_path); });
             if (content_type.empty()) {
                 return req->create_response(restinio::status_not_found()).done();
             }
-
             return req->create_response()
                 .append_header(restinio::http_field::content_type, content_type)
                 .set_body(restinio::sendfile(file_path))
