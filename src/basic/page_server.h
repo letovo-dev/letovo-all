@@ -9,9 +9,9 @@
 #include <filesystem>
 #include <any>
 #include "assist_funcs.h"
-#include "../basic/url_parser.h"
-#include "../basic/auth.h"
-
+#include "url_parser.h"
+#include "auth.h"
+#include "config.h"
 namespace page {
 
     pqxx::result get_page_content(int post_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr);

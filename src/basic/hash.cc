@@ -7,7 +7,17 @@ std::unordered_set<std::string> new_users;
 namespace hashing {
     string hash_from_string(const string& input) {
         unsigned char hash[SHA256_DIGEST_LENGTH];
-        SHA256(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), hash);
+        std::string str_to_hash;
+        if (Config::giveMe().server_config.update_hashes) {
+            str_to_hash = input + to_string(
+                chrono::duration_cast<chrono::seconds>(chrono::system_clock::now()
+                .time_since_epoch())
+                .count()
+            );
+        } else {
+            str_to_hash = input;
+        }
+        SHA256(reinterpret_cast<const unsigned char*>(str_to_hash.c_str()), input.size(), hash);
 
         // Convert hash to hex string
         stringstream ss;

@@ -94,12 +94,21 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     return router;
 }
 
+void prepare_paths() {
+    for(auto path : Config::giveMe().required_paths) {
+        if (!fs::exists(path)) {
+            fs::create_directories(path);
+        }
+    }
+}
 
 int main()
 {
     using namespace std::chrono;
 
     std::shared_ptr<cp::ConnectionsManager> pool_ptr = std::make_shared<cp::ConnectionsManager>(Config::giveMe().sql_config);
+
+    prepare_paths();
 
     pool_ptr -> connect();
 
