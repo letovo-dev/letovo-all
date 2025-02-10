@@ -4,6 +4,11 @@
         "body_fields": {},
         "header_fields": []
     },
+    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
     "/achivements/add": {
         "method": "post",
         "body_fields": {
@@ -173,6 +178,19 @@
     "/user/department/start/:department(.*)": {
         "method": "get",
         "body_fields": {},
+        "header_fields": []
+    },
+    "/user/all_avatars": {
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
+    },
+    "/user/set_avatar": {
+        "method": "put",
+        "body_fields": {
+            "token": "String",
+            "avatar": "String"
+        },
         "header_fields": []
     },
     "/auth/login": {

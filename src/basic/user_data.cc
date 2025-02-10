@@ -519,9 +519,9 @@ namespace user::server {
     void all_avatars(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get("/user/all_avatars", [pool_ptr, logger_ptr](auto req, auto) {
             std::vector<std::string> avatars;
-            for (const auto& entry : std::filesystem::directory_iterator(Config::giveMe().pages_config.user_avatars_path)) {
+            for (const auto& entry : std::filesystem::directory_iterator(Config::giveMe().pages_config.user_avatars_path.absolute)) {
                 if (std::filesystem::is_regular_file(entry.status())) {
-                    std::cout << entry.path().filename().string() << std::endl;
+                    avatars.push_back(Config::giveMe().pages_config.user_avatars_path.relative + entry.path().filename().string());
                 }
             }
             return req->create_response()
@@ -541,7 +541,7 @@ namespace user::server {
             }
 
             if (new_body.HasMember("avatar")) {
-                
+                user::set_avatar(auth::get_username(new_body["token"].GetString(), pool_ptr), new_body["avatar"].GetString(), pool_ptr);
 
                 return req->create_response()
                 .append_header("Content-Type", "text/plain; charset=utf-8")

@@ -1,6 +1,21 @@
 #include "achivements.h"
 
 namespace achivements {
+    pqxx::result full_user_achivements(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {username};
+
+        pqxx::result result = con->execute_params("select * from \"user_achivements\" right join \"achivements\" on \"user_achivements\".achivement_id = \"achivements\".achivement_id where \"user_achivements\".username = ($1) or \"user_achivements\".username is null order by \"achivement_tree\" asc, \"level\" desc;", params);
+
+        pool_ptr->returnConnection(std::move(con));
+
+        if (result.empty()) {
+            return {};
+        }
+        return result;
+    }
+
     pqxx::result user_achivements(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
 
@@ -111,6 +126,35 @@ namespace achivements::server {
 
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
+            }
+            return req->create_response().set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+        });
+    }
+
+    void full_user_achivemets(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/achivements/user/full/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
+            auto qrl = req->header().path();
+
+            std::string username = url::get_last_url_arg(qrl);
+
+            logger_ptr->info([username] { return fmt::format("username = {}, {}", username, username == "full" || username.empty()); });
+
+            if (username == "full" || username.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+            pqxx::result result;
+            try {
+                result = achivements::full_user_achivements(username, pool_ptr);
+            } catch (...) {
+                return req->create_response(restinio::status_internal_server_error()).done();
+            }
+
+            if (result.empty()) {
+                return req->create_response(restinio::status_ok())
+                    .set_body("{}")
+                    .done();
             }
             return req->create_response().set_body(cp::serialize(result))
                 .append_header("Content-Type", "application/json; charset=utf-8")

@@ -16,11 +16,17 @@ struct ServerConfig {
     bool update_hashes;
 };
 
+struct Path {
+    std::string relative;
+    std::string absolute;
+};
+
 struct PagesConfig {
-    std::string wiki_path;
-    std::string user_avatars_path;
-    std::string admin_avatars_path;
-    std::string achivements_path;
+    Path wiki_path;
+    Path user_avatars_path;
+    Path admin_avatars_path;
+    Path achivements_path;
+    Path media_path;
     bool create_file;
 };
 class Config {
@@ -63,14 +69,20 @@ private:
         server_config.update_hashes = config_map["update_hashes"].GetBool();
 
         config_map.Parse(GetJson("./PagesConfig.json").c_str());
-        pages_config.wiki_path = current_path + config_map["wiki_path"].GetString();
-        pages_config.user_avatars_path = current_path + config_map["user_avatars_path"].GetString();
-        pages_config.admin_avatars_path = current_path + config_map["admin_avatars_path"].GetString();
-        pages_config.achivements_path = current_path + config_map["achivements_path"].GetString();
+        pages_config.media_path.absolute = current_path + config_map["media_path"].GetString();
+        pages_config.media_path.relative = config_map["media_path"].GetString();
+        pages_config.wiki_path.absolute = pages_config.media_path.absolute + config_map["wiki_path"].GetString();
+        pages_config.wiki_path.relative = config_map["wiki_path"].GetString();
+        pages_config.user_avatars_path.absolute = pages_config.media_path.absolute + config_map["user_avatars_path"].GetString();
+        pages_config.user_avatars_path.relative = config_map["user_avatars_path"].GetString();
+        pages_config.admin_avatars_path.absolute = pages_config.media_path.absolute + config_map["admin_avatars_path"].GetString();
+        pages_config.admin_avatars_path.relative = config_map["admin_avatars_path"].GetString();
+        pages_config.achivements_path.absolute = pages_config.media_path.absolute + config_map["achivements_path"].GetString();
+        pages_config.achivements_path.relative = config_map["achivements_path"].GetString();
         pages_config.create_file = config_map["create_file"].GetBool();
 
-        required_paths.push_back(pages_config.wiki_path);
-        required_paths.push_back(pages_config.admin_avatars_path);
+        required_paths.push_back(pages_config.wiki_path.absolute);
+        required_paths.push_back(pages_config.admin_avatars_path.absolute);
     }
 
 public:
