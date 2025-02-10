@@ -265,6 +265,16 @@ namespace user {
         }
         return user::starter_role(department_id, pool_ptr);
     }
+
+    void set_avatar(std::string username, std::string avatar, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {avatar, username};
+
+        con->execute_params("UPDATE \"user\" SET avatar_pic=($1) WHERE username=($2);", params, true);
+
+        pool_ptr->returnConnection(std::move(con));
+    }
 } // namespace user
 
 namespace user::server {
@@ -505,4 +515,43 @@ namespace user::server {
                 .done();
         });
     }
+
+    void all_avatars(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get("/user/all_avatars", [pool_ptr, logger_ptr](auto req, auto) {
+            std::vector<std::string> avatars;
+            for (const auto& entry : std::filesystem::directory_iterator(Config::giveMe().pages_config.user_avatars_path)) {
+                if (std::filesystem::is_regular_file(entry.status())) {
+                    std::cout << entry.path().filename().string() << std::endl;
+                }
+            }
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(avatars))
+                .done();
+        });
+    }
+
+    void set_avatar(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_put("/user/set_avatar", [pool_ptr, logger_ptr](auto req, auto) {
+            rapidjson::Document new_body;
+            new_body.Parse(req->body().c_str());
+
+            if (!new_body.HasMember("token") || !auth::is_authed(new_body["token"].GetString(), pool_ptr)) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (new_body.HasMember("avatar")) {
+                
+
+                return req->create_response()
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("ok")
+                .done();
+            } else {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+            return req->create_response(restinio::status_internal_server_error()).done();
+        });
+    }
+
 } // namespace user::server

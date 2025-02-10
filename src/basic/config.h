@@ -18,6 +18,9 @@ struct ServerConfig {
 
 struct PagesConfig {
     std::string wiki_path;
+    std::string user_avatars_path;
+    std::string admin_avatars_path;
+    std::string achivements_path;
     bool create_file;
 };
 class Config {
@@ -61,9 +64,13 @@ private:
 
         config_map.Parse(GetJson("./PagesConfig.json").c_str());
         pages_config.wiki_path = current_path + config_map["wiki_path"].GetString();
+        pages_config.user_avatars_path = current_path + config_map["user_avatars_path"].GetString();
+        pages_config.admin_avatars_path = current_path + config_map["admin_avatars_path"].GetString();
+        pages_config.achivements_path = current_path + config_map["achivements_path"].GetString();
         pages_config.create_file = config_map["create_file"].GetBool();
 
         required_paths.push_back(pages_config.wiki_path);
+        required_paths.push_back(pages_config.admin_avatars_path);
     }
 
 public:

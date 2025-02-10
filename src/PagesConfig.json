@@ -1,4 +1,7 @@
 {
     "wiki_path": "/pages/wiki/",
+    "user_avatars_path": "/pages/images/avatars/",
+    "admin_avatars_path": "/pages/images/avatars/",
+    "achivements_path": "/pages/images/achivements/",
     "create_file": true
 }

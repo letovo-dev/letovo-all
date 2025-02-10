@@ -16,6 +16,7 @@
 namespace cp {
     std::string serialize(pqxx::result res);
     std::string serialize(pqxx::row res);
+    std::string serialize(std::vector<std::string> vec);
 
     struct connection_options {
         std::string dbname{};

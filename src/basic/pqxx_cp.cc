@@ -30,6 +30,18 @@ namespace cp {
         return res_str;
     }
 
+    std::string serialize(std::vector<std::string> vec) {
+        if(vec.empty()) {
+            return "{}";
+        }
+        std::string res_str = "{";
+        for (auto const& field : vec) {
+            res_str += '"' + field + "\",";
+        }
+        res_str[res_str.length() - 1] = '}';
+        return res_str;
+    }
+
     AsyncConnection::AsyncConnection(const connection_options& options, std::string name)
         : name(name)
     {
