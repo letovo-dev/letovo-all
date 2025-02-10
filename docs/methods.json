@@ -51,10 +51,14 @@
         "header_fields": []
     },
     "/achivements/pictures": {
-        "method": "get"
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
     },
     "/media/get/:filename(.*)": {
-        "method": "get"
+        "method": "get",
+        "body_fields": {},
+        "header_fields": []
     },
     "/post/:id(\\d+)": {
         "method": "get",
@@ -111,7 +115,9 @@
         ]
     },
     "/post/favourite/:id(\\d+)": {
-        "method": "delete"
+        "method": "delete",
+        "body_fields": {},
+        "header_fields": []
     },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get",
@@ -189,7 +195,8 @@
         "body_fields": {
             "token": "String",
             "avatar": "String"
-        }
+        },
+        "header_fields": []
     },
     "/auth/login": {
         "method": "post",
@@ -273,7 +280,8 @@
         "body_fields": {
             "token": "String",
             "input": "String"
-        }
+        },
+        "header_fields": []
     },
     "/actives/all_actives": {
         "method": "get",
@@ -305,6 +313,7 @@
     },
     "/actives/user_history": {
         "method": "get",
+        "body_fields": {},
         "header_fields": [
             "user_name"
         ]
@@ -330,6 +339,7 @@
     },
     "/deals/users_bids": {
         "method": "get",
+        "body_fields": {},
         "header_fields": [
             "Bearer"
         ]
@@ -352,6 +362,7 @@
     },
     "/transactions/get/": {
         "method": "get",
+        "body_fields": {},
         "header_fields": [
             "Bearer"
         ]

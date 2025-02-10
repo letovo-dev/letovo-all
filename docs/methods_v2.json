@@ -34,6 +34,80 @@
             "body": null
         }
     },
+    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get",
+            "body_fields": {},
+            "header_fields": []
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "id": "5",
+                        "username": "scv-7",
+                        "achivement_id": "2",
+                        "datetime": "2025-01-16 00:32:04.305811",
+                        "stage": "1",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "4",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "3",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "1",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "0",
+                        "stages": "1"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
     "/achivements/add": {
         "request": {
             "method": "post",
@@ -162,6 +236,30 @@
             "header_fields": []
         },
         "response": {}
+    },
+    "/achivements/pictures": {
+        "request": {
+            "method": "get",
+            "body_fields": {},
+            "header_fields": []
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    "/images/achivements/example_1.jpg",
+                    "/images/achivements/example_2.jpg"
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
     },
     "/media/get/:filename(.*)": {
         "request": {
@@ -486,7 +584,7 @@
         },
         "response": {
             "status_code": 200,
-            "text": 11,
+            "text": "11",
             "headers": [
                 "Server",
                 "Date",
@@ -496,6 +594,41 @@
             ],
             "body": null
         }
+    },
+    "/user/all_avatars": {
+        "request": {
+            "method": "get",
+            "body_fields": {},
+            "header_fields": []
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    "/images/avatars/example_1.jpeg",
+                    "/images/avatars/example_2.jpg"
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/set_avatar": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "token": "String",
+                "avatar": "String"
+            },
+            "header_fields": []
+        },
+        "response": {}
     },
     "/auth/login": {
         "request": {

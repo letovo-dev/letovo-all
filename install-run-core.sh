@@ -6,7 +6,7 @@ build_files=""
 checks_flag=true
 run_flag=true
 logging=true
-
+generate=false
 # Read and parse BuildConfig.json
 config_file="./BuildConfig.json"
 
@@ -27,7 +27,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'ptoifds:h' OPTION; do
+while getopts 'gptoifds:h' OPTION; do
     case "$OPTION" in
         i) 
             ehco "installing"
@@ -57,6 +57,10 @@ while getopts 'ptoifds:h' OPTION; do
             echo "pulling changes from git"
             git pull origin main
             ;;
+        g)
+            echo "generate methods.json"
+            generate=true
+            ;;
         h)
             echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o]"
             echo "Options:"
@@ -77,7 +81,9 @@ while getopts 'ptoifds:h' OPTION; do
 done
 
 if [ $run_flag = true ]; then
-    python3 ./docs/search_methods.py
+    if [ $generate = true ]; then
+        python3 ./docs/search_methods.py
+    fi
     export MAIN_FILE="$work_file"
     export BUILD_FILES="$build_files"
     echo "running $work_file"
