@@ -18,6 +18,7 @@ struct ServerConfig {
 
 struct PagesConfig {
     std::string wiki_path;
+    bool create_file;
 };
 class Config {
 public:
@@ -60,6 +61,7 @@ private:
 
         config_map.Parse(GetJson("./PagesConfig.json").c_str());
         pages_config.wiki_path = current_path + config_map["wiki_path"].GetString();
+        pages_config.create_file = config_map["create_file"].GetBool();
 
         required_paths.push_back(pages_config.wiki_path);
     }

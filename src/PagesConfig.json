@@ -1,3 +1,4 @@
 {
-    "wiki_path": "/pages/wiki/"
+    "wiki_path": "/pages/wiki/",
+    "create_file": true
 }

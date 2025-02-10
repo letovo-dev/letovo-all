@@ -170,7 +170,7 @@ namespace page::server {
                 }
                 
                 logger_ptr->info( [post_id]{return fmt::format("page added with id {}", post_id);});
-                if (new_map["author"].has_value()) 
+                if (new_map["author"].has_value() && Config::giveMe().pages_config.create_file) 
                     try {
                         assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::any_cast<std::string>(new_map["author"]), std::to_string(post_id), logger_ptr);
                     } catch (const std::exception& e) {
