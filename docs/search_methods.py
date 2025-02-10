@@ -39,8 +39,10 @@ def search_in_file(file_path):
     if last != "":
         res[last] = {}
         res[last]["method"] = last_method
-        res[last]["body_fields"] = fields
-        res[last]["header_fields"] = header_fields
+        if fields != {}:
+            res[last]["body_fields"] = fields
+        if header_fields != []:
+            res[last]["header_fields"] = header_fields
     return res
 
 

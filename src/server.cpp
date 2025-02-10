@@ -77,7 +77,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     user::server::set_users_department(router, pool_ptr, logger_ptr);
     user::server::all_departments(router, pool_ptr, logger_ptr);
     user::server::starter_role(router, pool_ptr, logger_ptr);
-    user::server::all_avatars(router, pool_ptr, logger_ptr);
+    user::server::all_avatars(router, logger_ptr);
     user::server::set_avatar(router, pool_ptr, logger_ptr);
 
     transactions::server::transfer(router, pool_ptr, logger_ptr);
@@ -91,6 +91,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     achivements::server::achivement_info(router, pool_ptr, logger_ptr);
     achivements::server::create_achivement(router, pool_ptr, logger_ptr);
     achivements::server::full_user_achivemets(router, pool_ptr, logger_ptr);
+    achivements::server::achivement_pictures(router, logger_ptr);
 
     media::server::get_file(router, pool_ptr, logger_ptr);
     

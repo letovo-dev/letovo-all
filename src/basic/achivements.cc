@@ -109,6 +109,16 @@ namespace achivements {
         pool_ptr->returnConnection(std::move(con));
         return id[0]["achivement_id"].as<int>();
     }
+
+    std::vector<std::string> achivement_pictures() {
+        std::vector<std::string> pictures;
+        for (const auto& entry : std::filesystem::directory_iterator(Config::giveMe().pages_config.achivements_path.absolute)) {
+            if (std::filesystem::is_regular_file(entry.status())) {
+                pictures.push_back(Config::giveMe().pages_config.achivements_path.relative + entry.path().filename().string());
+            }
+        }
+        return pictures;
+    }
 } // namespace achivements
 
 namespace achivements::server {
@@ -282,6 +292,14 @@ namespace achivements::server {
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
+        });
+    }
+
+    void achivement_pictures(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get("/achivements/pictures", [logger_ptr](auto req, auto) {
+            return req->create_response().set_body(cp::serialize(achivements::achivement_pictures()))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
         });
     }
 } // namespace achivements::server

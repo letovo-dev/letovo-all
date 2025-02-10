@@ -50,6 +50,8 @@ namespace user {
 
     void set_avatar(std::string username, std::string avatar, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
+    std::vector<std::string> all_avatars();
+
 } // namespace user
 
 namespace user::server {
@@ -73,7 +75,7 @@ namespace user::server {
 
     void starter_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
-    void all_avatars(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+    void all_avatars(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void set_avatar(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 } // namespace user::server
