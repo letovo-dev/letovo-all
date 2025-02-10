@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <unordered_set>
+#include "config.h"
 
 using namespace std;
 

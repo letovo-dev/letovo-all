@@ -21,7 +21,7 @@ namespace page {
     int add_page_by_content(bool is_secret, bool is_published, int likes, std::string title, std::string author, std::string text, std::string post_path, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         auto con = std::move(pool_ptr->getConnection());
         std::vector<std::string> params = {post_path, std::to_string(is_secret), std::to_string(is_published), std::to_string(likes), title, author, text};
-        pqxx::result result = con->execute_params("INSERT INTO \"posts\" (\"post_path\", \"is_secret\", \"is_published\", \"likes\", \"title\", \"author\", \"text\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING \"post_id\";", params);
+        pqxx::result result = con->execute_params("INSERT INTO \"posts\" (\"post_path\", \"is_secret\", \"is_published\", \"likes\", \"title\", \"author\", \"text\") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING \"post_id\";", params, true);
         pool_ptr->returnConnection(std::move(con));
         return result[0]["post_id"].as<int>();
     }
@@ -29,7 +29,7 @@ namespace page {
     int add_page_by_page(std::string post_path, std::string text, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         auto con = std::move(pool_ptr->getConnection());
         std::vector<std::string> params = {post_path};
-        pqxx::result result = con->execute_params("INSERT INTO \"posts\" (\"post_path\") VALUES ($1) RETURNING \"post_id\";", params);
+        pqxx::result result = con->execute_params("INSERT INTO \"posts\" (\"post_path\") VALUES ($1) RETURNING \"post_id\";", params, true);
         pool_ptr->returnConnection(std::move(con));
         assist::create_file(post_path, text, logger_ptr);
         return result[0]["post_id"].as<int>();
@@ -171,13 +171,28 @@ namespace page::server {
                 
                 logger_ptr->info( [post_id]{return fmt::format("page added with id {}", post_id);});
                 if (new_map["author"].has_value()) 
-                    assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::any_cast<std::string>(new_map["author"]), std::to_string(post_id), logger_ptr);
+                    try {
+                        assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::any_cast<std::string>(new_map["author"]), std::to_string(post_id), logger_ptr);
+                    } catch (const std::exception& e) {
+                        logger_ptr->error( [e]{return fmt::format("/post/add_page_content error: {}", e.what());});
+                        req->create_response(restinio::status_internal_server_error())
+                            .set_body("{\"error\": \"Internal server error\"}")
+                            .done();
+                    }
                 else 
-                    assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::to_string(post_id), logger_ptr);
-                return req->create_response()
-                .append_header("Content-Type", "application/json; charset=utf-8")
-                .set_body(cp::serialize(page::get_page_content(post_id, pool_ptr)))
-                .done();
+                    try {
+                        assist::create_mdx_from_template_file(path, std::any_cast<std::string>(new_map["title"]), std::to_string(post_id), logger_ptr);
+                    } catch (const std::exception& e) {
+                        logger_ptr->error( [e]{return fmt::format("/post/add_page_content error: {}", e.what());});
+                        req->create_response(restinio::status_internal_server_error())
+                            .set_body("{\"error\": \"Internal server error\"}")
+                            .done();
+                    }
+                logger_ptr->info( [post_id]{return fmt::format("page added with id {}", post_id);});
+                return req->create_response(restinio::status_ok())
+                    .append_header("Content-Type", "application/json; charset=utf-8")
+                    .set_body(cp::serialize(page::get_page_content(post_id, pool_ptr)))
+                    .done();
             }
             else {
                 logger_ptr->info( [endpoint]{return fmt::format("bad request from {}, not enough args", endpoint);});

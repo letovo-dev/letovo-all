@@ -5,19 +5,27 @@
 
     #include <fstream>
     #include "pqxx_cp.h"
+    #include <filesystem>
     #include "rapidjson/document.h"
 
-class ServerConfig {
-public:
+struct ServerConfig {
     std::string adress;
     int port;
     int thread_pool_size;
     std::string certs_path;
+    bool update_hashes;
+};
+
+struct PagesConfig {
+    std::string wiki_path;
 };
 class Config {
 public:
     cp::connection_options sql_config;
     ServerConfig server_config;
+    PagesConfig pages_config;
+    std::string current_path;
+    std::vector<std::string> required_paths;
 
     static Config& giveMe()
     {
@@ -33,9 +41,10 @@ private:
     };
 
     Config() {
+        current_path = std::filesystem::current_path().string();
+
         rapidjson::Document config_map;
         config_map.Parse(GetJson("./SqlConnectionConfig.json").c_str());
-
         sql_config.user = config_map["user"].GetString();
         sql_config.password = config_map["password"].GetString();
         sql_config.dbname = config_map["dbname"].GetString();
@@ -43,11 +52,16 @@ private:
         sql_config.connections_count = config_map["connections"].GetInt();
 
         config_map.Parse(GetJson("./ServerConfig.json").c_str());
-
         server_config.adress = config_map["adress"].GetString();
         server_config.port = config_map["port"].GetInt();
         server_config.thread_pool_size = config_map["thread_pool_size"].GetInt();
         server_config.certs_path = config_map["certs_path"].GetString();
+        server_config.update_hashes = config_map["update_hashes"].GetBool();
+
+        config_map.Parse(GetJson("./PagesConfig.json").c_str());
+        pages_config.wiki_path = current_path + config_map["wiki_path"].GetString();
+
+        required_paths.push_back(pages_config.wiki_path);
     }
 
 public:
