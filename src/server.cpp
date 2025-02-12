@@ -66,6 +66,8 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     auth::server::enable_delete(router, pool_ptr, logger_ptr);
     auth::server::is_user_active(router, pool_ptr, logger_ptr);
     auth::server::is_user(router, pool_ptr, logger_ptr);
+    auth::server::change_password(router, pool_ptr, logger_ptr);
+    auth::server::change_username(router, pool_ptr, logger_ptr);
 
     user::server::user_info(router, pool_ptr, logger_ptr);
     user::server::user_roles(router, pool_ptr, logger_ptr);
