@@ -1,9 +1,518 @@
 {
-    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+    "/auth/login": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "login": "String",
+                "password": "String"
+            }
+        },
+        "response": {}
+    },
+    "/auth/reg": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "login": "String",
+                "password": "String",
+                "temp_token": "String"
+            }
+        },
+        "response": {}
+    },
+    "/auth/amiauthed": {
         "request": {
             "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/auth/amiadmin": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/auth/isactive/:username(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/auth/isuser/:username(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/auth/delete": {
+        "request": {
+            "method": "delete",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/add_userrights": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "username": "String",
+                "rights": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/change_username": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "new_username": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/change_password/": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "unlogin": "Bool",
+                "new_password": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/add_user": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "token": "String",
+                "input": "String"
+            }
+        },
+        "response": {}
+    },
+    "/post/:id(\\d+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "post_id": "1",
+                        "post_path": "some_path",
+                        "is_secret": "f",
+                        "is_published": "t",
+                        "likes": "100",
+                        "title": "hello",
+                        "author": "none",
+                        "text": "text"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/post/author/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "username": "scv-7",
+                        "avatar_pic": ""
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/post/add_page_content": {
+        "request": {
+            "method": "post"
+        },
+        "response": {}
+    },
+    "/post/add_page": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "post_path": "String",
+                "text": "String"
+            }
+        },
+        "response": {}
+    },
+    "/post/update_likes": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "post_id": "Int",
+                "likes": "Int"
+            }
+        },
+        "response": {}
+    },
+    "/post/delete/:id(\\d+)": {
+        "request": {
+            "method": "delete",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite/": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "username": "scv-7",
+                        "post_id": "1"
+                    },
+                    {
+                        "username": "scv-7",
+                        "post_id": "35"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/post/favourite": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite/:id(\\d+)": {
+        "request": {
+            "method": "delete"
+        },
+        "response": {}
+    },
+    "/user/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "userid": "1762",
+                        "username": "scv-7",
+                        "userrights": "admin",
+                        "jointime": "2024-12-05 23:52:49.393567",
+                        "avatar_pic": "",
+                        "active": "t",
+                        "departmentid": "0",
+                        "rolename": "\u043f\u0438\u043f\u0430"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {}
+    },
+    "/user/add_role": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "token": "String",
+                "username": "String",
+                "role_id": "Int",
+                "role": "String",
+                "department": "Int"
+            }
+        },
+        "response": {}
+    },
+    "/user/delete_role": {
+        "request": {
+            "method": "delete"
+        },
+        "response": {}
+    },
+    "/user/create_role": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "token": "String",
+                "payment": "Int",
+                "role": "String",
+                "department": "Int",
+                "rang": "Int"
+            }
+        },
+        "response": {}
+    },
+    "/user/department/roles/:department([0-9]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "roleid": "11",
+                        "rolename": "starter",
+                        "rang": "0",
+                        "departmentid": "1",
+                        "payment": "-10"
+                    },
+                    {
+                        "roleid": "9",
+                        "rolename": "anyone",
+                        "rang": "1",
+                        "departmentid": "1",
+                        "payment": "100"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/department/name/:department([0-9]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "department": "somewhere"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/set_department": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "token": "String",
+                "department": "String",
+                "username": "String"
+            }
+        },
+        "response": {}
+    },
+    "/user/department/roles": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "departmentid": "0",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "departmentid": "1",
+                        "departmentname": "somewhere"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/department/start/:department(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": "11",
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/all_avatars": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    "/images/avatars/example_1.jpeg",
+                    "/images/avatars/example_2.jpg"
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/set_avatar": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "token": "String",
+                "avatar": "String"
+            }
+        },
+        "response": {}
+    },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
         },
         "response": {
             "status_code": 200,
@@ -36,9 +545,7 @@
     },
     "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
         "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "method": "get"
         },
         "response": {
             "status_code": 200,
@@ -115,8 +622,7 @@
                 "token": "String",
                 "username": "String",
                 "achivement_id": "Int"
-            },
-            "header_fields": []
+            }
         },
         "response": {}
     },
@@ -127,16 +633,13 @@
                 "token": "String",
                 "username": "String",
                 "achivement_id": "Int"
-            },
-            "header_fields": []
+            }
         },
         "response": {}
     },
     "/achivements/tree/:tree_id([0-9]+)": {
         "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "method": "get"
         },
         "response": {
             "status_code": 200,
@@ -192,9 +695,7 @@
     },
     "/achivements/info/:achivement_id([0-9]+)": {
         "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "method": "get"
         },
         "response": {
             "status_code": 200,
@@ -232,16 +733,13 @@
                 "pic": "String",
                 "description": "String",
                 "stages": "Int"
-            },
-            "header_fields": []
+            }
         },
         "response": {}
     },
     "/achivements/pictures": {
         "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "method": "get"
         },
         "response": {
             "status_code": 200,
@@ -263,306 +761,107 @@
     },
     "/media/get/:filename(.*)": {
         "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "method": "get"
         },
         "response": {}
     },
-    "/post/:id(\\d+)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    {
-                        "post_id": "1",
-                        "post_path": "some_path",
-                        "is_secret": "f",
-                        "is_published": "t",
-                        "likes": "100",
-                        "title": "hello",
-                        "author": "none",
-                        "text": "text"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/post/author/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    {
-                        "username": "scv-7",
-                        "avatar_pic": ""
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/post/add_page_content": {
-        "request": {
-            "method": "post",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/post/add_page": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "post_path": "String",
-                "text": "String"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/post/update_likes": {
-        "request": {
-            "method": "put",
-            "body_fields": {
-                "post_id": "Int",
-                "likes": "Int"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/post/delete/:id(\\d+)": {
-        "request": {
-            "method": "delete",
-            "body_fields": {},
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/post/favourite/": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/post/favourite": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "post_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/post/favourite/:id(\\d+)": {
-        "request": {
-            "method": "delete",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/user/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    {
-                        "userid": "1762",
-                        "username": "scv-7",
-                        "userrights": "admin",
-                        "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "",
-                        "active": "t",
-                        "departmentid": "0",
-                        "rolename": "\u043f\u0438\u043f\u0430"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/user/add_role": {
+    "/transactions/send": {
         "request": {
             "method": "post",
             "body_fields": {
                 "token": "String",
-                "username": "String",
-                "role_id": "Int",
-                "role": "String",
-                "department": "Int"
-            },
-            "header_fields": []
+                "receiver": "String",
+                "amount": "Int"
+            }
         },
         "response": {}
     },
-    "/user/delete_role": {
-        "request": {
-            "method": "delete",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/user/create_role": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "token": "String",
-                "payment": "Int",
-                "role": "String",
-                "department": "Int",
-                "rang": "Int"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/user/department/roles/:department([0-9]+)": {
+    "/transactions/balance/": {
         "request": {
             "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "text": 1800,
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/transactions/get/": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {
             "status_code": 200,
             "text": {
                 "result": [
                     {
-                        "roleid": "11",
-                        "rolename": "starter",
-                        "rang": "0",
-                        "departmentid": "1",
-                        "payment": "-10"
+                        "transactionid": "1",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-01-04 10:14:22.658979"
                     },
                     {
-                        "roleid": "9",
-                        "rolename": "anyone",
-                        "rang": "1",
-                        "departmentid": "1",
-                        "payment": "100"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/user/department/name/:department([0-9]+)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    {
-                        "department": "somewhere"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/user/set_department": {
-        "request": {
-            "method": "put",
-            "body_fields": {
-                "token": "String",
-                "department": "String",
-                "username": "String"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/user/department/roles": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    {
-                        "departmentid": "0",
-                        "departmentname": "nowhere"
+                        "transactionid": "2",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-01-04 10:15:45.232075"
                     },
                     {
-                        "departmentid": "1",
-                        "departmentname": "somewhere"
+                        "transactionid": "3",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-01-04 10:17:04.799216"
+                    },
+                    {
+                        "transactionid": "4",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-01-04 10:17:56.438583"
+                    },
+                    {
+                        "transactionid": "5",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-01-04 10:18:57.781062"
+                    },
+                    {
+                        "transactionid": "6",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-01-04 10:19:40.911856"
+                    },
+                    {
+                        "transactionid": "7",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-6",
+                        "transactiontime": "2025-01-04 10:20:50.458302"
+                    },
+                    {
+                        "transactionid": "8",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-6",
+                        "transactiontime": "2025-01-31 14:12:14.814543"
                     }
                 ]
             },
@@ -575,243 +874,16 @@
             ],
             "body": null
         }
-    },
-    "/user/department/start/:department(.*)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": "11",
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/user/all_avatars": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    "/images/avatars/example_1.jpeg",
-                    "/images/avatars/example_2.jpg"
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/user/set_avatar": {
-        "request": {
-            "method": "put",
-            "body_fields": {
-                "token": "String",
-                "avatar": "String"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/auth/login": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "login": "String",
-                "password": "String"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/auth/reg": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "login": "String",
-                "password": "String",
-                "temp_token": "String"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/auth/amiauthed": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "status": "f"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/auth/amiadmin": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "status": "f"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/auth/isactive/:username(.*)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "status": "t"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/auth/isuser/:username(.*)": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
-        },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "status": "t"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
-    },
-    "/auth/delete": {
-        "request": {
-            "method": "delete",
-            "body_fields": {},
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/auth/add_userrights": {
-        "request": {
-            "method": "put",
-            "body_fields": {
-                "username": "String",
-                "rights": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/auth/change_username": {
-        "request": {
-            "method": "put",
-            "body_fields": {
-                "new_username": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/auth/change_password/": {
-        "request": {
-            "method": "put",
-            "body_fields": {
-                "unlogin": "Bool",
-                "new_password": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/auth/add_user": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "token": "String",
-                "input": "String"
-            },
-            "header_fields": []
-        },
-        "response": {}
     },
     "/actives/all_actives": {
         "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": []
+            "method": "get"
         },
         "response": {}
     },
     "/actives/active": {
         "request": {
             "method": "get",
-            "body_fields": {},
             "header_fields": [
                 "active_id",
                 "active_ticker"
@@ -822,7 +894,6 @@
     "/actives/history": {
         "request": {
             "method": "get",
-            "body_fields": {},
             "header_fields": [
                 "active_id",
                 "active_ticker"
@@ -833,7 +904,6 @@
     "/actives/user_actives": {
         "request": {
             "method": "get",
-            "body_fields": {},
             "header_fields": [
                 "user_name"
             ]
@@ -843,7 +913,6 @@
     "/actives/user_history": {
         "request": {
             "method": "get",
-            "body_fields": {},
             "header_fields": [
                 "user_name"
             ]
@@ -858,8 +927,7 @@
                 "price": "Int",
                 "amount": "Int",
                 "active": "String"
-            },
-            "header_fields": []
+            }
         },
         "response": {}
     },
@@ -870,47 +938,13 @@
                 "token": "String",
                 "price": "Int",
                 "bid_id": "Int"
-            },
-            "header_fields": []
+            }
         },
         "response": {}
     },
     "/deals/users_bids": {
         "request": {
             "method": "get",
-            "body_fields": {},
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/transactions/send": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "token": "String",
-                "receiver": "String",
-                "amount": "Int"
-            },
-            "header_fields": []
-        },
-        "response": {}
-    },
-    "/transactions/balance/": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/transactions/get/": {
-        "request": {
-            "method": "get",
-            "body_fields": {},
             "header_fields": [
                 "Bearer"
             ]

@@ -1,210 +1,10 @@
 {
-    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/add": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "username": "String",
-            "achivement_id": "Int"
-        },
-        "header_fields": []
-    },
-    "/achivements/delete": {
-        "method": "delete",
-        "body_fields": {
-            "token": "String",
-            "username": "String",
-            "achivement_id": "Int"
-        },
-        "header_fields": []
-    },
-    "/achivements/tree/:tree_id([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/info/:achivement_id([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/achivements/create": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "name": "String",
-            "tree_id": "Int",
-            "level": "Int",
-            "pic": "String",
-            "description": "String",
-            "stages": "Int"
-        },
-        "header_fields": []
-    },
-    "/achivements/pictures": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/media/get/:filename(.*)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/:id(\\d+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/author/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/add_page_content": {
-        "method": "post",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/post/add_page": {
-        "method": "post",
-        "body_fields": {
-            "post_path": "String",
-            "text": "String"
-        },
-        "header_fields": []
-    },
-    "/post/update_likes": {
-        "method": "put",
-        "body_fields": {
-            "post_id": "Int",
-            "likes": "Int"
-        },
-        "header_fields": []
-    },
-    "/post/delete/:id(\\d+)": {
-        "method": "delete",
-        "body_fields": {},
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/favourite/": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/favourite": {
-        "method": "post",
-        "body_fields": {
-            "post_id": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/favourite/:id(\\d+)": {
-        "method": "delete",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/add_role": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "username": "String",
-            "role_id": "Int",
-            "role": "String",
-            "department": "Int"
-        },
-        "header_fields": []
-    },
-    "/user/delete_role": {
-        "method": "delete",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/create_role": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "payment": "Int",
-            "role": "String",
-            "department": "Int",
-            "rang": "Int"
-        },
-        "header_fields": []
-    },
-    "/user/department/roles/:department([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/department/name/:department([0-9]+)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/set_department": {
-        "method": "put",
-        "body_fields": {
-            "token": "String",
-            "department": "String",
-            "username": "String"
-        },
-        "header_fields": []
-    },
-    "/user/department/roles": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/department/start/:department(.*)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/all_avatars": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
-    },
-    "/user/set_avatar": {
-        "method": "put",
-        "body_fields": {
-            "token": "String",
-            "avatar": "String"
-        },
-        "header_fields": []
-    },
     "/auth/login": {
         "method": "post",
         "body_fields": {
             "login": "String",
             "password": "String"
-        },
-        "header_fields": []
+        }
     },
     "/auth/reg": {
         "method": "post",
@@ -212,36 +12,28 @@
             "login": "String",
             "password": "String",
             "temp_token": "String"
-        },
-        "header_fields": []
+        }
     },
     "/auth/amiauthed": {
         "method": "get",
-        "body_fields": {},
         "header_fields": [
             "Bearer"
         ]
     },
     "/auth/amiadmin": {
         "method": "get",
-        "body_fields": {},
         "header_fields": [
             "Bearer"
         ]
     },
     "/auth/isactive/:username(.*)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
+        "method": "get"
     },
     "/auth/isuser/:username(.*)": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
+        "method": "get"
     },
     "/auth/delete": {
         "method": "delete",
-        "body_fields": {},
         "header_fields": [
             "Bearer"
         ]
@@ -280,17 +72,185 @@
         "body_fields": {
             "token": "String",
             "input": "String"
+        }
+    },
+    "/post/:id(\\d+)": {
+        "method": "get"
+    },
+    "/post/author/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get"
+    },
+    "/post/add_page_content": {
+        "method": "post"
+    },
+    "/post/add_page": {
+        "method": "post",
+        "body_fields": {
+            "post_path": "String",
+            "text": "String"
+        }
+    },
+    "/post/update_likes": {
+        "method": "put",
+        "body_fields": {
+            "post_id": "Int",
+            "likes": "Int"
+        }
+    },
+    "/post/delete/:id(\\d+)": {
+        "method": "delete",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/post/favourite/": {
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/post/favourite": {
+        "method": "post",
+        "body_fields": {
+            "post_id": "Int"
         },
-        "header_fields": []
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/post/favourite/:id(\\d+)": {
+        "method": "delete"
+    },
+    "/user/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get"
+    },
+    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get"
+    },
+    "/user/add_role": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "username": "String",
+            "role_id": "Int",
+            "role": "String",
+            "department": "Int"
+        }
+    },
+    "/user/delete_role": {
+        "method": "delete"
+    },
+    "/user/create_role": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "payment": "Int",
+            "role": "String",
+            "department": "Int",
+            "rang": "Int"
+        }
+    },
+    "/user/department/roles/:department([0-9]+)": {
+        "method": "get"
+    },
+    "/user/department/name/:department([0-9]+)": {
+        "method": "get"
+    },
+    "/user/set_department": {
+        "method": "put",
+        "body_fields": {
+            "token": "String",
+            "department": "String",
+            "username": "String"
+        }
+    },
+    "/user/department/roles": {
+        "method": "get"
+    },
+    "/user/department/start/:department(.*)": {
+        "method": "get"
+    },
+    "/user/all_avatars": {
+        "method": "get"
+    },
+    "/user/set_avatar": {
+        "method": "put",
+        "body_fields": {
+            "token": "String",
+            "avatar": "String"
+        }
+    },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get"
+    },
+    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
+        "method": "get"
+    },
+    "/achivements/add": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/delete": {
+        "method": "delete",
+        "body_fields": {
+            "token": "String",
+            "username": "String",
+            "achivement_id": "Int"
+        }
+    },
+    "/achivements/tree/:tree_id([0-9]+)": {
+        "method": "get"
+    },
+    "/achivements/info/:achivement_id([0-9]+)": {
+        "method": "get"
+    },
+    "/achivements/create": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "name": "String",
+            "tree_id": "Int",
+            "level": "Int",
+            "pic": "String",
+            "description": "String",
+            "stages": "Int"
+        }
+    },
+    "/achivements/pictures": {
+        "method": "get"
+    },
+    "/media/get/:filename(.*)": {
+        "method": "get"
+    },
+    "/transactions/send": {
+        "method": "post",
+        "body_fields": {
+            "token": "String",
+            "receiver": "String",
+            "amount": "Int"
+        }
+    },
+    "/transactions/balance/": {
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/transactions/get/": {
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/actives/all_actives": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": []
+        "method": "get"
     },
     "/actives/active": {
         "method": "get",
-        "body_fields": {},
         "header_fields": [
             "active_id",
             "active_ticker"
@@ -298,7 +258,6 @@
     },
     "/actives/history": {
         "method": "get",
-        "body_fields": {},
         "header_fields": [
             "active_id",
             "active_ticker"
@@ -306,14 +265,12 @@
     },
     "/actives/user_actives": {
         "method": "get",
-        "body_fields": {},
         "header_fields": [
             "user_name"
         ]
     },
     "/actives/user_history": {
         "method": "get",
-        "body_fields": {},
         "header_fields": [
             "user_name"
         ]
@@ -325,8 +282,7 @@
             "price": "Int",
             "amount": "Int",
             "active": "String"
-        },
-        "header_fields": []
+        }
     },
     "/deals/remove_bid": {
         "method": "delete",
@@ -334,35 +290,10 @@
             "token": "String",
             "price": "Int",
             "bid_id": "Int"
-        },
-        "header_fields": []
+        }
     },
     "/deals/users_bids": {
         "method": "get",
-        "body_fields": {},
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/transactions/send": {
-        "method": "post",
-        "body_fields": {
-            "token": "String",
-            "receiver": "String",
-            "amount": "Int"
-        },
-        "header_fields": []
-    },
-    "/transactions/balance/": {
-        "method": "get",
-        "body_fields": {},
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/transactions/get/": {
-        "method": "get",
-        "body_fields": {},
         "header_fields": [
             "Bearer"
         ]
