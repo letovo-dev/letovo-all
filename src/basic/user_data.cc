@@ -51,7 +51,7 @@ namespace user {
 
         std::vector<std::string> params = {username};
 
-        pqxx::result result = con->execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"roles\".departmentid, \"roles\".rolename from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);", params);
+        pqxx::result result = con->execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"roles\".departmentid, \"roles\".rolename, \"user\".registered from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);", params);
 
         pool_ptr->returnConnection(std::move(con));
 

@@ -54,7 +54,6 @@
             "new_username": "String"
         },
         "header_fields": [
-            "Authorization",
             "Bearer"
         ]
     },
@@ -73,6 +72,12 @@
         "body_fields": {
             "input": "String"
         },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/auth/register_true": {
+        "method": "put",
         "header_fields": [
             "Bearer"
         ]

@@ -43,8 +43,9 @@ namespace cp {
         return res_str;
     }
 
-    AsyncConnection::AsyncConnection(const connection_options& options, std::string name)
+    AsyncConnection::AsyncConnection(const connection_options& options, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr, std::string name)
         : name(name)
+        , logger_ptr_(logger_ptr)
     {
         connect_string = "dbname = " + options.dbname + " user = " + options.user + " password = " + options.password + " hostaddr = " + options.hostaddr + " port = " + options.port;
         con = std::make_shared<pqxx::connection>(connect_string);
@@ -55,6 +56,7 @@ namespace cp {
         con = db.con;
         name = db.name;
         last_used = std::chrono::system_clock::now();
+        logger_ptr_ = db.logger_ptr_;
     }
     pqxx::result AsyncConnection::query(const std::string& sql) {
         if (!is_open()) {
@@ -125,8 +127,12 @@ namespace cp {
         if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
-        pqxx::work w(*con);
-        pqxx::result r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
+        pqxx::work w(*con); pqxx::result r;
+        try {
+            r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
+        } catch (const std::exception& e) {
+            logger_ptr_->error([e, sql] { return fmt::format("Error: {} in {}", e.what(), sql); });
+        }
         if (commit) {
             w.commit();
         }
@@ -138,8 +144,12 @@ namespace cp {
         if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
-        pqxx::work w(*con);
-        pqxx::result r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
+        pqxx::work w(*con); pqxx::result r;
+        try {
+            r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
+        } catch (const std::exception& e) {
+            logger_ptr_->error([e, sql] { return fmt::format("Error: {} in {}", e.what(), sql); });
+        }
         if (commit) {
             w.commit();
         }
@@ -151,8 +161,12 @@ namespace cp {
         if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);
         }
-        pqxx::work w(*con);
-        pqxx::result r = w.exec(sql);
+        pqxx::work w(*con); pqxx::result r;
+        try {
+            r = w.exec(sql);
+        } catch (const std::exception& e) {
+            logger_ptr_->error([e, sql] { return fmt::format("Error: {} in {}", e.what(), sql); });
+        }
         if (commit) {
             w.commit();
         }
@@ -164,14 +178,16 @@ namespace cp {
         return last_used + std::chrono::seconds(60) > std::chrono::system_clock::now();
     }
 
-    ConnectionsManager::ConnectionsManager(const connection_options& options)
+    ConnectionsManager::ConnectionsManager(std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr, const connection_options& options)
         : options(options)
+        , logger_ptr_(logger_ptr)
         , numberOfConnections(options.connections_count)
     {
     }
 
-    ConnectionsManager::ConnectionsManager(const connection_options& options, int numberOfConnections)
+    ConnectionsManager::ConnectionsManager(std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr, const connection_options& options, int numberOfConnections)
         : options(options)
+        , logger_ptr_(logger_ptr)
         , numberOfConnections(numberOfConnections)
     {
     }
@@ -181,7 +197,7 @@ namespace cp {
 
     void ConnectionsManager::connect() {
         for (int i = 0; i < numberOfConnections; i++) {
-            std::unique_ptr<AsyncConnection> db_ptr = std::make_unique<AsyncConnection>(options, std::to_string(i));
+            std::unique_ptr<AsyncConnection> db_ptr = std::make_unique<AsyncConnection>(options, logger_ptr_, std::to_string(i));
             connections.push(std::move(db_ptr));
         }
     }

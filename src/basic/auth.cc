@@ -160,6 +160,18 @@ namespace auth {
 
         return true;
     }
+
+    bool register_true(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        std::vector<std::string> params = {username};
+
+        auto con = std::move(pool_ptr->getConnection());
+
+        con->execute_params("UPDATE \"user\" SET \"registered\"=true WHERE \"username\"=($1);", params, true);
+
+        pool_ptr->returnConnection(std::move(con));
+
+        return true;
+    }
 } // namespace auth
 
 namespace auth::server {
@@ -404,7 +416,6 @@ namespace auth::server {
         router.get()->http_put(R"(/auth/change_username)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
-                // std::cout << req->header().get_field("Authorization") << std::endl;
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
                 logger_ptr->error([e] { return fmt::format("{}", e.what()); });
@@ -513,6 +524,35 @@ namespace auth::server {
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
+        });
+    }
+
+    void register_true(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_put("/auth/register_true", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            std::string username = hashing::string_from_hash(token);
+
+            if (!auth::is_admin(token, pool_ptr)) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if (auth::register_true(username, pool_ptr)) {
+                return req->create_response().set_body("ok")
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .done();
+            } else {
+                return req->create_response(restinio::status_internal_server_error()).done();
+            }
+            
         });
     }
 } // namespace auth::server
