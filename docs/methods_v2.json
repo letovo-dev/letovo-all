@@ -30,7 +30,7 @@
         "response": {
             "status_code": 200,
             "text": {
-                "status": "t"
+                "status": "f"
             },
             "headers": [
                 "Server",
@@ -52,7 +52,7 @@
         "response": {
             "status_code": 200,
             "text": {
-                "status": "t"
+                "status": "f"
             },
             "headers": [
                 "Server",
@@ -131,12 +131,13 @@
                 "new_username": "String"
             },
             "header_fields": [
+                "Authorization",
                 "Bearer"
             ]
         },
         "response": {}
     },
-    "/auth/change_password/": {
+    "/auth/change_password": {
         "request": {
             "method": "put",
             "body_fields": {
@@ -153,9 +154,11 @@
         "request": {
             "method": "post",
             "body_fields": {
-                "token": "String",
                 "input": "String"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -255,29 +258,7 @@
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    {
-                        "username": "scv-7",
-                        "post_id": "1"
-                    },
-                    {
-                        "username": "scv-7",
-                        "post_id": "35"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
+        "response": {}
     },
     "/post/favourite": {
         "request": {
@@ -293,7 +274,10 @@
     },
     "/post/favourite/:id(\\d+)": {
         "request": {
-            "method": "delete"
+            "method": "delete",
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -337,12 +321,14 @@
         "request": {
             "method": "post",
             "body_fields": {
-                "token": "String",
                 "username": "String",
                 "role_id": "Int",
                 "role": "String",
                 "department": "Int"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -356,12 +342,14 @@
         "request": {
             "method": "post",
             "body_fields": {
-                "token": "String",
                 "payment": "Int",
                 "role": "String",
                 "department": "Int",
                 "rang": "Int"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -426,10 +414,12 @@
         "request": {
             "method": "put",
             "body_fields": {
-                "token": "String",
                 "department": "String",
                 "username": "String"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -504,9 +494,11 @@
         "request": {
             "method": "put",
             "body_fields": {
-                "token": "String",
                 "avatar": "String"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -619,10 +611,12 @@
         "request": {
             "method": "post",
             "body_fields": {
-                "token": "String",
                 "username": "String",
                 "achivement_id": "Int"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -630,10 +624,12 @@
         "request": {
             "method": "delete",
             "body_fields": {
-                "token": "String",
                 "username": "String",
                 "achivement_id": "Int"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -726,14 +722,16 @@
         "request": {
             "method": "post",
             "body_fields": {
-                "token": "String",
                 "name": "String",
                 "tree_id": "Int",
                 "level": "Int",
                 "pic": "String",
                 "description": "String",
                 "stages": "Int"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -769,10 +767,12 @@
         "request": {
             "method": "post",
             "body_fields": {
-                "token": "String",
                 "receiver": "String",
                 "amount": "Int"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -783,18 +783,7 @@
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "text": 1800,
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
+        "response": {}
     },
     "/transactions/get/": {
         "request": {
@@ -803,77 +792,7 @@
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "text": {
-                "result": [
-                    {
-                        "transactionid": "1",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-01-04 10:14:22.658979"
-                    },
-                    {
-                        "transactionid": "2",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-01-04 10:15:45.232075"
-                    },
-                    {
-                        "transactionid": "3",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-01-04 10:17:04.799216"
-                    },
-                    {
-                        "transactionid": "4",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-01-04 10:17:56.438583"
-                    },
-                    {
-                        "transactionid": "5",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-01-04 10:18:57.781062"
-                    },
-                    {
-                        "transactionid": "6",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-01-04 10:19:40.911856"
-                    },
-                    {
-                        "transactionid": "7",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-6",
-                        "transactiontime": "2025-01-04 10:20:50.458302"
-                    },
-                    {
-                        "transactionid": "8",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-6",
-                        "transactiontime": "2025-01-31 14:12:14.814543"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ],
-            "body": null
-        }
+        "response": {}
     },
     "/actives/all_actives": {
         "request": {
@@ -923,11 +842,13 @@
         "request": {
             "method": "post",
             "body_fields": {
-                "token": "String",
                 "price": "Int",
                 "amount": "Int",
                 "active": "String"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },
@@ -935,10 +856,12 @@
         "request": {
             "method": "delete",
             "body_fields": {
-                "token": "String",
                 "price": "Int",
                 "bid_id": "Int"
-            }
+            },
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {}
     },

@@ -54,10 +54,11 @@
             "new_username": "String"
         },
         "header_fields": [
+            "Authorization",
             "Bearer"
         ]
     },
-    "/auth/change_password/": {
+    "/auth/change_password": {
         "method": "put",
         "body_fields": {
             "unlogin": "Bool",
@@ -70,9 +71,11 @@
     "/auth/add_user": {
         "method": "post",
         "body_fields": {
-            "token": "String",
             "input": "String"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/post/:id(\\d+)": {
         "method": "get"
@@ -119,7 +122,10 @@
         ]
     },
     "/post/favourite/:id(\\d+)": {
-        "method": "delete"
+        "method": "delete",
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get"
@@ -130,12 +136,14 @@
     "/user/add_role": {
         "method": "post",
         "body_fields": {
-            "token": "String",
             "username": "String",
             "role_id": "Int",
             "role": "String",
             "department": "Int"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/user/delete_role": {
         "method": "delete"
@@ -143,12 +151,14 @@
     "/user/create_role": {
         "method": "post",
         "body_fields": {
-            "token": "String",
             "payment": "Int",
             "role": "String",
             "department": "Int",
             "rang": "Int"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/user/department/roles/:department([0-9]+)": {
         "method": "get"
@@ -159,10 +169,12 @@
     "/user/set_department": {
         "method": "put",
         "body_fields": {
-            "token": "String",
             "department": "String",
             "username": "String"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/user/department/roles": {
         "method": "get"
@@ -176,9 +188,11 @@
     "/user/set_avatar": {
         "method": "put",
         "body_fields": {
-            "token": "String",
             "avatar": "String"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "method": "get"
@@ -189,18 +203,22 @@
     "/achivements/add": {
         "method": "post",
         "body_fields": {
-            "token": "String",
             "username": "String",
             "achivement_id": "Int"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/achivements/delete": {
         "method": "delete",
         "body_fields": {
-            "token": "String",
             "username": "String",
             "achivement_id": "Int"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/achivements/tree/:tree_id([0-9]+)": {
         "method": "get"
@@ -211,14 +229,16 @@
     "/achivements/create": {
         "method": "post",
         "body_fields": {
-            "token": "String",
             "name": "String",
             "tree_id": "Int",
             "level": "Int",
             "pic": "String",
             "description": "String",
             "stages": "Int"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/achivements/pictures": {
         "method": "get"
@@ -229,10 +249,12 @@
     "/transactions/send": {
         "method": "post",
         "body_fields": {
-            "token": "String",
             "receiver": "String",
             "amount": "Int"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/transactions/balance/": {
         "method": "get",
@@ -278,19 +300,23 @@
     "/deals/add_bid": {
         "method": "post",
         "body_fields": {
-            "token": "String",
             "price": "Int",
             "amount": "Int",
             "active": "String"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/deals/remove_bid": {
         "method": "delete",
         "body_fields": {
-            "token": "String",
             "price": "Int",
             "bid_id": "Int"
-        }
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/deals/users_bids": {
         "method": "get",

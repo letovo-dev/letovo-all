@@ -29,10 +29,10 @@ def requestUrl(url: str) -> str:
             url = url + str(ID)
     return url
 
-def formatHeaders(headers: list) -> dict:
+def formatHeaders(headers: list[str]) -> dict:
     header = {}
     for item in headers:
-        if item == "Bearer":
+        if item.lower() == "Bearer".lower():
             header["Bearer"] = TOKEN
     return header
 
