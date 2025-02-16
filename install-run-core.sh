@@ -27,7 +27,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'gptoifds:h' OPTION; do
+while getopts 'gptoifdhs:' OPTION; do
     case "$OPTION" in
         i) 
             ehco "installing"
@@ -71,6 +71,7 @@ while getopts 'gptoifds:h' OPTION; do
             echo "  -d: run with debug keys"
             echo "  -o: console output"
             echo "  -s: skip pre-run checks"
+            echo "  -g: generate methods.json"
             exit 0
             ;;
         ?)
@@ -82,7 +83,8 @@ done
 
 if [ $run_flag = true ]; then
     if [ $generate = true ]; then
-        python3 ./docs/search_methods.py
+        .venv/bin/python3 ./docs/search_methods.py
+        exit 0
     fi
     export MAIN_FILE="$work_file"
     export BUILD_FILES="$build_files"
@@ -100,6 +102,8 @@ if [ $run_flag = true ]; then
         ./server_starter
     fi
 else
+    python3 -m venv .venv
+    .venv/bin/pip3 install -r ./requirements.txt
     # detect system packet manager
     declare -A osInfo;
     osInfo[/etc/arch-release]="pacman -S"

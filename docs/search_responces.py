@@ -1,7 +1,6 @@
 import json
 import requests
 import re
-import time
 
 USERNAME = "scv-7"
 PASSWORD = "7"
@@ -9,7 +8,10 @@ TOKEN = "5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9"
 URL = "http://127.0.0.1/api/"
 ID = 1
 REGEX_LINE = re.compile(r":.*\)")
-with open("methods.json", "r") as file:
+METHODS_FILE = "./docs/methods.json"
+RESPONSES_FILE = "./docs/methods_v2.json"
+
+with open(METHODS_FILE, "r") as file:
     SEARCH_REQUESTS = json.load(file)
 
 def requestUrl(url: str) -> str:
@@ -36,7 +38,9 @@ def formatHeaders(headers: list) -> dict:
 
 def sendRequest(url: str, data: dict) -> requests.Response:
     url = requestUrl(url)
-    headers = formatHeaders(data["header_fields"])
+    headers = {}
+    if "header_fields" in data:
+        headers = formatHeaders(data["header_fields"])
     if data["method"] == "get" and url:
         response = requests.get(URL + url, headers=headers, verify=False)
         return response
@@ -65,5 +69,5 @@ if __name__ == "__main__":
             if response.request.body != "":
                 result[url]["response"]["body"] = response.request.body
         # time.sleep(0.1)
-    with open("methods_v2.json", "w") as file:
+    with open(RESPONSES_FILE, "w") as file:
         json.dump(result, file, indent=4)

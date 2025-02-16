@@ -29,11 +29,18 @@ struct PagesConfig {
     Path media_path;
     bool create_file;
 };
+
+struct MarketConfig {
+    int bid_resolver_sleep_time;
+    std::string junk_user;
+};
+
 class Config {
 public:
     cp::connection_options sql_config;
     ServerConfig server_config;
     PagesConfig pages_config;
+    MarketConfig market_config;
     std::string current_path;
     std::vector<std::string> required_paths;
 
@@ -80,6 +87,10 @@ private:
         pages_config.achivements_path.absolute = pages_config.media_path.absolute + config_map["achivements_path"].GetString();
         pages_config.achivements_path.relative = config_map["achivements_path"].GetString();
         pages_config.create_file = config_map["create_file"].GetBool();
+
+        config_map.Parse(GetJson("./MarketConfig.json").c_str());
+        market_config.bid_resolver_sleep_time = config_map["bid_resolver_sleep_time"].GetInt();
+        market_config.junk_user = config_map["junk_user"].GetString();
 
         required_paths.push_back(pages_config.wiki_path.absolute);
         required_paths.push_back(pages_config.admin_avatars_path.absolute);
