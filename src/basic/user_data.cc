@@ -338,15 +338,24 @@ namespace user::server {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
-            std::string token = new_body["token"].GetString();
-
-            logger_ptr->info([token, pool_ptr] { return fmt::format("token = {}, admin = {}", token, auth::is_admin(token, pool_ptr)); });
-
-            if (!new_body.HasMember("username") || !new_body.HasMember("token")) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
-            if (!auth::is_admin(new_body["token"].GetString(), pool_ptr)) {
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            logger_ptr->info([token, pool_ptr] { return fmt::format("token = {}, admin = {}", token, auth::is_admin(token, pool_ptr)); });
+
+            if (!new_body.HasMember("username")) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (!auth::is_admin(token, pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (new_body.HasMember("role_id")) {
@@ -379,7 +388,18 @@ namespace user::server {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
-            if (!new_body.HasMember("token") || !auth::is_admin(new_body["token"].GetString(), pool_ptr)) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if ((token, pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -453,8 +473,18 @@ namespace user::server {
         router.get()->http_put("/user/set_department", [pool_ptr, logger_ptr](auto req, auto) {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
 
-            if (!new_body.HasMember("token") || !auth::is_admin(new_body["token"].GetString(), pool_ptr)) {
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (!auth::is_admin(token, pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             int result;
@@ -540,12 +570,22 @@ namespace user::server {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
-            if (!new_body.HasMember("token") || !auth::is_authed(new_body["token"].GetString(), pool_ptr)) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if (!auth::is_authed(token, pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (new_body.HasMember("avatar")) {
-                user::set_avatar(auth::get_username(new_body["token"].GetString(), pool_ptr), new_body["avatar"].GetString(), pool_ptr);
+                user::set_avatar(auth::get_username(token, pool_ptr), new_body["avatar"].GetString(), pool_ptr);
 
                 return req->create_response()
                 .append_header("Content-Type", "text/plain; charset=utf-8")

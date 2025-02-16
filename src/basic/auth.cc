@@ -490,7 +490,18 @@ namespace auth::server {
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
-            if (!new_body.HasMember("token") || !auth::is_admin(new_body["token"].GetString(), pool_ptr)) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (!auth::is_admin(token, pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (new_body.HasMember("input")) {
