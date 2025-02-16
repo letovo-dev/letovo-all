@@ -2,6 +2,8 @@ import os
 import re
 import json
 
+ROOT_PATH = "./src/"
+
 
 def search_in_file(file_path):
     print("--")
@@ -25,8 +27,10 @@ def search_in_file(file_path):
                         print(f"Duplicate method {last} in file {file_path}")
                     res[last] = {}
                     res[last]["method"] = last_method
-                    res[last]["body_fields"] = fields
-                    res[last]["header_fields"] = header_fields
+                    if fields != {}:
+                        res[last]["body_fields"] = fields
+                    if header_fields != []:
+                        res[last]["header_fields"] = header_fields
                 last = method_match.group(2)
                 last_method = method_match.group(1)
                 fields = {}
@@ -39,25 +43,32 @@ def search_in_file(file_path):
     if last != "":
         res[last] = {}
         res[last]["method"] = last_method
-        res[last]["body_fields"] = fields
-        res[last]["header_fields"] = header_fields
+        if fields != {}:
+            res[last]["body_fields"] = fields
+        if header_fields != []:
+            res[last]["header_fields"] = header_fields
     return res
+
+
+def config_files():
+    config = json.load(open("BuildConfig.json"))
+    files = [ROOT_PATH + x for x in config["build_files"]]
+    return files
 
 
 def search(directory):
     results = {}
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file[-3:] != ".cc":
-                continue
-            file_path = os.path.join(root, file)
-            # try:
-            print(f"Reading file {file_path}, {os.path.exists(file_path)}")
-            try:
-                results.update(search_in_file(file_path))
-            except UnicodeDecodeError:
-                pass
-                # print(f"Error reading file {file_path}")
+
+    for file in config_files():
+        if file[-3:] != ".cc":
+            continue
+        # try:
+        print(f"Reading file {file}, {os.path.exists(file)}")
+        try:
+            results.update(search_in_file(file))
+        except UnicodeDecodeError:
+            pass
+            # print(f"Error reading file {file_path}")
     return results
 
 
