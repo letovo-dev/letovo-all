@@ -10,6 +10,7 @@
 #include <vector>
 #include <pqxx/pqxx>
 #include <chrono>
+#include <restinio/all.hpp>
 #include <condition_variable>
 #include <string>
 
@@ -30,11 +31,11 @@ namespace cp {
     class AsyncConnection {
     public:
         std::chrono::time_point<std::chrono::system_clock> last_used;
-        AsyncConnection(const connection_options& options, std::string name);
-        AsyncConnection(const AsyncConnection& db);
-        pqxx::result query(const std::string& sql);
-        void prepare(const std::string& sql);
-        void prepare(const std::string& _name, const std::string& sql);
+        AsyncConnection(const AsyncConnection&);
+        AsyncConnection(const connection_options&, std::shared_ptr<restinio::shared_ostream_logger_t>, std::string);
+        pqxx::result query(const std::string&);
+        void prepare(const std::string&);
+        void prepare(const std::string&, const std::string&);
         pqxx::result execute_params(const std::string& sql, std::vector<std::string>& params, bool commit = false);
         pqxx::result execute_params(const std::string& sql, std::vector<int>& params, bool commit = false);
         pqxx::result execute_prepared(int&& args);
@@ -44,6 +45,7 @@ namespace cp {
         pqxx::result execute(const std::string& sql, bool commit = false);
     private:
         std::shared_ptr<pqxx::connection> con;
+        std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr_;
         std::string connect_string;
         bool free;
         std::string name;
@@ -51,14 +53,15 @@ namespace cp {
     };
     class ConnectionsManager {
     public:
-        ConnectionsManager(const connection_options& options, int numberOfConnections);
-        ConnectionsManager(const connection_options& options);
+        ConnectionsManager(std::shared_ptr<restinio::shared_ostream_logger_t>, const connection_options&, int);
+        ConnectionsManager(std::shared_ptr<restinio::shared_ostream_logger_t>, const connection_options&);
         ConnectionsManager();
         void connect();
         std::unique_ptr<AsyncConnection> getConnection();
         void returnConnection(std::unique_ptr<AsyncConnection> db_ptr);
     private:
         connection_options options;
+        std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr_;
         int numberOfConnections;
         std::queue<std::unique_ptr<AsyncConnection>> connections;
         std::thread worker;

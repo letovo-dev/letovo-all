@@ -131,7 +131,6 @@
                 "new_username": "String"
             },
             "header_fields": [
-                "Authorization",
                 "Bearer"
             ]
         },
@@ -156,6 +155,15 @@
             "body_fields": {
                 "input": "String"
             },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/register_true": {
+        "request": {
+            "method": "put",
             "header_fields": [
                 "Bearer"
             ]
@@ -297,7 +305,8 @@
                         "avatar_pic": "",
                         "active": "t",
                         "departmentid": "0",
-                        "rolename": "\u043f\u0438\u043f\u0430"
+                        "rolename": "\u043f\u0438\u043f\u0430",
+                        "registered": "t"
                     }
                 ]
             },

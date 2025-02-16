@@ -40,10 +40,8 @@ void hi(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shar
     }); 
 }
 
-std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
     auto router = std::make_unique<router::express_router_t<>>();
-
-    auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
     
     hi(router, logger_ptr);
 
@@ -68,6 +66,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     auth::server::is_user(router, pool_ptr, logger_ptr);
     auth::server::change_password(router, pool_ptr, logger_ptr);
     auth::server::change_username(router, pool_ptr, logger_ptr);
+    auth::server::register_true(router, pool_ptr, logger_ptr);
 
     user::server::user_info(router, pool_ptr, logger_ptr);
     user::server::user_roles(router, pool_ptr, logger_ptr);
@@ -112,7 +111,9 @@ int main()
 {
     using namespace std::chrono;
 
-    std::shared_ptr<cp::ConnectionsManager> pool_ptr = std::make_shared<cp::ConnectionsManager>(Config::giveMe().sql_config);
+    auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
+
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr = std::make_shared<cp::ConnectionsManager>(logger_ptr, Config::giveMe().sql_config);
 
     prepare_paths();
 
@@ -120,7 +121,7 @@ int main()
 
     pre_run_checks::do_checks(pool_ptr);
 
-    auto router = create(pool_ptr);
+    auto router = create(pool_ptr, logger_ptr);
 
     using traits_t =
         restinio::single_thread_tls_traits_t<
