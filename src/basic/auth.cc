@@ -252,11 +252,11 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::is_authed(token, pool_ptr)) {
                 return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
@@ -276,11 +276,11 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::is_admin(token, pool_ptr)) {
                 return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
@@ -334,11 +334,11 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             std::string username = hashing::string_from_hash(token);
@@ -364,11 +364,11 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             std::string username = hashing::string_from_hash(token);
@@ -404,13 +404,15 @@ namespace auth::server {
         router.get()->http_put(R"(/auth/change_username)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
+                // std::cout << req->header().get_field("Authorization") << std::endl;
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                logger_ptr->error([e] { return fmt::format("{}", e.what()); });
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (!is_authed(token, pool_ptr)) {
@@ -418,6 +420,8 @@ namespace auth::server {
             }
 
             std::string username = hashing::string_from_hash(token);
+
+            logger_ptr->info([username] { return fmt::format("user {} change username request", username); });
 
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
@@ -438,16 +442,16 @@ namespace auth::server {
         });
     }
     void change_password(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_put("/auth/change_password/", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_put("/auth/change_password", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             std::string username = hashing::string_from_hash(token);

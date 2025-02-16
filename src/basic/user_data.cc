@@ -343,7 +343,7 @@ namespace user::server {
             logger_ptr->info([token, pool_ptr] { return fmt::format("token = {}, admin = {}", token, auth::is_admin(token, pool_ptr)); });
 
             if (!new_body.HasMember("username") || !new_body.HasMember("token")) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (!auth::is_admin(new_body["token"].GetString(), pool_ptr)) {

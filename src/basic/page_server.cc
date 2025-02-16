@@ -261,12 +261,12 @@ namespace page::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
             int post_id = std::stoi(url::get_last_url_arg(req->header().path()));
 
             if(token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
             if(!auth::is_authed(token, pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
@@ -322,7 +322,10 @@ namespace page::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
             }
             std::string username = auth::get_username(token, pool_ptr);
 
@@ -344,20 +347,23 @@ namespace page::server {
                 }
                 logger_ptr->info( [endpoint]{return fmt::format("favourite post added from {}", endpoint);});
                 return req->create_response().done();
-            }
-            else return req->create_response(restinio::status_non_authoritative_information()).done();
+            } else return req->create_response(restinio::status_non_authoritative_information()).done();
         });
     }
 
     void delete_favourite_post(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_delete(R"(/post/favourite/:id(\d+))", [pool_ptr, logger_ptr](auto req, auto) {
             std::vector<std::string> url_parts = url::spilt_url_path(req->header().path(), "/");
-
-            std::string token = url_parts[3];
+            std::string token;
+            try {
+                token = req->header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
             int post_id = std::stoi(url::get_last_url_arg(req->header().path()));
 
             if(token.empty()) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
+                return req->create_response(restinio::status_unauthorized()).done();
             }
             if(!auth::is_authed(token, pool_ptr)) {
                 return req->create_response(restinio::status_unauthorized()).done();
