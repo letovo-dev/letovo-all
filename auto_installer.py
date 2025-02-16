@@ -47,7 +47,7 @@ PURPLE = '\033[95m'
 CYAN = '\033[96m'
 WHITE = '\033[97m'
 echo = lambda values, color: (
-    print("%s%s%s" % (color, values, DEFAULT)) if color else print("%s%s" % (values, DEFAULT))
+    print('%s%s%s' % (color, values, DEFAULT)) if color else print('%s%s' % (values, DEFAULT))
 )  # noqa
 
 
@@ -59,28 +59,28 @@ exit_code = 0
 print(YELLOW + 'installing dependencies for sub-projects' + GREEN)
 
 for project in config['required_sub_repos']:
-    if not os.path.exists(os.path.join("src", project)):
-        print(RED + "\nerror! missing sub-repo: " + project)
+    if not os.path.exists(os.path.join('src', project)):
+        print(RED + '\nerror! missing sub-repo: ' + project)
         exit_code = 1
     else:
         try:
-            subprocess.run(["python3", "-m", "venv", "./venv"])
-            if os.path.exists(os.path.join("src", project, "requirements.txt")):
-                subprocess.run(["./venv/bin/pip3", "install", "-r", os.path.join("src", project, "requirements.txt")])
-            elif os.path.exists(os.path.join("src", project, "auto_installer.py")):
-                subprocess.run(["./venv/bin/python3", os.path.join("src", project, "auto_installer.py")])
+            subprocess.run(['python3', '-m', 'venv', './venv'])
+            if os.path.exists(os.path.join('src', project, 'requirements.txt')):
+                subprocess.run(['./venv/bin/pip3', 'install', '-r', os.path.join('src', project, 'requirements.txt')])
+            elif os.path.exists(os.path.join('src', project, 'auto_installer.py')):
+                subprocess.run(['./venv/bin/python3', os.path.join('src', project, 'auto_installer.py')])
             else:
-                print(YELLOW + "warning! missing requirements.txt for sub-repo: " + project)
+                print(YELLOW + 'warning! missing requirements.txt for sub-repo: ' + project)
         except Exception as e:
             pass
 
-print(WHITE + "\nchecking config files")
+print(WHITE + '\nchecking config files')
 
-with open("./src/SqlConnectionConfig.json") as f:
+with open('./src/SqlConnectionConfig.json') as f:
     sql_config = json.load(f)
 
-if "default" in sql_config["password"]:
-    print(RED + "\nerror! please change the default password in SqlConnectionConfig.json")
+if 'default' in sql_config['password']:
+    print(RED + '\nerror! please change the default password in SqlConnectionConfig.json')
     exit_code = 1
 
 with open('./src/letovo-secrets/src/config.json') as f:
@@ -89,15 +89,15 @@ with open('./src/letovo-secrets/src/config.json') as f:
 if bot_config['token'] == '':
     print(
         RED
-        + "\nerror! token missing in bot config!\n"
+        + '\nerror! token missing in bot config!\n'
         + WHITE
-        + "hint: you can add placeholder to bypass this error if you dont have an intention to use bot"
+        + 'hint: you can add placeholder to bypass this error if you dont have an intention to use bot'
     )
     exit_code = 1
 
 if exit_code == 0:
-    print(WHITE + "all dependencies are installed")
+    print(WHITE + 'all dependencies are installed')
 else:
-    print(RED + "\nerror! please check the logs above\n")
+    print(RED + '\nerror! please check the logs above\n')
 
 exit(exit_code)

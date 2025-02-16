@@ -1,24 +1,24 @@
 {
-    "test_file": "test.cpp",
-    "work_file": "server.cpp",
-    "required_sub_repos": {
-        "letovo-secrets" : "https://github.com/letovo-dev/letovo-secrets.git", 
-        "letovo-wiki": "https://github.com/letovo-dev/letovo-wiki.git"
-    },
-    "build_files": [ 
-                        "basic/auth.cc", 
-                        "basic/utils.cc", 
-                        "basic/pqxx_cp.cc", 
-                        "basic/hash.cc", 
-                        "basic/assist_funcs.cc", 
-                        "basic/page_server.cc", 
-                        "basic/url_parser.cc",
-                        "basic/user_data.cc",
-                        "basic/checks.cc",
-                        "basic/achivements.cc",
-                        "basic/media.cc",
-                        "market/transactions.cc",
-                        "market/actives.cc",
-                        "market/DOM.cc"
-                    ]
+  "build_files": [
+    "basic/auth.cc",
+    "basic/utils.cc",
+    "basic/pqxx_cp.cc",
+    "basic/hash.cc",
+    "basic/assist_funcs.cc",
+    "basic/page_server.cc",
+    "basic/url_parser.cc",
+    "basic/user_data.cc",
+    "basic/checks.cc",
+    "basic/achivements.cc",
+    "basic/media.cc",
+    "market/transactions.cc",
+    "market/actives.cc",
+    "market/DOM.cc"
+  ],
+  "required_sub_repos": {
+    "letovo-secrets": "https://github.com/letovo-dev/letovo-secrets.git",
+    "letovo-wiki": "https://github.com/letovo-dev/letovo-wiki.git"
+  },
+  "test_file": "test.cpp",
+  "work_file": "server.cpp"
 }

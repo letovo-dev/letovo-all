@@ -1,8 +1,8 @@
 {
-    "media_path": "/pages/",
-    "wiki_path": "/wiki/",
-    "user_avatars_path": "/images/avatars/",
-    "admin_avatars_path": "/images/avatars/",
-    "achivements_path": "/images/achivements/",
-    "create_file": true
+  "achivements_path": "/images/achivements/",
+  "admin_avatars_path": "/images/avatars/",
+  "create_file": true,
+  "media_path": "/pages/",
+  "user_avatars_path": "/images/avatars/",
+  "wiki_path": "/wiki/"
 }
