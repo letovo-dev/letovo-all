@@ -1,7 +1,7 @@
+#include <iostream>
 #include <restinio/all.hpp>
 #include <restinio/tls.hpp>
 #include "rapidjson/document.h"
-#include <iostream>
 
 // do i need this?
 #include <fmt/format.h>
@@ -10,39 +10,42 @@
 #include "./basic/checks.h"
 
 // server functions
+#include "./basic/achivements.h"
 #include "./basic/auth.h"
 #include "./basic/config.h"
-#include "./basic/user_data.h"
 #include "./basic/media.h"
-#include "./basic/achivements.h"
-#include "./market/transactions.h"
 #include "./basic/page_server.h"
+#include "./basic/user_data.h"
+#include "./market/transactions.h"
 
 #include <filesystem>
-namespace fs = std::filesystem; 
+namespace fs = std::filesystem;
 
 using namespace restinio;
 
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
 
-void hi(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-    router.get()->http_get(
-        "/hi",
-        [logger_ptr](auto req, auto) {
+void hi(
+    std::unique_ptr<restinio::router::express_router_t<>>& router,
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr
+) {
+    router.get()->http_get("/hi", [logger_ptr](auto req, auto) {
+        asio_ns::ip::tcp::endpoint endpoint = req->remote_endpoint();
 
-            asio_ns::ip::tcp::endpoint endpoint = req->remote_endpoint();
+        logger_ptr->info([] { return fmt::format("hi recieved"); });
 
-            logger_ptr->info( []{return fmt::format("hi recieved");});
-                        
-            std::cout<<"endpoint: "<<endpoint.address().to_string()<<std::endl;
-            return req->create_response().set_body(endpoint.address().to_string()).done();
-    }); 
+        std::cout << "endpoint: " << endpoint.address().to_string() << std::endl;
+        return req->create_response().set_body(endpoint.address().to_string()).done();
+    });
 }
 
-std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+std::unique_ptr<restinio::router::express_router_t<>> create(
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr,
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr
+) {
     auto router = std::make_unique<router::express_router_t<>>();
-    
+
     hi(router, logger_ptr);
 
     page::server::get_page_content(router, pool_ptr, logger_ptr);
@@ -95,51 +98,48 @@ std::unique_ptr<restinio::router::express_router_t<>> create(std::shared_ptr<cp:
     achivements::server::achivement_pictures(router, logger_ptr);
 
     media::server::get_file(router, pool_ptr, logger_ptr);
-    
+
     return router;
 }
 
 void prepare_paths() {
-    for(auto path : Config::giveMe().required_paths) {
+    for (auto path : Config::giveMe().required_paths) {
         if (!fs::exists(path)) {
             fs::create_directories(path);
         }
     }
 }
 
-int main()
-{
+int main() {
     using namespace std::chrono;
 
     auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
 
-    std::shared_ptr<cp::ConnectionsManager> pool_ptr = std::make_shared<cp::ConnectionsManager>(logger_ptr, Config::giveMe().sql_config);
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr =
+        std::make_shared<cp::ConnectionsManager>(logger_ptr, Config::giveMe().sql_config);
 
     prepare_paths();
 
-    pool_ptr -> connect();
+    pool_ptr->connect();
 
     pre_run_checks::do_checks(pool_ptr);
 
     auto router = create(pool_ptr, logger_ptr);
 
-    using traits_t =
-        restinio::single_thread_tls_traits_t<
-            restinio::asio_timer_manager_t,
-            restinio::single_threaded_ostream_logger_t,
-            restinio::router::express_router_t<> >;
+    using traits_t = restinio::single_thread_tls_traits_t<
+        restinio::asio_timer_manager_t,
+        restinio::single_threaded_ostream_logger_t,
+        restinio::router::express_router_t<>>;
 
-    struct traits: public default_traits_t
-    {
+    struct traits : public default_traits_t {
         using request_handler_t = restinio::router::express_router_t<>;
     };
-    
-    restinio::run(
-			restinio::on_thread_pool<traits>(Config::giveMe().server_config.thread_pool_size)
-				.address( Config::giveMe().server_config.adress )
-                .port( Config::giveMe().server_config.port )
-				.request_handler( move(router))
-                // .tls_context( std::move(tls_context) )
+
+    restinio::run(restinio::on_thread_pool<traits>(Config::giveMe().server_config.thread_pool_size)
+                      .address(Config::giveMe().server_config.adress)
+                      .port(Config::giveMe().server_config.port)
+                      .request_handler(move(router))
+                  // .tls_context( std::move(tls_context) )
     );
     return 0;
 }

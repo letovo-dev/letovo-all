@@ -2,35 +2,35 @@ import os
 import re
 import json
 
-ROOT_PATH = "./src/"
+ROOT_PATH = './src/'
 
 
 def search_in_file(file_path):
-    print("--")
+    print('--')
     with open(file_path, 'r') as file:
-        last = ""
-        last_method = ""
+        last = ''
+        last_method = ''
         res = {}
         fields = {}
-        method_pattern = re.compile(r"->http_(.*?)\(.*?(\/.*?)\)?\"")
-        body_pattern = r"body\[\"(.*?)\"\]\.Get(.*?)\(\)"
-        header_pattern = re.compile(r".*header\(\)\.get_field\(\"(.*?)\"")
+        method_pattern = re.compile(r'->http_(.*?)\(.*?(\/.*?)\)?\"')
+        body_pattern = r'body\[\"(.*?)\"\]\.Get(.*?)\(\)'
+        header_pattern = re.compile(r'.*header\(\)\.get_field\(\"(.*?)\"')
         for line in file:
-            if r"/transactions/get/" in line:
+            if r'/transactions/get/' in line:
                 pass
             method_match = method_pattern.search(line)
             body_match = re.findall(body_pattern, line)
             header_match = header_pattern.search(line)
             if method_match:
-                if last != "":
+                if last != '':
                     if last in res:
-                        print(f"Duplicate method {last} in file {file_path}")
+                        print(f'Duplicate method {last} in file {file_path}')
                     res[last] = {}
-                    res[last]["method"] = last_method
+                    res[last]['method'] = last_method
                     if fields != {}:
-                        res[last]["body_fields"] = fields
+                        res[last]['body_fields'] = fields
                     if header_fields != []:
-                        res[last]["header_fields"] = header_fields
+                        res[last]['header_fields'] = header_fields
                 last = method_match.group(2)
                 last_method = method_match.group(1)
                 fields = {}
@@ -40,19 +40,19 @@ def search_in_file(file_path):
                     fields[m[0]] = m[1]
             elif header_match:
                 header_fields.append(header_match.group(1))
-    if last != "":
+    if last != '':
         res[last] = {}
-        res[last]["method"] = last_method
+        res[last]['method'] = last_method
         if fields != {}:
-            res[last]["body_fields"] = fields
+            res[last]['body_fields'] = fields
         if header_fields != []:
-            res[last]["header_fields"] = header_fields
+            res[last]['header_fields'] = header_fields
     return res
 
 
 def config_files():
-    config = json.load(open("BuildConfig.json"))
-    files = [ROOT_PATH + x for x in config["build_files"]]
+    config = json.load(open('BuildConfig.json'))
+    files = [ROOT_PATH + x for x in config['build_files']]
     return files
 
 
@@ -60,10 +60,10 @@ def search(directory):
     results = {}
 
     for file in config_files():
-        if file[-3:] != ".cc":
+        if file[-3:] != '.cc':
             continue
         # try:
-        print(f"Reading file {file}, {os.path.exists(file)}")
+        print(f'Reading file {file}, {os.path.exists(file)}')
         try:
             results.update(search_in_file(file))
         except UnicodeDecodeError:
@@ -72,6 +72,6 @@ def search(directory):
     return results
 
 
-if __name__ == "__main__":
-    with open("./docs/methods.json", "w") as f:
-        f.write(json.dumps(search("./src"), indent=4))
+if __name__ == '__main__':
+    with open('./docs/methods.json', 'w') as f:
+        f.write(json.dumps(search('./src'), indent=4))
