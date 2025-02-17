@@ -18,7 +18,7 @@ namespace auth {
     bool is_authed(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
     bool is_admin(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
     bool is_user(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
-    bool is_admin_by_uname(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+    bool is_rights_by_username(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::string rights="admin");
     bool is_authed_by_body(std::string req_body, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
     bool auth(std::string token, std::string password, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
     bool reg(std::string username, std::string password_hash, std::string userid, std::shared_ptr<cp::ConnectionsManager> pool_ptr);

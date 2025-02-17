@@ -185,14 +185,17 @@ namespace achivements::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (!auth::is_admin(token, pool_ptr)) {
+                logger_ptr->info([]{return "not admin";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -216,14 +219,17 @@ namespace achivements::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (!auth::is_admin(token, pool_ptr)) {
+                logger_ptr->info([]{return "not admin";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -289,14 +295,17 @@ namespace achivements::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (!auth::is_admin(token, pool_ptr)) {
+                logger_ptr->info([]{return "not admin";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
