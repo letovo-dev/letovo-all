@@ -36,7 +36,7 @@ namespace auth {
     bool is_admin(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto decoded = hashing::string_from_hash(token);
 
-        return is_admin_by_uname(decoded, pool_ptr);
+        return is_rights_by_username(decoded, pool_ptr);
     }
 
     bool is_user(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
@@ -54,8 +54,8 @@ namespace auth {
         return true;
     }
 
-    bool is_admin_by_uname(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-        std::vector<std::string> params = {username, "admin"};
+    bool is_rights_by_username(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::string rights) {
+        std::vector<std::string> params = {username, rights};
 
         auto con = std::move(pool_ptr->getConnection());
 
@@ -259,15 +259,17 @@ namespace auth::server {
     }
 
     void am_i_authed(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiauthed)", [pool_ptr](auto req, auto) {
+        router.get()->http_get(R"(/auth/amiauthed)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::is_authed(token, pool_ptr)) {
@@ -283,15 +285,17 @@ namespace auth::server {
     }
 
     void am_i_admin(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/amiadmin)", [pool_ptr](auto req, auto) {
+        router.get()->http_get(R"(/auth/amiadmin)", [pool_ptr, logger_ptr](auto req, auto) {
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::is_admin(token, pool_ptr)) {
@@ -346,10 +350,12 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -376,10 +382,12 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -458,10 +466,12 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -505,14 +515,17 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (!auth::is_admin(token, pool_ptr)) {
+                logger_ptr->info([]{return "not admin";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (new_body.HasMember("input")) {
@@ -533,16 +546,19 @@ namespace auth::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
             std::string username = hashing::string_from_hash(token);
 
             if (!auth::is_admin(token, pool_ptr)) {
+                logger_ptr->info([]{return "not admin";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::register_true(username, pool_ptr)) {
