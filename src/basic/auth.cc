@@ -557,10 +557,6 @@ namespace auth::server {
 
             std::string username = hashing::string_from_hash(token);
 
-            if (!auth::is_admin(token, pool_ptr)) {
-                logger_ptr->info([]{return "not admin";});
-                return req->create_response(restinio::status_unauthorized()).done();
-            }
             if (auth::register_true(username, pool_ptr)) {
                 return req->create_response().set_body("ok")
                     .append_header("Content-Type", "text/plain; charset=utf-8")
