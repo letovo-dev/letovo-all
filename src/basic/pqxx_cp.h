@@ -28,6 +28,18 @@ namespace cp {
 
         int connections_count = 8;
     };
+
+    struct Request {
+        const std::string sql;
+        const std::vector<std::string> params;
+        bool commit = false;
+    };
+
+    enum struct Status {
+        OK,
+        ERROR,
+        EMPTY
+    };
     class AsyncConnection {
     public:
         std::chrono::time_point<std::chrono::system_clock> last_used;
@@ -36,7 +48,9 @@ namespace cp {
         pqxx::result query(const std::string&);
         void prepare(const std::string&);
         void prepare(const std::string&, const std::string&);
+        pqxx::result execute_params(Request);
         pqxx::result execute_params(const std::string& sql, std::vector<std::string>& params, bool commit = false);
+        pqxx::result execute_many(std::vector<Request>&);
         pqxx::result execute_params(const std::string& sql, std::vector<int>& params, bool commit = false);
         pqxx::result execute_prepared(int&& args);
         pqxx::result execute_prepared(const std::string&& args);

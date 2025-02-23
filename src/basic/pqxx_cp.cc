@@ -157,6 +157,45 @@ namespace cp {
         return r;
     }
 
+    pqxx::result AsyncConnection::execute_params(Request req) {
+        if (!is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        pqxx::work w(*con); pqxx::result r;
+        try {
+            r = w.exec_params(req.sql, pqxx::prepare::make_dynamic_params(req.params));
+        } catch (const std::exception& e) {
+            logger_ptr_->error([e, req] { return fmt::format("Error: {} in {}", e.what(), req.sql); });
+        }
+        if (req.commit) {
+            w.commit();
+        }
+        last_used = std::chrono::system_clock::now();
+        return r;
+    }
+
+    pqxx::result AsyncConnection::execute_many(std::vector<Request>& reqs) {
+        if (!is_open()) {
+            con = std::make_shared<pqxx::connection>(connect_string);
+        }
+        bool commit = false;
+        pqxx::work w(*con); pqxx::result r;
+        for (auto& req : reqs) {
+            try {
+                r = w.exec_params(req.sql, pqxx::prepare::make_dynamic_params(req.params));
+            } catch (const std::exception& e) {
+                logger_ptr_->error([e, req] { return fmt::format("Error: {} in {}", e.what(), req.sql); });
+            }
+            if (req.commit) {
+                commit = true;
+            }
+        }
+        if (commit)
+            w.commit();
+        last_used = std::chrono::system_clock::now();
+        return r;
+    }
+
     pqxx::result AsyncConnection::execute(const std::string& sql, bool commit) {
         if (!is_open()) {
             con = std::make_shared<pqxx::connection>(connect_string);

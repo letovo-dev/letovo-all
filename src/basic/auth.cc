@@ -452,7 +452,9 @@ namespace auth::server {
                 }
                 std::string new_token = hashing::hash_from_string(new_username);
                 logger_ptr->info([username, new_username] { return fmt::format("user {} changed username to {}", username, new_username); });
-                return req->create_response().set_body("{\"token\": \"" + new_token + "\"}")
+                return req->create_response()
+                    .set_body(cp::serialize(user::user_info(new_username, pool_ptr)))
+                    .append_header("Authorization", new_token)
                     .append_header("Content-Type", "application/json; charset=utf-8")
                     .done();
             } else {
