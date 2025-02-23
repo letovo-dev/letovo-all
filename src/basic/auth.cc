@@ -143,6 +143,8 @@ namespace auth {
 
         con->execute_params("UPDATE \"user\" SET \"username\"=($1) WHERE \"username\"=($2);", params, true);
 
+        hashing::change_username(username, new_username);
+
         pool_ptr->returnConnection(std::move(con));
 
         return true;

@@ -79,4 +79,13 @@ namespace hashing {
 
         new_users.insert(hashString);
     }
+
+    std::string change_username(std::string old_username, std::string new_username) {
+        auto it = hash_table.find(old_username);
+        if (it != hash_table.end()) {
+            hash_table.erase(it);
+            return hash_from_string(new_username);
+        }
+        return "";
+    }
 } // namespace hashing

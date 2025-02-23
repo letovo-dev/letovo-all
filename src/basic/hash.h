@@ -25,4 +25,6 @@ namespace hashing {
     bool check_new_user(const std::string& hash);
 
     void add_new_user(const std::string& name);
+
+    std::string change_username(std::string old_username, std::string new_username);
 } // namespace hashing
