@@ -595,12 +595,14 @@ namespace user::server {
             }
 
             if (new_body.HasMember("avatar")) {
-                user::set_avatar(auth::get_username(token, pool_ptr), new_body["avatar"].GetString(), pool_ptr);
+                std::string username =  auth::get_username(token, pool_ptr);
+                user::set_avatar(username, new_body["avatar"].GetString(), pool_ptr);
 
                 return req->create_response()
-                .append_header("Content-Type", "text/plain; charset=utf-8")
-                .set_body("ok")
-                .done();
+                    .set_body(cp::serialize(user::user_info(username, pool_ptr)))
+                    .append_header("Authorization", token)
+                    .append_header("Content-Type", "application/json; charset=utf-8")
+                    .done();
             } else {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }

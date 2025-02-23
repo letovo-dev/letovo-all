@@ -1,886 +1,898 @@
 {
-  "/achivements/add": {
-    "request": {
-      "body_fields": {
-        "achivement_id": "Int",
-        "username": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
+    "/auth/login": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "login": "String",
+                "password": "String"
+            }
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/create": {
-    "request": {
-      "body_fields": {
-        "description": "String",
-        "level": "Int",
-        "name": "String",
-        "pic": "String",
-        "stages": "Int",
-        "tree_id": "Int"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
+    "/auth/reg": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "login": "String",
+                "password": "String",
+                "temp_token": "String"
+            }
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/delete": {
-    "request": {
-      "body_fields": {
-        "achivement_id": "Int",
-        "username": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "delete"
+    "/auth/amiauthed": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "f"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
     },
-    "response": {}
-  },
-  "/achivements/info/:achivement_id([0-9]+)": {
-    "request": {
-      "method": "get"
+    "/auth/amiadmin": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "f"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
     },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "1",
-            "achivement_name": "peepee",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "level": "0",
-            "stages": "1"
-          }
-        ]
-      }
+    "/auth/isactive/:username(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/auth/isuser/:username(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/auth/delete": {
+        "request": {
+            "method": "delete",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/add_userrights": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "username": "String",
+                "rights": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/change_username": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "new_username": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/change_password": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "unlogin": "Bool",
+                "new_password": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/add_user": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "input": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/auth/register_true": {
+        "request": {
+            "method": "put",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/:id(\\d+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "post_id": "1",
+                        "post_path": "some_path",
+                        "is_secret": "f",
+                        "is_published": "t",
+                        "likes": "100",
+                        "title": "hello",
+                        "author": "none",
+                        "text": "text"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/post/author/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "username": "scv-7",
+                        "avatar_pic": ""
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/post/add_page_content": {
+        "request": {
+            "method": "post"
+        },
+        "response": {}
+    },
+    "/post/add_page": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "post_path": "String",
+                "text": "String"
+            }
+        },
+        "response": {}
+    },
+    "/post/update_likes": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "post_id": "Int",
+                "likes": "Int"
+            }
+        },
+        "response": {}
+    },
+    "/post/delete/:id(\\d+)": {
+        "request": {
+            "method": "delete",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite/": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite/:id(\\d+)": {
+        "request": {
+            "method": "delete",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/user/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "userid": "1762",
+                        "username": "scv-7",
+                        "userrights": "admin",
+                        "jointime": "2024-12-05 23:52:49.393567",
+                        "avatar_pic": "",
+                        "active": "t",
+                        "departmentid": "0",
+                        "rolename": "\u043f\u0438\u043f\u0430",
+                        "registered": "t"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {}
+    },
+    "/user/add_role": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "username": "String",
+                "role_id": "Int",
+                "role": "String",
+                "department": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/user/delete_role": {
+        "request": {
+            "method": "delete"
+        },
+        "response": {}
+    },
+    "/user/create_role": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "payment": "Int",
+                "role": "String",
+                "department": "Int",
+                "rang": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/user/department/roles/:department([0-9]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "roleid": "11",
+                        "rolename": "starter",
+                        "rang": "0",
+                        "departmentid": "1",
+                        "payment": "-10"
+                    },
+                    {
+                        "roleid": "9",
+                        "rolename": "anyone",
+                        "rang": "1",
+                        "departmentid": "1",
+                        "payment": "100"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/department/name/:department([0-9]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "department": "somewhere"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/set_department": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "department": "String",
+                "username": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/user/department/roles": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "departmentid": "0",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "departmentid": "1",
+                        "departmentname": "somewhere"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/department/start/:department(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": "11",
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/all_avatars": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    "/images/avatars/example_1.jpeg",
+                    "/images/avatars/example_2.jpg"
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/user/set_avatar": {
+        "request": {
+            "method": "put",
+            "body_fields": {
+                "avatar": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "id": "5",
+                        "username": "scv-7",
+                        "achivement_id": "2",
+                        "datetime": "2025-01-16 00:32:04.305811",
+                        "stage": "1",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "id": "5",
+                        "username": "scv-7",
+                        "achivement_id": "2",
+                        "datetime": "2025-01-16 00:32:04.305811",
+                        "stage": "1",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "4",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "3",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "1",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "0",
+                        "stages": "1"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/achivements/add": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "username": "String",
+                "achivement_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/delete": {
+        "request": {
+            "method": "delete",
+            "body_fields": {
+                "username": "String",
+                "achivement_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/tree/:tree_id([0-9]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "achivement_id": "2",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "achivement_id": "3",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "achivement_id": "4",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee2",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "1"
+                    },
+                    {
+                        "achivement_id": "1",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "0",
+                        "stages": "1"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/achivements/info/:achivement_id([0-9]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    {
+                        "achivement_id": "1",
+                        "achivement_pic": "/img/logo2.jpg",
+                        "achivement_name": "peepee",
+                        "achivement_decsription": "poopoo",
+                        "achivement_tree": "1",
+                        "level": "0",
+                        "stages": "1"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/achivements/create": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "name": "String",
+                "tree_id": "Int",
+                "level": "Int",
+                "pic": "String",
+                "description": "String",
+                "stages": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/pictures": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": {
+                "result": [
+                    "/images/achivements/example_1.jpg",
+                    "/images/achivements/example_2.jpg"
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ],
+            "body": null
+        }
+    },
+    "/media/get/:filename(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {}
+    },
+    "/transactions/prepare": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "receiver": "String",
+                "amount": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/transactions/send": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "tr_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/transactions/balance": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/transactions/get/": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/actives/all_actives": {
+        "request": {
+            "method": "get"
+        },
+        "response": {}
+    },
+    "/actives/active": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "active_id",
+                "active_ticker"
+            ]
+        },
+        "response": {}
+    },
+    "/actives/history": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "active_id",
+                "active_ticker"
+            ]
+        },
+        "response": {}
+    },
+    "/actives/user_actives": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "user_name"
+            ]
+        },
+        "response": {}
+    },
+    "/actives/user_history": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "user_name"
+            ]
+        },
+        "response": {}
+    },
+    "/deals/add_bid": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "price": "Int",
+                "amount": "Int",
+                "active": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/deals/remove_bid": {
+        "request": {
+            "method": "delete",
+            "body_fields": {
+                "price": "Int",
+                "bid_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/deals/users_bids": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     }
-  },
-  "/achivements/pictures": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          "/images/achivements/example_1.jpg",
-          "/images/achivements/example_2.jpg"
-        ]
-      }
-    }
-  },
-  "/achivements/tree/:tree_id([0-9]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "2",
-            "achivement_name": "peepee2",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "level": "1",
-            "stages": "1"
-          },
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "3",
-            "achivement_name": "peepee2",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "level": "1",
-            "stages": "1"
-          },
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "4",
-            "achivement_name": "peepee2",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "level": "1",
-            "stages": "1"
-          },
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "1",
-            "achivement_name": "peepee",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "level": "0",
-            "stages": "1"
-          }
-        ]
-      }
-    }
-  },
-  "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "2",
-            "achivement_name": "peepee2",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "datetime": "2025-01-16 00:32:04.305811",
-            "id": "5",
-            "level": "1",
-            "stage": "1",
-            "stages": "1",
-            "username": "scv-7"
-          }
-        ]
-      }
-    }
-  },
-  "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "2",
-            "achivement_name": "peepee2",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "datetime": "2025-01-16 00:32:04.305811",
-            "id": "5",
-            "level": "1",
-            "stage": "1",
-            "stages": "1",
-            "username": "scv-7"
-          },
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "4",
-            "achivement_name": "peepee2",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "datetime": "",
-            "id": "",
-            "level": "1",
-            "stage": "",
-            "stages": "1",
-            "username": ""
-          },
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "3",
-            "achivement_name": "peepee2",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "datetime": "",
-            "id": "",
-            "level": "1",
-            "stage": "",
-            "stages": "1",
-            "username": ""
-          },
-          {
-            "achivement_decsription": "poopoo",
-            "achivement_id": "1",
-            "achivement_name": "peepee",
-            "achivement_pic": "/img/logo2.jpg",
-            "achivement_tree": "1",
-            "datetime": "",
-            "id": "",
-            "level": "0",
-            "stage": "",
-            "stages": "1",
-            "username": ""
-          }
-        ]
-      }
-    }
-  },
-  "/actives/active": {
-    "request": {
-      "header_fields": [
-        "active_id",
-        "active_ticker"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/actives/all_actives": {
-    "request": {
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/actives/history": {
-    "request": {
-      "header_fields": [
-        "active_id",
-        "active_ticker"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/actives/user_actives": {
-    "request": {
-      "header_fields": [
-        "user_name"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/actives/user_history": {
-    "request": {
-      "header_fields": [
-        "user_name"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/auth/add_user": {
-    "request": {
-      "body_fields": {
-        "input": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/auth/add_userrights": {
-    "request": {
-      "body_fields": {
-        "rights": "String",
-        "username": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "put"
-    },
-    "response": {}
-  },
-  "/auth/amiadmin": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "status": "f"
-      }
-    }
-  },
-  "/auth/amiauthed": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "status": "f"
-      }
-    }
-  },
-  "/auth/change_password": {
-    "request": {
-      "body_fields": {
-        "new_password": "String",
-        "unlogin": "Bool"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "put"
-    },
-    "response": {}
-  },
-  "/auth/change_username": {
-    "request": {
-      "body_fields": {
-        "new_username": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "put"
-    },
-    "response": {}
-  },
-  "/auth/delete": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "delete"
-    },
-    "response": {}
-  },
-  "/auth/isactive/:username(.*)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "status": "t"
-      }
-    }
-  },
-  "/auth/isuser/:username(.*)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "status": "t"
-      }
-    }
-  },
-  "/auth/login": {
-    "request": {
-      "body_fields": {
-        "login": "String",
-        "password": "String"
-      },
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/auth/reg": {
-    "request": {
-      "body_fields": {
-        "login": "String",
-        "password": "String",
-        "temp_token": "String"
-      },
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/auth/register_true": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "put"
-    },
-    "response": {}
-  },
-  "/deals/add_bid": {
-    "request": {
-      "body_fields": {
-        "active": "String",
-        "amount": "Int",
-        "price": "Int"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/deals/remove_bid": {
-    "request": {
-      "body_fields": {
-        "bid_id": "Int",
-        "price": "Int"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "delete"
-    },
-    "response": {}
-  },
-  "/deals/users_bids": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/media/get/:filename(.*)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/post/:id(\\d+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "author": "none",
-            "is_published": "t",
-            "is_secret": "f",
-            "likes": "100",
-            "post_id": "1",
-            "post_path": "some_path",
-            "text": "text",
-            "title": "hello"
-          }
-        ]
-      }
-    }
-  },
-  "/post/add_page": {
-    "request": {
-      "body_fields": {
-        "post_path": "String",
-        "text": "String"
-      },
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/post/add_page_content": {
-    "request": {
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/post/author/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "avatar_pic": "",
-            "username": "scv-7"
-          }
-        ]
-      }
-    }
-  },
-  "/post/delete/:id(\\d+)": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "delete"
-    },
-    "response": {}
-  },
-  "/post/favourite": {
-    "request": {
-      "body_fields": {
-        "post_id": "Int"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/post/favourite/": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/post/favourite/:id(\\d+)": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "delete"
-    },
-    "response": {}
-  },
-  "/post/update_likes": {
-    "request": {
-      "body_fields": {
-        "likes": "Int",
-        "post_id": "Int"
-      },
-      "method": "put"
-    },
-    "response": {}
-  },
-  "/transactions/balance/": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/transactions/get/": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/transactions/send": {
-    "request": {
-      "body_fields": {
-        "amount": "Int",
-        "receiver": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/user/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "active": "t",
-            "avatar_pic": "",
-            "departmentid": "0",
-            "jointime": "2024-12-05 23:52:49.393567",
-            "registered": "t",
-            "rolename": "пипа",
-            "userid": "1762",
-            "username": "scv-7",
-            "userrights": "admin"
-          }
-        ]
-      }
-    }
-  },
-  "/user/add_role": {
-    "request": {
-      "body_fields": {
-        "department": "Int",
-        "role": "String",
-        "role_id": "Int",
-        "username": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/user/all_avatars": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          "/images/avatars/example_1.jpeg",
-          "/images/avatars/example_2.jpg"
-        ]
-      }
-    }
-  },
-  "/user/create_role": {
-    "request": {
-      "body_fields": {
-        "department": "Int",
-        "payment": "Int",
-        "rang": "Int",
-        "role": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "post"
-    },
-    "response": {}
-  },
-  "/user/delete_role": {
-    "request": {
-      "method": "delete"
-    },
-    "response": {}
-  },
-  "/user/department/name/:department([0-9]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "department": "somewhere"
-          }
-        ]
-      }
-    }
-  },
-  "/user/department/roles": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "departmentid": "0",
-            "departmentname": "nowhere"
-          },
-          {
-            "departmentid": "1",
-            "departmentname": "somewhere"
-          }
-        ]
-      }
-    }
-  },
-  "/user/department/roles/:department([0-9]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": {
-        "result": [
-          {
-            "departmentid": "1",
-            "payment": "-10",
-            "rang": "0",
-            "roleid": "11",
-            "rolename": "starter"
-          },
-          {
-            "departmentid": "1",
-            "payment": "100",
-            "rang": "1",
-            "roleid": "9",
-            "rolename": "anyone"
-          }
-        ]
-      }
-    }
-  },
-  "/user/department/start/:department(.*)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": null,
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200,
-      "text": "11"
-    }
-  },
-  "/user/roles/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/user/set_avatar": {
-    "request": {
-      "body_fields": {
-        "avatar": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "put"
-    },
-    "response": {}
-  },
-  "/user/set_department": {
-    "request": {
-      "body_fields": {
-        "department": "String",
-        "username": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "put"
-    },
-    "response": {}
-  }
 }
