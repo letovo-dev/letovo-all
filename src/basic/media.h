@@ -14,11 +14,33 @@
 #include <fstream>
 #include <filesystem>
 #include "config.h"
+#include "lodepng.h"
 
 namespace media {
-    extern std::unordered_map<std::string, std::string> content_types;
+    #define TOP_LEFT_CORNER(side, corner_size) side / corner_size
+    #define TOP_RIGHT_CORNER(side, corner_size) side / corner_size - side + 3
+    #define BOTTOM_LEFT_CORNER(side, corner_size) side / corner_size - side + 3
+    #define BOTTOM_RIGHT_CORNER(side, corner_size) (side * 2 - side / corner_size) - 1
+    #define INDEX(i, pixel_size) i * pixel_size
 
-#define content_type(file_name) content_types[file_name]
+    #define content_type(file_name) content_types[file_name]
+
+    extern const int pixel_size;
+    extern const int corner_size;
+    extern const unsigned char blank;
+
+    struct Image {
+        std::vector<unsigned char> data;
+        unsigned width;
+        unsigned height;
+        Image(std::vector<unsigned char> data, unsigned width, unsigned height);
+    };
+
+    Image decode_image(const char* filename);
+
+    void encode_image(const char* filename, std::vector<unsigned char>& image, unsigned width, unsigned height);
+    
+    extern std::unordered_map<std::string, std::string> content_types;
 
     std::string save_file(std::string path, std::string file_name, std::string file);
 
@@ -29,6 +51,10 @@ namespace media {
     std::vector<std::string> get_all_files(std::string path);
 
     bool can_i_read(std::string token, std::string file_name, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    void cut_corners(Image& img);
+
+    void cut_media(std::string file_name);
 } // namespace media
 
 namespace media::server {

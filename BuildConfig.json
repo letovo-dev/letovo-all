@@ -11,6 +11,7 @@
     "basic/checks.cc",
     "basic/achivements.cc",
     "basic/media.cc",
+    "basic/lode_png.cc",
     "market/transactions.cc",
     "market/actives.cc",
     "market/DOM.cc"

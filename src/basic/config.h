@@ -35,12 +35,19 @@ struct MarketConfig {
     std::string junk_user;
 };
 
+struct MediaConfig {
+    int pixel_size;
+    int corner_size;
+    const char* path_to_blank;
+};
+
 class Config {
 public:
     cp::connection_options sql_config;
     ServerConfig server_config;
     PagesConfig pages_config;
     MarketConfig market_config;
+    MediaConfig media_config;
     std::string current_path;
     std::vector<std::string> required_paths;
 
@@ -91,6 +98,11 @@ private:
         config_map.Parse(GetJson("./MarketConfig.json").c_str());
         market_config.bid_resolver_sleep_time = config_map["bid_resolver_sleep_time"].GetInt();
         market_config.junk_user = config_map["junk_user"].GetString();
+
+        config_map.Parse(GetJson("./MediaConfig.json").c_str());
+        media_config.pixel_size = config_map["pixel_size"].GetInt();
+        media_config.corner_size = config_map["corner_size"].GetInt();
+        media_config.path_to_blank = config_map["path_to_blank"].GetString();
 
         required_paths.push_back(pages_config.wiki_path.absolute);
         required_paths.push_back(pages_config.admin_avatars_path.absolute);

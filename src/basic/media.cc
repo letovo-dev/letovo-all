@@ -1,6 +1,36 @@
 #include "media.h"
 
 namespace media {
+    Image::Image(
+        std::vector<unsigned char> data,
+        unsigned width,
+        unsigned height
+    )
+    : data(data)
+    , width(width)
+    , height(height) {};
+
+    const int pixel_size = Config::giveMe().media_config.pixel_size;
+    const int corner_size = Config::giveMe().media_config.corner_size;
+    const unsigned char blank = decode_image(Config::giveMe().media_config.path_to_blank).data[0];
+
+    Image decode_image(const char* filename) {
+        std::vector<unsigned char> image;
+        unsigned width, height;
+
+        unsigned error = lodepng::decode(image, width, height, filename);
+
+        if(error) std::cout << "decoder error " << error << ": " << lodepng_error_text(error) << std::endl;
+
+        return Image(image, width, height);
+    }
+
+    void encode_image(const char* filename, std::vector<unsigned char>& image, unsigned width, unsigned height) {
+        unsigned error = lodepng::encode(filename, image, width, height);
+
+        if(error) std::cout << "encoder error " << error << ": "<< lodepng_error_text(error) << std::endl;
+    }
+
     std::unordered_map<std::string, std::string> content_types = {
         {".html", "text/html"},
         {".htm", "text/html"},
@@ -88,6 +118,31 @@ namespace media {
             return false;
         }
         return true;
+    }
+
+    void cut_corners(Image& img) {
+        int side = std::min((int)img.width, (int)img.height);
+
+        for(int i = 0; i < side * side; i += 1) {
+            if (
+                false
+                || i % side + (int)(i / side) < TOP_LEFT_CORNER(side, corner_size)
+                || i % side + (int)(i / side) >= BOTTOM_RIGHT_CORNER(side, corner_size)
+                || i % side - (int)(i / side) <= BOTTOM_LEFT_CORNER(side, corner_size)
+                || (int)(i / side) - i % side <= TOP_RIGHT_CORNER(side, corner_size)
+            ) {
+                img.data[INDEX(i, pixel_size)] = blank;
+                img.data[INDEX(i, pixel_size) + 1] = blank;
+                img.data[INDEX(i, pixel_size) + 2] = blank;
+                img.data[INDEX(i, pixel_size) + 3] = blank;
+            }
+        }
+    }
+
+    void cut_media(std::string file_name) {
+        Image img = media::decode_image(file_name.c_str());
+        media::cut_corners(img);
+        media::encode_image(file_name.c_str(), img.data, img.width, img.height);
     }
 } // namespace media
 

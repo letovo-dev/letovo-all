@@ -1,0 +1,5 @@
+{
+    "pixel_size": 4,
+    "corner_size": 3,
+    "path_to_blank": "./blank.png"
+}
