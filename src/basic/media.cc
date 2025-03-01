@@ -76,6 +76,13 @@ namespace media {
         {".webm", "video/webm"},
     };
 
+    std::unordered_map<std::string, std::string> media_types = {
+        {"avatar", Config::giveMe().pages_config.user_avatars_path.absolute},
+        {"admin_avatar", Config::giveMe().pages_config.admin_avatars_path.absolute},
+        {"achivement", Config::giveMe().pages_config.achivements_path.absolute},
+        {"media", Config::giveMe().pages_config.media_path.absolute},
+    };
+
     std::string save_file(std::string path, std::string file_name, std::string file) {
         std::ofstream out(path + file_name, std::ios::binary);
         out << file;
@@ -183,6 +190,89 @@ namespace media::server {
                 .append_header(restinio::http_field::content_type, content_type)
                 .set_body(restinio::sendfile(file_path))
                 .done();
+        });
+    }
+
+    void post_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_post("/media/post", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->info([] { return "post file request"; });
+            rapidjson::Document new_body;
+            new_body.Parse(req->body().c_str());
+
+            std::string token;
+            try {
+                token = req->header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            logger_ptr->info([token] { return fmt::format("token = {}", token); });
+
+            if (!auth::is_admin(token, pool_ptr)) {
+                return req->create_response(restinio::status_forbidden())
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body(Comment::giveMe().no_access)
+                .done();
+            }
+            if(!new_body.HasMember("media_type")) {
+                return req->create_response(restinio::status_bad_request())
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("no media type")
+                .done();
+            };
+            if(
+                (media_types.find(new_body["media_type"].GetString()) != media_types.end())
+            ) {
+                auto mt = new_body["media_type"].GetString();
+                logger_ptr->info([mt] { return fmt::format("media type = {}", mt); });
+                return req->create_response(restinio::status_bad_request())
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("wrong media type")
+                .done();
+            }
+            
+
+            std::string username = auth::get_username(token, pool_ptr);
+
+            if (username.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            logger_ptr->info([username] { return fmt::format("username = {}", username); });
+
+            if (new_body.HasMember("file") && new_body.HasMember("file_name")) {
+                std::string full_path;
+                auto file = new_body["file"].GetString(); 
+                logger_ptr->info([file] { return fmt::format("file = {}", file[10]); });
+                try {
+                    full_path = media::save_file(
+                        media_type(new_body["media_type"].GetString()),
+                        new_body["file_name"].GetString(),
+                        new_body["file"].GetString()
+                    );
+                } catch (...) {
+                    return req->create_response(restinio::status_bad_request())
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("can't save file")
+                    .done();
+                };
+                if (new_body["media_type"].GetString() == "avatar") {
+                    media::cut_media(full_path);                
+                }
+                return req->create_response()
+                    .append_header("Content-Type", "application/json; charset=utf-8")
+                    .set_body("{\"result\": \"file saved\"}")
+                    .done();
+            } else {
+                return req->create_response(restinio::status_bad_request())
+                .append_header("Content-Type", "text/plain; charset=utf-8")
+                .set_body("no file or file name")
+                .done();
+            }
         });
     }
 } // namespace media::server

@@ -24,10 +24,14 @@ namespace media {
     #define INDEX(i, pixel_size) i * pixel_size
 
     #define content_type(file_name) content_types[file_name]
+    #define media_type(file_name) media_types[file_name]
 
     extern const int pixel_size;
     extern const int corner_size;
     extern const unsigned char blank;
+    
+
+    extern unordered_map<string, string> media_types;
 
     struct Image {
         std::vector<unsigned char> data;
@@ -39,8 +43,6 @@ namespace media {
     Image decode_image(const char* filename);
 
     void encode_image(const char* filename, std::vector<unsigned char>& image, unsigned width, unsigned height);
-    
-    extern std::unordered_map<std::string, std::string> content_types;
 
     std::string save_file(std::string path, std::string file_name, std::string file);
 
@@ -59,6 +61,8 @@ namespace media {
 
 namespace media::server {
     void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    void post_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void get_all_files(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 } // namespace media::server

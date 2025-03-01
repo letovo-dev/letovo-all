@@ -596,7 +596,16 @@ namespace user::server {
 
             if (new_body.HasMember("avatar")) {
                 std::string username =  auth::get_username(token, pool_ptr);
-                user::set_avatar(username, new_body["avatar"].GetString(), pool_ptr);
+                std::string avatar = new_body["avatar"].GetString();
+                if(media::check_if_file_exists(avatar).empty()) {
+                    return req->create_response(
+                        restinio::status_bad_request()
+                    )
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("file not found")
+                    .done();
+                }
+                user::set_avatar(username, avatar, pool_ptr);
 
                 return req->create_response()
                     .set_body(cp::serialize(user::user_info(username, pool_ptr)))

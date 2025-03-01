@@ -99,6 +99,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     achivements::server::achivement_pictures(router, logger_ptr);
 
     media::server::get_file(router, pool_ptr, logger_ptr);
+    // media::server::post_file(router, pool_ptr, logger_ptr);
 
     return router;
 }
