@@ -1,6 +1,21 @@
 {
+    "explanation:": {
+        "request": {
+            "function": "technical field, just for backend",
+            "method": "allowed REST API method",
+            "body_fields": "required fields in request body",
+            "header_fields": "required fields in request header"
+        },
+        "response": {
+            "status_code": "response status code",
+            "headers": "response headers",
+            "text": "response text",
+            "body": "response body"
+        }
+    },
     "/auth/login": {
         "request": {
+            "function": "enable_auth",
             "method": "post",
             "body_fields": {
                 "login": "String",
@@ -11,6 +26,7 @@
     },
     "/auth/reg": {
         "request": {
+            "function": "enable_reg",
             "method": "post",
             "body_fields": {
                 "login": "String",
@@ -22,6 +38,7 @@
     },
     "/auth/amiauthed": {
         "request": {
+            "function": "am_i_authed",
             "method": "get",
             "header_fields": [
                 "Bearer"
@@ -29,7 +46,7 @@
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "status": "f"
             },
             "headers": [
@@ -38,12 +55,12 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/auth/amiadmin": {
         "request": {
+            "function": "am_i_admin",
             "method": "get",
             "header_fields": [
                 "Bearer"
@@ -51,7 +68,7 @@
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "status": "f"
             },
             "headers": [
@@ -60,17 +77,17 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/auth/isactive/:username(.*)": {
         "request": {
+            "function": "is_user_active",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "status": "t"
             },
             "headers": [
@@ -79,17 +96,17 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/auth/isuser/:username(.*)": {
         "request": {
+            "function": "is_user",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "status": "t"
             },
             "headers": [
@@ -98,12 +115,12 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/auth/delete": {
         "request": {
+            "function": "enable_delete",
             "method": "delete",
             "header_fields": [
                 "Bearer"
@@ -113,6 +130,7 @@
     },
     "/auth/add_userrights": {
         "request": {
+            "function": "add_userrights",
             "method": "put",
             "body_fields": {
                 "username": "String",
@@ -126,6 +144,7 @@
     },
     "/auth/change_username": {
         "request": {
+            "function": "change_username",
             "method": "put",
             "body_fields": {
                 "new_username": "String"
@@ -138,22 +157,11 @@
     },
     "/auth/change_password": {
         "request": {
+            "function": "change_password",
             "method": "put",
             "body_fields": {
                 "unlogin": "Bool",
                 "new_password": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/auth/add_user": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "input": "String"
             },
             "header_fields": [
                 "Bearer"
@@ -172,11 +180,12 @@
     },
     "/post/:id(\\d+)": {
         "request": {
+            "function": "get_page_content",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "post_id": "1",
@@ -196,17 +205,17 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/post/author/:username([a-zA-Z0-9\\-]+)": {
         "request": {
+            "function": "get_page_author",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "username": "scv-7",
@@ -220,18 +229,19 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/post/add_page_content": {
         "request": {
+            "function": "add_page_by_content",
             "method": "post"
         },
         "response": {}
     },
     "/post/add_page": {
         "request": {
+            "function": "add_page_by_page",
             "method": "post",
             "body_fields": {
                 "post_path": "String",
@@ -242,6 +252,7 @@
     },
     "/post/update_likes": {
         "request": {
+            "function": "update_likes",
             "method": "put",
             "body_fields": {
                 "post_id": "Int",
@@ -252,6 +263,7 @@
     },
     "/post/delete/:id(\\d+)": {
         "request": {
+            "function": "enable_delete",
             "method": "delete",
             "header_fields": [
                 "Bearer"
@@ -261,6 +273,7 @@
     },
     "/post/favourite/": {
         "request": {
+            "function": "get_favourite_posts",
             "method": "get",
             "header_fields": [
                 "Bearer"
@@ -270,6 +283,7 @@
     },
     "/post/favourite": {
         "request": {
+            "function": "post_add_favourite_post",
             "method": "post",
             "body_fields": {
                 "post_id": "Int"
@@ -291,11 +305,12 @@
     },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
+            "function": "user_info",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "userid": "1762",
@@ -316,18 +331,19 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/user/roles/:username([a-zA-Z0-9\\-]+)": {
         "request": {
+            "function": "user_roles",
             "method": "get"
         },
         "response": {}
     },
     "/user/add_role": {
         "request": {
+            "function": "add_user_role",
             "method": "post",
             "body_fields": {
                 "username": "String",
@@ -343,12 +359,14 @@
     },
     "/user/delete_role": {
         "request": {
+            "function": "delete_user_role",
             "method": "delete"
         },
         "response": {}
     },
     "/user/create_role": {
         "request": {
+            "function": "create_role",
             "method": "post",
             "body_fields": {
                 "payment": "Int",
@@ -364,11 +382,12 @@
     },
     "/user/department/roles/:department([0-9]+)": {
         "request": {
+            "function": "department_roles",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "roleid": "11",
@@ -392,17 +411,17 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/user/department/name/:department([0-9]+)": {
         "request": {
+            "function": "department_name",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "department": "somewhere"
@@ -415,12 +434,12 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/user/set_department": {
         "request": {
+            "function": "set_users_department",
             "method": "put",
             "body_fields": {
                 "department": "String",
@@ -434,11 +453,12 @@
     },
     "/user/department/roles": {
         "request": {
+            "function": "all_departments",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "departmentid": "0",
@@ -456,12 +476,12 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/user/department/start/:department(.*)": {
         "request": {
+            "function": "starter_role",
             "method": "get"
         },
         "response": {
@@ -473,20 +493,21 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/user/all_avatars": {
         "request": {
+            "function": "all_avatars",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
-                    "/images/avatars/example_1.jpeg",
-                    "/images/avatars/example_2.jpg"
+                    "/images/avatars/example_1.png",
+                    "/images/avatars/example_2.png",
+                    "/images/avatars/example_3.png"
                 ]
             },
             "headers": [
@@ -495,8 +516,7 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/user/set_avatar": {
@@ -513,11 +533,12 @@
     },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
+            "function": "user_achivemets",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "id": "5",
@@ -540,17 +561,17 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
         "request": {
+            "function": "full_user_achivemets",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "id": "5",
@@ -612,12 +633,12 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/achivements/add": {
         "request": {
+            "function": "add_achivement",
             "method": "post",
             "body_fields": {
                 "username": "String",
@@ -631,6 +652,7 @@
     },
     "/achivements/delete": {
         "request": {
+            "function": "delete_achivement",
             "method": "delete",
             "body_fields": {
                 "username": "String",
@@ -644,11 +666,12 @@
     },
     "/achivements/tree/:tree_id([0-9]+)": {
         "request": {
+            "function": "achivements_tree",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "achivement_id": "2",
@@ -694,17 +717,17 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/achivements/info/:achivement_id([0-9]+)": {
         "request": {
+            "function": "achivement_info",
             "method": "get"
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     {
                         "achivement_id": "1",
@@ -723,12 +746,12 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/achivements/create": {
         "request": {
+            "function": "create_achivement",
             "method": "post",
             "body_fields": {
                 "name": "String",
@@ -750,7 +773,7 @@
         },
         "response": {
             "status_code": 200,
-            "text": {
+            "body": {
                 "result": [
                     "/images/achivements/example_1.jpg",
                     "/images/achivements/example_2.jpg"
@@ -762,8 +785,7 @@
                 "Content-Type",
                 "Content-Length",
                 "Connection"
-            ],
-            "body": null
+            ]
         }
     },
     "/media/get/:filename(.*)": {
@@ -772,21 +794,9 @@
         },
         "response": {}
     },
-    "/transactions/prepare": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "receiver": "String",
-                "amount": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
     "/transactions/send": {
         "request": {
+            "function": "transfer",
             "method": "post",
             "body_fields": {
                 "tr_id": "String"
@@ -799,6 +809,7 @@
     },
     "/transactions/balance": {
         "request": {
+            "function": "get_balance",
             "method": "get",
             "header_fields": [
                 "Bearer"
@@ -807,86 +818,6 @@
         "response": {}
     },
     "/transactions/get/": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/actives/all_actives": {
-        "request": {
-            "method": "get"
-        },
-        "response": {}
-    },
-    "/actives/active": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "active_id",
-                "active_ticker"
-            ]
-        },
-        "response": {}
-    },
-    "/actives/history": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "active_id",
-                "active_ticker"
-            ]
-        },
-        "response": {}
-    },
-    "/actives/user_actives": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "user_name"
-            ]
-        },
-        "response": {}
-    },
-    "/actives/user_history": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "user_name"
-            ]
-        },
-        "response": {}
-    },
-    "/deals/add_bid": {
-        "request": {
-            "method": "post",
-            "body_fields": {
-                "price": "Int",
-                "amount": "Int",
-                "active": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/deals/remove_bid": {
-        "request": {
-            "method": "delete",
-            "body_fields": {
-                "price": "Int",
-                "bid_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/deals/users_bids": {
         "request": {
             "method": "get",
             "header_fields": [

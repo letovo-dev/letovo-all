@@ -4,28 +4,46 @@ import json
 
 ROOT_PATH = './src/'
 
+def search_server_functions(file_path) -> set:
+    active_functions = set()
+    with open(file_path, 'r') as file:
+        method_pattern = re.compile(r'\s{2}\w*::server::(.*)\(')
+        for line in file:
+            method_match = method_pattern.search(line)
+            if method_match:
+                active_functions.add(method_match.group(1))
+    return active_functions
 
-def search_in_file(file_path):
-    print('--')
+
+def search_in_file(file_path, active_functions) -> dict:
     with open(file_path, 'r') as file:
         last = ''
         last_method = ''
         res = {}
         fields = {}
+        last_function = ''
+        function = ''
         method_pattern = re.compile(r'->http_(.*?)\(.*?(\/.*?)\)?\"')
         body_pattern = r'body\[\"(.*?)\"\]\.Get(.*?)\(\)'
         header_pattern = re.compile(r'.*header\(\)\.get_field\(\"(.*?)\"')
+        funtion_pattern = re.compile(r'\s{2}void (.*?)\(.*router')
         for line in file:
             if r'/transactions/get/' in line:
                 pass
+            funtion_match = funtion_pattern.search(line)
             method_match = method_pattern.search(line)
             body_match = re.findall(body_pattern, line)
             header_match = header_pattern.search(line)
+            if funtion_match:
+                last_function = function
+                function = funtion_match.group(1)
+
             if method_match:
-                if last != '':
+                if last != '' and last_function in active_functions and last_function != '':
                     if last in res:
                         print(f'Duplicate method {last} in file {file_path}')
                     res[last] = {}
+                    res[last]['function'] = last_function
                     res[last]['method'] = last_method
                     if fields != {}:
                         res[last]['body_fields'] = fields
@@ -33,6 +51,7 @@ def search_in_file(file_path):
                         res[last]['header_fields'] = header_fields
                 last = method_match.group(2)
                 last_method = method_match.group(1)
+                
                 fields = {}
                 header_fields = []
             elif body_match and len(body_match) != 0:
@@ -40,7 +59,8 @@ def search_in_file(file_path):
                     fields[m[0]] = m[1]
             elif header_match:
                 header_fields.append(header_match.group(1))
-    if last != '':
+
+    if last != '' and function in active_functions and function != '':
         res[last] = {}
         res[last]['method'] = last_method
         if fields != {}:
@@ -59,16 +79,19 @@ def config_files():
 def search(directory):
     results = {}
 
+    active_functions = search_server_functions(ROOT_PATH + 'server.cpp')
+
     for file in config_files():
         if file[-3:] != '.cc':
             continue
         # try:
-        print(f'Reading file {file}, {os.path.exists(file)}')
+        # print(f'Reading file {file}, {os.path.exists(file)}')
         try:
-            results.update(search_in_file(file))
+            results.update(search_in_file(file, active_functions))
         except UnicodeDecodeError:
             pass
             # print(f"Error reading file {file_path}")
+    # print(*active_functions, sep='\n')
     return results
 
 

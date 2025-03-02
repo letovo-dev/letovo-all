@@ -51,7 +51,22 @@ def sendRequest(url: str, data: dict) -> requests.Response:
 
 
 if __name__ == '__main__':
-    result = {}
+    result = {
+        "explanation:": {
+            "request": {
+                "function": "technical field, just for backend",
+                "method": "allowed REST API method",
+                "body_fields": "required fields in request body",
+                "header_fields": "required fields in request header"
+            },
+            "response": {
+                "status_code": "response status code",
+                "headers": "response headers",
+                "text": "response text",
+                "body": "response body"
+            }
+        }
+    }
     for url in SEARCH_REQUESTS:
         print(f'Sending request to {url}, {SEARCH_REQUESTS[url]["method"]}')
         if 'request' in SEARCH_REQUESTS[url]:
@@ -65,13 +80,11 @@ if __name__ == '__main__':
             result[url]['response']['status_code'] = response.status_code
             if response.text != '':
                 if 'json' in response.headers['Content-Type']:
-                    result[url]['response']['text'] = json.loads(response.text.replace('\\', ''))
+                    result[url]['response']['body'] = json.loads(response.text.replace('\\', ''))
                 elif 'text' in response.headers['Content-Type']:
                     result[url]['response']['text'] = response.text
             if response.headers != '' and response.headers != None and len(response.headers) != 0:
                 result[url]['response']['headers'] = list(response.headers.keys())
-            if response.request.body != '':
-                result[url]['response']['body'] = response.request.body
         # time.sleep(0.1)
     with open(RESPONSES_FILE, 'w') as file:
         json.dump(result, file, indent=4)
