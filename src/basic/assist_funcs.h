@@ -8,8 +8,17 @@
 #include <fmt/format.h>
 #include <rapidjson/document.h>
 #include <boost/format.hpp>
+#include <regex>
+#include <unordered_map>
 
 namespace assist{
+    struct ReqBody {
+        std::unordered_map<std::string, std::string> fields;
+        std::unordered_map<std::string, std::regex> expected_fields;
+        ReqBody();
+        std::string CheckFileds();
+    };
+
     std::unordered_map<std::string, std::any> parse_page_content(rapidjson::Document& new_body);
 
     void add_id_to_page(const std::string& filePath, int number, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
@@ -18,4 +27,6 @@ namespace assist{
     
     void create_mdx_from_template_file(const std::string &filePath, const std::string &title, const std::string & post_id, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
     void create_mdx_from_template_file(const std::string &filePath, const std::string &title, const std::string &author, const std::string & post_id, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    ReqBody file_body_parser(std::string);
 }

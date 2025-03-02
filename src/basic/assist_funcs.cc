@@ -117,4 +117,46 @@ namespace assist{
 
         create_file(Config::giveMe().pages_config.wiki_path.absolute + filePath, mdx_template_text, logger_ptr);
     }
+
+    ReqBody::ReqBody() {
+        fields = {};
+        expected_fields = {};
+    }
+
+    std::string ReqBody::CheckFileds() {
+        for (auto field : expected_fields) {
+            if (fields.find(field.first) == fields.end() || fields[field.first].empty()) {
+                return field.first;
+            }
+        }
+        return "";
+    }
+
+    ReqBody file_body_parser(std::string file_str) {
+        ReqBody body;
+        if(file_str.empty()) {
+            return body;
+        }
+        std::cout << file_str.size() << std::endl;
+        body.expected_fields = {
+            {"media_type", std::regex("\"media_type\": \"(avatar|admin_avatar|achivement|media)\"")},
+            {"file_name", std::regex("\"file_name\": \"(.*?)\"")},
+            {"file", std::regex("\"file\": \"(.*)\"")}
+        };
+        for (const auto& field : body.expected_fields) {
+            std::smatch match;
+            std::cout << field.first << std::endl;
+            
+            if (std::regex_search(file_str, match, field.second)) {
+                std::cout << "ok" << std::endl;
+                if (match.size() > 1) {
+                    body.fields[field.first] = match.str(1);
+                }
+            } else {
+                std::cout << "no match for " << field.first << std::endl;
+            }
+            std::cout << "parsed " << field.first << std::endl;
+        }
+        return body;
+    }
 }
