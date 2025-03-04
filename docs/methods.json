@@ -145,8 +145,16 @@
         "function": "user_info",
         "method": "get"
     },
+    "/user/full/:username([a-zA-Z0-9\\-]+)": {
+        "function": "full_user_info",
+        "method": "get"
+    },
     "/user/roles/:username([a-zA-Z0-9\\-]+)": {
         "function": "user_roles",
+        "method": "get"
+    },
+    "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
+        "function": "user_unactive_roles",
         "method": "get"
     },
     "/user/add_role": {
