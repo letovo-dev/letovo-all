@@ -319,9 +319,43 @@
                         "jointime": "2024-12-05 23:52:49.393567",
                         "avatar_pic": "",
                         "active": "t",
+                        "times_visited": "1",
                         "departmentid": "0",
                         "rolename": "\u043f\u0438\u043f\u0430",
                         "registered": "t"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/user/full/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "function": "full_user_info",
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "userid": "1762",
+                        "username": "scv-7",
+                        "userrights": "admin",
+                        "balance": "700",
+                        "jointime": "2024-12-05 23:52:49.393567",
+                        "avatar_pic": "",
+                        "active": "t",
+                        "times_visited": "1",
+                        "role": "\u043f\u0438\u043f\u0430",
+                        "paycheck": "1000",
+                        "departmentname": "nowhere"
                     }
                 ]
             },
@@ -339,7 +373,117 @@
             "function": "user_roles",
             "method": "get"
         },
-        "response": {}
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "username": "scv-7",
+                        "roleid": "9",
+                        "rolename": "anyone",
+                        "rang": "1",
+                        "departmentid": "1",
+                        "payment": "100",
+                        "departmentname": "somewhere"
+                    },
+                    {
+                        "username": "scv-7",
+                        "roleid": "1",
+                        "rolename": "anyone",
+                        "rang": "1",
+                        "departmentid": "0",
+                        "payment": "0",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "username": "scv-7",
+                        "roleid": "0",
+                        "rolename": "somewhere",
+                        "rang": "0",
+                        "departmentid": "0",
+                        "payment": "0",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "username": "scv-7",
+                        "roleid": "7",
+                        "rolename": "\u043f\u0438\u043f\u0430",
+                        "rang": "3",
+                        "departmentid": "0",
+                        "payment": "1000",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "username": "scv-7",
+                        "roleid": "2",
+                        "rolename": "\u0447\u0438\u0441\u0442\u0435\u043b\u044c\u0449\u0438\u043a \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432",
+                        "rang": "2",
+                        "departmentid": "0",
+                        "payment": "0",
+                        "departmentname": "nowhere"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "function": "user_unactive_roles",
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "roleid": "0",
+                        "rolename": "somewhere",
+                        "rang": "0",
+                        "departmentid": "0",
+                        "payment": "0",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "roleid": "1",
+                        "rolename": "anyone",
+                        "rang": "1",
+                        "departmentid": "0",
+                        "payment": "0",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "roleid": "2",
+                        "rolename": "\u0447\u0438\u0441\u0442\u0435\u043b\u044c\u0449\u0438\u043a \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432",
+                        "rang": "2",
+                        "departmentid": "0",
+                        "payment": "0",
+                        "departmentname": "nowhere"
+                    },
+                    {
+                        "roleid": "9",
+                        "rolename": "anyone",
+                        "rang": "1",
+                        "departmentid": "1",
+                        "payment": "100",
+                        "departmentname": "somewhere"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
     },
     "/user/add_role": {
         "request": {

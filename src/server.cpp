@@ -72,7 +72,9 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     auth::server::register_true(router, pool_ptr, logger_ptr);
 
     user::server::user_info(router, pool_ptr, logger_ptr);
+    user::server::full_user_info(router, pool_ptr, logger_ptr);
     user::server::user_roles(router, pool_ptr, logger_ptr);
+    user::server::user_unactive_roles(router, pool_ptr, logger_ptr);
     user::server::add_user_role(router, pool_ptr, logger_ptr);
     user::server::delete_user_role(router, pool_ptr, logger_ptr);
     user::server::create_role(router, pool_ptr, logger_ptr);

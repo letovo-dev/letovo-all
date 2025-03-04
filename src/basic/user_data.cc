@@ -51,7 +51,23 @@ namespace user {
 
         std::vector<std::string> params = {username};
 
-        pqxx::result result = con->execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"roles\".departmentid, \"roles\".rolename, \"user\".registered from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);", params);
+        pqxx::result result = con->execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"user\".times_visited, \"roles\".departmentid, \"roles\".rolename, \"user\".registered from \"user\" left join \"roles\" on \"user\".role = \"roles\".roleid where \"user\".username=($1);", params);
+
+        pool_ptr->returnConnection(std::move(con));
+
+        if (result.empty()) {
+            return {};
+        }
+
+        return result;
+    }
+
+    pqxx::result full_user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {username};
+
+        pqxx::result result = con->execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".balance, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"user\".times_visited, \"roles\".rolename as role, \"roles\".payment as paycheck, \"department\".departmentname from \"user\"  left join \"roles\" on \"user\".role = \"roles\".roleid  left join \"department\" on \"roles\".departmentid = \"department\".departmentid where \"user\".username = ($1);", params);
 
         pool_ptr->returnConnection(std::move(con));
 
@@ -67,7 +83,22 @@ namespace user {
 
         std::vector<std::string> params = {username};
 
-        pqxx::result result = con->execute_params("select * from \"useroles\" where username=($1);", params);
+        pqxx::result result = con->execute_params("select distinct * from \"useroles\" left join \"roles\" on \"useroles\".roleid = \"roles\".roleid  left join \"department\" on \"roles\".departmentid = \"department\".departmentid where \"useroles\".username = ($1);", params);
+
+        pool_ptr->returnConnection(std::move(con));
+
+        if (result.empty()) {
+            return {};
+        }
+        return result;
+    }
+
+    pqxx::result user_unactive_roles(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {username};
+
+        pqxx::result result = con->execute_params("select distinct \"roles\".*, \"department\".* from \"useroles\" left join \"roles\" on \"useroles\".roleid = \"roles\".roleid  left join \"department\" on \"roles\".departmentid = \"department\".departmentid left join \"user\" on \"user\".username = \"useroles\".username where \"useroles\".username = ($1) and \"useroles\".roleid != \"user\".role;", params);
 
         pool_ptr->returnConnection(std::move(con));
 
@@ -310,9 +341,8 @@ namespace user::server {
         });
     }
 
-    void user_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        // TODO: not working as it should: shows only the last role, not all of them idk why
-        router.get()->http_get(R"(/user/roles/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+    void full_user_info(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/user/full/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
             auto qrl = req->header().path();
 
             std::string username = url::get_last_url_arg(qrl);
@@ -321,7 +351,56 @@ namespace user::server {
                 return req->create_response(restinio::status_bad_request()).done();
             }
 
-            pqxx::result result = user::best_user_roles(username, pool_ptr);
+            pqxx::result result = user::full_user_info(username, pool_ptr);
+
+            if (result.empty()) {
+                return req->create_response(restinio::status_bad_gateway())
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("user not found")
+                    .done();
+            }
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
+        });
+    }
+
+    void user_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        // TODO: not working as it should: shows only the last role, not all of them idk why
+        router.get()->http_get(R"(/user/roles/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            auto qrl = req->header().path();
+
+            std::string username = url::get_last_url_arg(qrl);
+
+            if (username.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            pqxx::result result = user::user_roles(username, pool_ptr);
+
+            if (result.empty()) {
+                return req->create_response(restinio::status_bad_gateway()).done();
+            }
+            return req->create_response()
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .set_body(cp::serialize(result))
+                .done();
+        });
+    }
+
+    void user_unactive_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        // TODO: not working as it should: shows only the last role, not all of them idk why
+        router.get()->http_get(R"(/user/unactive_roles/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            auto qrl = req->header().path();
+
+            std::string username = url::get_last_url_arg(qrl);
+
+            if (username.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            pqxx::result result = user::user_unactive_roles(username, pool_ptr);
 
             if (result.empty()) {
                 return req->create_response(restinio::status_bad_gateway()).done();
@@ -596,7 +675,16 @@ namespace user::server {
 
             if (new_body.HasMember("avatar")) {
                 std::string username =  auth::get_username(token, pool_ptr);
-                user::set_avatar(username, new_body["avatar"].GetString(), pool_ptr);
+                std::string avatar = new_body["avatar"].GetString();
+                if(media::check_if_file_exists(avatar).empty()) {
+                    return req->create_response(
+                        restinio::status_bad_request()
+                    )
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("file not found")
+                    .done();
+                }
+                user::set_avatar(username, avatar, pool_ptr);
 
                 return req->create_response()
                     .set_body(cp::serialize(user::user_info(username, pool_ptr)))

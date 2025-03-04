@@ -3,7 +3,7 @@
 #include "pqxx_cp.h"
 #include <pqxx/pqxx>
 #include <unordered_set>
-// #include "spdlog/spdlog.h"
+#include "media.h"
 #include "rapidjson/document.h"
 #include "asio/ip/detail/endpoint.hpp"
 #include "hash.h"
@@ -17,9 +17,13 @@ namespace user {
 
     pqxx::result user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
+    pqxx::result full_user_info(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
     pqxx::result user_role(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     pqxx::result user_roles(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    pqxx::result user_unactive_roles(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     bool add_user_role(std::string username, std::string role, int department, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
@@ -57,7 +61,11 @@ namespace user {
 namespace user::server {
     void user_info(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
+    void full_user_info(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
     void user_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    void user_unactive_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void add_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
