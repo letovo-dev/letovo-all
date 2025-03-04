@@ -7,6 +7,7 @@ checks_flag=true
 run_flag=true
 logging=true
 generate=false
+generate_full=false
 # Read and parse BuildConfig.json
 config_file="./BuildConfig.json"
 
@@ -33,10 +34,6 @@ while getopts 'gptoifdhs:' OPTION; do
             ehco "installing"
             run_flag=false
             ;;
-        f)
-            echo "set work file to $OPTARG"
-            work_file="$OPTARG"
-            ;;
         t)
             echo "running test file"
             work_file="$test_file"
@@ -61,17 +58,22 @@ while getopts 'gptoifdhs:' OPTION; do
             echo "generate methods.json"
             generate=true
             ;;
+        f)
+            echo "genereate methods_v2.json"
+            generate_full=true
+            ;;
         h)
-            echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o]"
+            echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o] [-s] [-p] [-g] [-f] [-h]"
             echo "Options:"
             echo "  -p: pull changes from git before launch"
             echo "  -i: install dependencies"
-            echo "  -f: set work file"
             echo "  -t: run test file"
             echo "  -d: run with debug keys"
             echo "  -o: console output"
             echo "  -s: skip pre-run checks"
             echo "  -g: generate methods.json"
+            echo "  -f: generate methods_v2.json. only run with -g"
+            echo "  -h: show this help message"
             exit 0
             ;;
         ?)
@@ -84,6 +86,9 @@ done
 if [ $run_flag = true ]; then
     if [ $generate = true ]; then
         .venv/bin/python3 ./docs/search_methods.py
+        if [ $generate_full = true ]; then
+            .venv/bin/python3 ./docs/search_responces.py
+        fi
         exit 0
     fi
     export MAIN_FILE="$work_file"
