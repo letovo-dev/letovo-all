@@ -191,7 +191,7 @@ namespace auth::server {
                 std::string loginHeader = new_body["login"].GetString();
                 std::string passwordHeader = new_body["password"].GetString();
 
-                auto user = user::user_info(loginHeader, pool_ptr);
+                auto user = user::full_user_info(loginHeader, pool_ptr);
 
                 if (!auth::auth(loginHeader, passwordHeader, pool_ptr)) {
                     return req->create_response(restinio::status_unauthorized()).append_header_date_field().connection_close().done();
@@ -455,7 +455,7 @@ namespace auth::server {
                 std::string new_token = hashing::hash_from_string(new_username);
                 logger_ptr->info([username, new_username] { return fmt::format("user {} changed username to {}", username, new_username); });
                 return req->create_response()
-                    .set_body(cp::serialize(user::user_info(new_username, pool_ptr)))
+                    .set_body(cp::serialize(user::full_user_info(new_username, pool_ptr)))
                     .append_header("Authorization", new_token)
                     .append_header("Content-Type", "application/json; charset=utf-8")
                     .done();
