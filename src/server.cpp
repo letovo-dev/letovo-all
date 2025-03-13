@@ -86,7 +86,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     user::server::all_avatars(router, logger_ptr);
     user::server::set_avatar(router, pool_ptr, logger_ptr);
 
-    // transactions::server::prepare_transaction(router, pool_ptr, logger_ptr);
+    transactions::server::prepare_transaction(router, pool_ptr, logger_ptr);
     transactions::server::transfer(router, pool_ptr, logger_ptr);
     transactions::server::get_balance(router, pool_ptr, logger_ptr);
     transactions::server::get_transactions(router, pool_ptr, logger_ptr);

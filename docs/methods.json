@@ -286,6 +286,17 @@
     "/media/get/:filename(.*)": {
         "method": "get"
     },
+    "/transactions/prepare": {
+        "function": "prepare_transaction",
+        "method": "post",
+        "body_fields": {
+            "receiver": "String",
+            "amount": "Int"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
     "/transactions/send": {
         "function": "transfer",
         "method": "post",
