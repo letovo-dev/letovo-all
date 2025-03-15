@@ -94,18 +94,23 @@ namespace achivements {
     }
 
     int create_achivement(std::string name, int tree_id, int level, std::string pic, std::string description, int stages, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        std::cout << "here2\n";
+        
         auto con = std::move(pool_ptr->getConnection());
 
         std::vector<std::string> params = {name, std::to_string(tree_id), std::to_string(level), pic, description, std::to_string(stages)};
 
+        std::cout << "here3\n";
         pqxx::result id = {};
         try {
-            pqxx::result result = con->execute_params("INSERT INTO \"achivements\" (achivement_name, achivement_tree, level, achivement_pic, achivement_decsription, stages) VALUES ($1, $2, $3, $4, $5, $6) RETURNING achivement_id;", params, true);
+            id = con->execute_params("INSERT INTO \"achivements\" (achivement_name, achivement_tree, level, achivement_pic, achivement_decsription, stages) VALUES ($1, $2, $3, $4, $5, $6) RETURNING achivement_id;", params, true);
+            std::cout << "here3.5\n";
         } catch (...) {
+            std::cout << "here4\n";
             pool_ptr->returnConnection(std::move(con));
             return -1;
         }
-
+        
         pool_ptr->returnConnection(std::move(con));
         return id[0]["achivement_id"].as<int>();
     }
@@ -321,12 +326,15 @@ namespace achivements::server {
                     int stages = new_body["stages"].GetInt();
                 }
                 if (!url::validate_pic_path(pic)) {
+                    logger_ptr->info([]{return "wrong pic path";});
                     return req->create_response(restinio::status_bad_request()).done();
                 }
+                std::cout << "here\n";
                 result = achivements::create_achivement(name, tree_id, level, pic, description, stages, pool_ptr);
                 if (result == -1) {
                     return req->create_response(restinio::status_bad_request()).done();
                 }
+                std::cout << result << std::endl;
                 std::string response = fmt::format("{{\"achivement_id\":{}}}", result);
                 return req->create_response().set_body(response)
                 .append_header("Content-Type", "application/json; charset=utf-8")

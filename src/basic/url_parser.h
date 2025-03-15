@@ -3,6 +3,8 @@
 #include "restinio/all.hpp"
 #include <vector>
 #include <string>
+#include "config.h"
+#include <iostream>
 namespace url {
     bool is_number(const std::string& s);
 

@@ -46,12 +46,9 @@ namespace url {
     bool validate_pic_path(const std::string& pic_path) {
         bool format = pic_path.find(".png") != std::string::npos || pic_path.find(".jpg") != std::string::npos || pic_path.find(".jpeg") != std::string::npos;
         bool path = true;
-        std::string start = "/img/";
-        for (int i = 0; i < start.size(); i++) {
-            if (pic_path[i] != start[i]) {
-                path = false;
-            }
-        }
+        path = std::filesystem::exists(Config::giveMe().pages_config.achivements_path.absolute + pic_path);
+        std::cout << Config::giveMe().pages_config.achivements_path.absolute + pic_path << std::endl;
+        std::cout << format && path << '\n';
         return format && path;
     }
 } // namespace url

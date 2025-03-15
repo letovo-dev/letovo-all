@@ -67,7 +67,7 @@ namespace user {
 
         std::vector<std::string> params = {username};
 
-        pqxx::result result = con->execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".balance, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"user\".times_visited, \"roles\".rolename as role, \"roles\".payment as paycheck, \"department\".departmentname from \"user\"  left join \"roles\" on \"user\".role = \"roles\".roleid  left join \"department\" on \"roles\".departmentid = \"department\".departmentid where \"user\".username = ($1);", params);
+        pqxx::result result = con->execute_params("select \"user\".userid, \"user\".username, \"user\".userrights, \"user\".balance, \"user\".jointime, \"user\".avatar_pic, \"user\".active, \"user\".times_visited, \"roles\".rolename as role, \"roles\".payment as paycheck, \"department\".* from \"user\"  left join \"roles\" on \"user\".role = \"roles\".roleid  left join \"department\" on \"roles\".departmentid = \"department\".departmentid where \"user\".username = ($1);", params);
 
         pool_ptr->returnConnection(std::move(con));
 
@@ -332,7 +332,10 @@ namespace user::server {
             pqxx::result result = user::user_info(username, pool_ptr);
 
             if (result.empty()) {
-                return req->create_response(restinio::status_bad_gateway()).done();
+                return req->create_response(restinio::status_no_content())
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("user not found")
+                    .done();
             }
             return req->create_response()
                 .append_header("Content-Type", "application/json; charset=utf-8")
