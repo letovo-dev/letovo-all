@@ -13,7 +13,8 @@
     "basic/media.cc",
     "market/transactions.cc",
     "market/actives.cc",
-    "market/DOM.cc"
+    "market/DOM.cc",
+    "letovo-soc-net/social.cc"
   ],
   "required_sub_repos": {
     "letovo-secrets": "https://github.com/letovo-dev/letovo-secrets.git",

@@ -319,5 +319,44 @@
         "header_fields": [
             "Bearer"
         ]
+    },
+    "/social/authors": {
+        "function": "get_authors_list",
+        "method": "get"
+    },
+    "/social/news": {
+        "function": "get_news",
+        "method": "get",
+        "header_fields": [
+            "start",
+            "size",
+            "Bearer"
+        ]
+    },
+    "/social/comments": {
+        "function": "get_comments",
+        "method": "get",
+        "header_fields": [
+            "postid",
+            "start",
+            "size",
+            "Bearer"
+        ]
+    },
+    "/social/media": {
+        "function": "get_post_media",
+        "method": "get",
+        "header_fields": [
+            "postid",
+            "pics"
+        ]
+    },
+    "/social/like": {
+        "method": "post",
+        "header_fields": [
+            "postid",
+            "like",
+            "Bearer"
+        ]
     }
 }

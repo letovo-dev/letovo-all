@@ -131,7 +131,7 @@ namespace cp {
         try {
             r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
         } catch (const std::exception& e) {
-            logger_ptr_->error([e, sql] { return fmt::format("Error: {} in {}", e.what(), sql); });
+            logger_ptr_->error([e, sql] { return fmt::format("{} in {}", e.what(), sql); });
         }
         if (commit) {
             w.commit();

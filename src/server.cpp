@@ -17,6 +17,7 @@
 #include "./basic/page_server.h"
 #include "./basic/user_data.h"
 #include "./market/transactions.h"
+#include "./letovo-soc-net/social.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -99,6 +100,12 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     achivements::server::create_achivement(router, pool_ptr, logger_ptr);
     achivements::server::full_user_achivemets(router, pool_ptr, logger_ptr);
     achivements::server::achivement_pictures(router, logger_ptr);
+
+    social::server::get_authors_list(router, pool_ptr, logger_ptr);
+    social::server::get_news(router, pool_ptr, logger_ptr);
+    social::server::get_comments(router, pool_ptr, logger_ptr);
+    social::server::get_post_media(router, pool_ptr, logger_ptr);
+    social::server::add_like(router, pool_ptr, logger_ptr);
 
     media::server::get_file(router, pool_ptr, logger_ptr);
 
