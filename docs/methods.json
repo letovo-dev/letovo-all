@@ -314,7 +314,7 @@
             "Bearer"
         ]
     },
-    "/transactions/get/": {
+    "/transactions/my": {
         "method": "get",
         "header_fields": [
             "Bearer"
