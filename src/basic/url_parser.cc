@@ -54,37 +54,4 @@ namespace url {
         return format && path;
     }
 
-    std::map<std::string, std::string> parseQueryString(const std::string& url) {
-        std::map<std::string, std::string> queryParams;
-        
-        // Find the start of the query string
-        size_t queryStart = url.find('?');
-        if (queryStart == std::string::npos) {
-            return queryParams; // No query string found
-        }
-        
-        // Extract the query string
-        std::string queryString = url.substr(queryStart + 1);
-        std::cout << "query string: " << queryString << std::endl;
-        // Use a stringstream to split the query string by '&'
-        std::stringstream ss(queryString);
-        std::string pair;
-        while (std::getline(ss, pair, '&')) {
-            // Split each pair by '='
-            size_t equalPos = pair.find('=');
-            if (equalPos != std::string::npos) {
-                std::string key = pair.substr(0, equalPos);
-                std::string value = pair.substr(equalPos + 1);
-                queryParams[key] = value;
-                std::cout << key << " : " << value << std::endl;
-            }
-        }
-        
-        return queryParams;
-    }
-
-    std::map<std::string, std::string> parseQueryString(restinio::string_view_t path) {
-        std::string url = {path.begin(), path.end()};
-        return parseQueryString(url);
-    }
 } // namespace url

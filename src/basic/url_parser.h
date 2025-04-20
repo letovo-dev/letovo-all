@@ -20,7 +20,4 @@ namespace url {
 
     bool validate_pic_path(const std::string& pic_path);
 
-    std::map<std::string, std::string> parseQueryString(const std::string& url);
-
-    std::map<std::string, std::string> parseQueryString(restinio::string_view_t path);
 } // namespace url
