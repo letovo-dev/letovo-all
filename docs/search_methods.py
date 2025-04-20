@@ -27,12 +27,14 @@ def search_in_file(file_path, active_functions) -> dict:
         body_pattern = r'body\[\"(.*?)\"\]\.Get(.*?)\(\)'
         header_pattern = re.compile(r'.*header\(\)\.get_field\(\"(.*?)\"')
         funtion_pattern = re.compile(r'\s{2}void (.*?)\(.*router')
+        params_pattern = r".*?qp\.has\(\"(.*?)\""
         for line in file:
             if r'/transactions/get/' in line:
                 pass
             funtion_match = funtion_pattern.search(line)
             method_match = method_pattern.search(line)
             body_match = re.findall(body_pattern, line)
+            params_match = re.findall(params_pattern, line)
             header_match = header_pattern.search(line)
             if funtion_match:
                 last_function = function
@@ -47,16 +49,22 @@ def search_in_file(file_path, active_functions) -> dict:
                     res[last]['method'] = last_method
                     if fields != {}:
                         res[last]['body_fields'] = fields
+                    if params != []:
+                        res[last]['params'] = params
                     if header_fields != []:
                         res[last]['header_fields'] = header_fields
                 last = method_match.group(2)
                 last_method = method_match.group(1)
                 
                 fields = {}
+                params = []
                 header_fields = []
             elif body_match and len(body_match) != 0:
                 for m in body_match:
                     fields[m[0]] = m[1]
+            elif params_match and len(params_match) != 0:
+                for m in params_match:
+                    params.append(m)
             elif header_match:
                 header_fields.append(header_match.group(1))
 
@@ -67,6 +75,8 @@ def search_in_file(file_path, active_functions) -> dict:
             res[last]['body_fields'] = fields
         if header_fields != []:
             res[last]['header_fields'] = header_fields
+        if params != []:
+            res[last]['params'] = params
     return res
 
 

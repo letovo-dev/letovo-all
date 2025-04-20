@@ -27,9 +27,7 @@ namespace url {
         }
         return "";
     }
-
-    std::vector<std::string> spilt_url_path(restinio::string_view_t path, const std::string delimiter) {
-        std::string s = {path.begin(), path.end()};
+    std::vector<std::string> spilt_url_path(std::string s, const std::string delimiter) {
         std::vector<std::string> tokens;
         size_t pos = 0;
         std::string token;
@@ -42,6 +40,10 @@ namespace url {
 
         return tokens;
     }
+    std::vector<std::string> spilt_url_path(restinio::string_view_t path, const std::string delimiter) {
+        std::string s = {path.begin(), path.end()};
+        return spilt_url_path(s, delimiter);
+    }
 
     bool validate_pic_path(const std::string& pic_path) {
         bool format = pic_path.find(".png") != std::string::npos || pic_path.find(".jpg") != std::string::npos || pic_path.find(".jpeg") != std::string::npos;
@@ -51,4 +53,5 @@ namespace url {
         std::cout << format && path << '\n';
         return format && path;
     }
+
 } // namespace url
