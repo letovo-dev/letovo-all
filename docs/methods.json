@@ -324,38 +324,53 @@
         "function": "get_authors_list",
         "method": "get"
     },
-    "/social/news": {
+    "/social/news:search(.*)": {
         "function": "get_news",
         "method": "get",
-        "header_fields": [
+        "params": [
             "start",
-            "size",
+            "size"
+        ],
+        "header_fields": [
             "Bearer"
         ]
     },
-    "/social/comments": {
+    "/social/comments:search(.*)": {
         "function": "get_comments",
         "method": "get",
-        "header_fields": [
-            "postid",
+        "params": [
+            "post_id",
             "start",
-            "size",
+            "size"
+        ],
+        "header_fields": [
             "Bearer"
         ]
     },
-    "/social/media": {
+    "/social/media/pics/:post_id(.*)": {
         "function": "get_post_media",
         "method": "get",
         "header_fields": [
-            "postid",
             "pics"
         ]
     },
     "/social/like": {
+        "function": "add_like",
         "method": "post",
+        "body_fields": {
+            "post_id": "String"
+        },
         "header_fields": [
-            "postid",
-            "like",
+            "Bearer"
+        ]
+    },
+    "/social/comments": {
+        "method": "post",
+        "body_fields": {
+            "comment": "String",
+            "post_id": "String"
+        },
+        "header_fields": [
             "Bearer"
         ]
     }

@@ -307,7 +307,7 @@
                         "times_visited": "1",
                         "departmentid": "0",
                         "rolename": "\u043f\u0438\u043f\u0430",
-                        "registered": "t"
+                        "registered": "f"
                     }
                 ]
             },
@@ -333,7 +333,7 @@
                         "userid": "1762",
                         "username": "scv-7",
                         "userrights": "admin",
-                        "balance": "1051",
+                        "balance": "1063",
                         "jointime": "2024-12-05 23:52:49.393567",
                         "avatar_pic": "/images/avatars/example_1.png",
                         "active": "t",
@@ -1797,7 +1797,7 @@
         },
         "response": {
             "status_code": 200,
-            "body": 1051,
+            "body": 1063,
             "headers": [
                 "Server",
                 "Date",
@@ -1957,6 +1957,27 @@
                         "sender": "scv-5",
                         "receiver": "scv-7",
                         "transactiontime": "2025-03-15 21:32:53.560811"
+                    },
+                    {
+                        "transactionid": "45",
+                        "amount": "13",
+                        "sender": "scv-5",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-04-02 16:49:44.400572"
+                    },
+                    {
+                        "transactionid": "46",
+                        "amount": "12",
+                        "sender": "scv-5",
+                        "receiver": "scv-7",
+                        "transactiontime": "2025-04-14 11:11:23.788235"
+                    },
+                    {
+                        "transactionid": "47",
+                        "amount": "13",
+                        "sender": "scv-7",
+                        "receiver": "scv-5",
+                        "transactiontime": "2025-04-14 11:14:25.762528"
                     }
                 ]
             },
@@ -1988,13 +2009,65 @@
             ]
         }
     },
-    "/social/news": {
+    "/social/news:search(.*)": {
         "request": {
             "function": "get_news",
             "method": "get",
-            "header_fields": [
+            "params": [
                 "start",
-                "size",
+                "size"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/comments:search(.*)": {
+        "request": {
+            "function": "get_comments",
+            "method": "get",
+            "params": [
+                "post_id",
+                "start",
+                "size"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/media/pics/:post_id(.*)": {
+        "request": {
+            "function": "get_post_media",
+            "method": "get",
+            "header_fields": [
+                "pics"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": []
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/like": {
+        "request": {
+            "function": "add_like",
+            "method": "post",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
                 "Bearer"
             ]
         },
@@ -2002,34 +2075,12 @@
     },
     "/social/comments": {
         "request": {
-            "function": "get_comments",
-            "method": "get",
-            "header_fields": [
-                "postid",
-                "start",
-                "size",
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/media": {
-        "request": {
-            "function": "get_post_media",
-            "method": "get",
-            "header_fields": [
-                "postid",
-                "pics"
-            ]
-        },
-        "response": {}
-    },
-    "/social/like": {
-        "request": {
             "method": "post",
+            "body_fields": {
+                "comment": "String",
+                "post_id": "String"
+            },
             "header_fields": [
-                "postid",
-                "like",
                 "Bearer"
             ]
         },

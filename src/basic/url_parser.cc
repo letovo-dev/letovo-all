@@ -27,9 +27,7 @@ namespace url {
         }
         return "";
     }
-
-    std::vector<std::string> spilt_url_path(restinio::string_view_t path, const std::string delimiter) {
-        std::string s = {path.begin(), path.end()};
+    std::vector<std::string> spilt_url_path(std::string s, const std::string delimiter) {
         std::vector<std::string> tokens;
         size_t pos = 0;
         std::string token;
@@ -42,6 +40,10 @@ namespace url {
 
         return tokens;
     }
+    std::vector<std::string> spilt_url_path(restinio::string_view_t path, const std::string delimiter) {
+        std::string s = {path.begin(), path.end()};
+        return spilt_url_path(s, delimiter);
+    }
 
     bool validate_pic_path(const std::string& pic_path) {
         bool format = pic_path.find(".png") != std::string::npos || pic_path.find(".jpg") != std::string::npos || pic_path.find(".jpeg") != std::string::npos;
@@ -50,5 +52,39 @@ namespace url {
         std::cout << Config::giveMe().pages_config.achivements_path.absolute + pic_path << std::endl;
         std::cout << format && path << '\n';
         return format && path;
+    }
+
+    std::map<std::string, std::string> parseQueryString(const std::string& url) {
+        std::map<std::string, std::string> queryParams;
+        
+        // Find the start of the query string
+        size_t queryStart = url.find('?');
+        if (queryStart == std::string::npos) {
+            return queryParams; // No query string found
+        }
+        
+        // Extract the query string
+        std::string queryString = url.substr(queryStart + 1);
+        std::cout << "query string: " << queryString << std::endl;
+        // Use a stringstream to split the query string by '&'
+        std::stringstream ss(queryString);
+        std::string pair;
+        while (std::getline(ss, pair, '&')) {
+            // Split each pair by '='
+            size_t equalPos = pair.find('=');
+            if (equalPos != std::string::npos) {
+                std::string key = pair.substr(0, equalPos);
+                std::string value = pair.substr(equalPos + 1);
+                queryParams[key] = value;
+                std::cout << key << " : " << value << std::endl;
+            }
+        }
+        
+        return queryParams;
+    }
+
+    std::map<std::string, std::string> parseQueryString(restinio::string_view_t path) {
+        std::string url = {path.begin(), path.end()};
+        return parseQueryString(url);
     }
 } // namespace url
