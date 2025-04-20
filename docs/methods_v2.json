@@ -47,7 +47,7 @@
         "response": {
             "status_code": 200,
             "body": {
-                "status": "t"
+                "status": "f"
             },
             "headers": [
                 "Server",
@@ -69,7 +69,7 @@
         "response": {
             "status_code": 200,
             "body": {
-                "status": "t"
+                "status": "f"
             },
             "headers": [
                 "Server",
@@ -256,15 +256,7 @@
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/post/favourite": {
         "request": {
@@ -1795,17 +1787,7 @@
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": 1063,
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/transactions/get/": {
         "request": {
@@ -1814,181 +1796,7 @@
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "transactionid": "19",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 12:55:16.552781"
-                    },
-                    {
-                        "transactionid": "20",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 13:09:05.239221"
-                    },
-                    {
-                        "transactionid": "21",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 13:20:59.058171"
-                    },
-                    {
-                        "transactionid": "22",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 14:31:12.84917"
-                    },
-                    {
-                        "transactionid": "23",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 14:33:07.101375"
-                    },
-                    {
-                        "transactionid": "24",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 14:38:42.188608"
-                    },
-                    {
-                        "transactionid": "25",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 15:12:30.149546"
-                    },
-                    {
-                        "transactionid": "26",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 15:12:46.498789"
-                    },
-                    {
-                        "transactionid": "27",
-                        "amount": "12",
-                        "sender": "front100",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-13 18:05:05.542953"
-                    },
-                    {
-                        "transactionid": "28",
-                        "amount": "23",
-                        "sender": "front100",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-13 18:15:57.322891"
-                    },
-                    {
-                        "transactionid": "29",
-                        "amount": "5",
-                        "sender": "front100",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-13 19:45:24.685654"
-                    },
-                    {
-                        "transactionid": "31",
-                        "amount": "5",
-                        "sender": "front100",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-13 20:13:15.717863"
-                    },
-                    {
-                        "transactionid": "32",
-                        "amount": "5",
-                        "sender": "front100",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-13 20:20:55.706014"
-                    },
-                    {
-                        "transactionid": "34",
-                        "amount": "5",
-                        "sender": "front100",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-13 20:44:41.525116"
-                    },
-                    {
-                        "transactionid": "36",
-                        "amount": "10",
-                        "sender": "front100",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-15 10:38:17.215205"
-                    },
-                    {
-                        "transactionid": "38",
-                        "amount": "10",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 11:28:11.100351"
-                    },
-                    {
-                        "transactionid": "39",
-                        "amount": "2",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 12:02:35.796961"
-                    },
-                    {
-                        "transactionid": "40",
-                        "amount": "5",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 12:23:56.933044"
-                    },
-                    {
-                        "transactionid": "41",
-                        "amount": "10",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 13:12:04.217381"
-                    },
-                    {
-                        "transactionid": "42",
-                        "amount": "13",
-                        "sender": "scv-5",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-03-15 21:32:53.560811"
-                    },
-                    {
-                        "transactionid": "45",
-                        "amount": "13",
-                        "sender": "scv-5",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-04-02 16:49:44.400572"
-                    },
-                    {
-                        "transactionid": "46",
-                        "amount": "12",
-                        "sender": "scv-5",
-                        "receiver": "scv-7",
-                        "transactiontime": "2025-04-14 11:11:23.788235"
-                    },
-                    {
-                        "transactionid": "47",
-                        "amount": "13",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-04-14 11:14:25.762528"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/authors": {
         "request": {
