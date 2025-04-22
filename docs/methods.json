@@ -354,6 +354,30 @@
             "pics"
         ]
     },
+    "/social/new/:post_id(.*)": {
+        "function": "get_post",
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/social/titles": {
+        "function": "get_all_titles",
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/social/search:search(.*)": {
+        "function": "search_by_title",
+        "method": "get",
+        "params": [
+            "title"
+        ],
+        "header_fields": [
+            "Bearer"
+        ]
+    },
     "/social/like": {
         "function": "add_like",
         "method": "post",

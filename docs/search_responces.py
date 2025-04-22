@@ -11,6 +11,12 @@ REGEX_LINE = re.compile(r':.*\)')
 METHODS_FILE = './docs/methods.json'
 RESPONSES_FILE = './docs/methods_v2.json'
 
+TO_REPLACE = {
+    ":post_id(.*))": "81",
+    # ":username([a-zA-Z0-9\-]+)": USERNAME,
+    # ":username(.*)": USERNAME,
+}
+
 with open(METHODS_FILE, 'r') as file:
     SEARCH_REQUESTS = json.load(file)
 
@@ -28,6 +34,9 @@ def requestUrl(url: str) -> str:
         elif 'department' in url:
             url = re.sub(REGEX_LINE, '', url)
             url = url + str(ID)
+    for key, value in TO_REPLACE.items():
+        if key in url:
+            url = re.sub(key, value, url)
     return url
 
 

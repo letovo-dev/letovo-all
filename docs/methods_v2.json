@@ -196,7 +196,7 @@
                 "result": [
                     {
                         "username": "scv-7",
-                        "avatar_pic": "/images/avatars/example_1.png"
+                        "avatar_pic": "/images/avatars/example_4.png"
                     }
                 ]
             },
@@ -302,7 +302,7 @@
                         "username": "scv-7",
                         "userrights": "admin",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "/images/avatars/example_1.png",
+                        "avatar_pic": "/images/avatars/example_4.png",
                         "active": "t",
                         "times_visited": "1",
                         "departmentid": "0",
@@ -334,8 +334,9 @@
                         "username": "scv-7",
                         "userrights": "admin",
                         "balance": "1063",
+                        "registered": "f",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "/images/avatars/example_1.png",
+                        "avatar_pic": "/images/avatars/example_4.png",
                         "active": "t",
                         "times_visited": "1",
                         "role": "\u043f\u0438\u043f\u0430",
@@ -636,7 +637,9 @@
             "body": {
                 "result": [
                     "images/avatars/example_1.png",
+                    "images/avatars/example_5.png",
                     "images/avatars/example_2.png",
+                    "images/avatars/example_4.png",
                     "images/avatars/example_3.png"
                 ]
             },
@@ -1924,59 +1927,59 @@
                         "transactiontime": "2025-03-15 10:38:17.215205"
                     },
                     {
-                        "transactionid": "38",
-                        "amount": "10",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 11:28:11.100351"
-                    },
-                    {
-                        "transactionid": "39",
-                        "amount": "2",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 12:02:35.796961"
-                    },
-                    {
-                        "transactionid": "40",
-                        "amount": "5",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 12:23:56.933044"
-                    },
-                    {
-                        "transactionid": "41",
-                        "amount": "10",
-                        "sender": "scv-7",
-                        "receiver": "scv-5",
-                        "transactiontime": "2025-03-15 13:12:04.217381"
-                    },
-                    {
                         "transactionid": "42",
                         "amount": "13",
-                        "sender": "scv-5",
+                        "sender": "scv-55",
                         "receiver": "scv-7",
                         "transactiontime": "2025-03-15 21:32:53.560811"
                     },
                     {
                         "transactionid": "45",
                         "amount": "13",
-                        "sender": "scv-5",
+                        "sender": "scv-55",
                         "receiver": "scv-7",
                         "transactiontime": "2025-04-02 16:49:44.400572"
                     },
                     {
                         "transactionid": "46",
                         "amount": "12",
-                        "sender": "scv-5",
+                        "sender": "scv-55",
                         "receiver": "scv-7",
                         "transactiontime": "2025-04-14 11:11:23.788235"
+                    },
+                    {
+                        "transactionid": "38",
+                        "amount": "10",
+                        "sender": "scv-7",
+                        "receiver": "scv-55",
+                        "transactiontime": "2025-03-15 11:28:11.100351"
+                    },
+                    {
+                        "transactionid": "39",
+                        "amount": "2",
+                        "sender": "scv-7",
+                        "receiver": "scv-55",
+                        "transactiontime": "2025-03-15 12:02:35.796961"
+                    },
+                    {
+                        "transactionid": "40",
+                        "amount": "5",
+                        "sender": "scv-7",
+                        "receiver": "scv-55",
+                        "transactiontime": "2025-03-15 12:23:56.933044"
+                    },
+                    {
+                        "transactionid": "41",
+                        "amount": "10",
+                        "sender": "scv-7",
+                        "receiver": "scv-55",
+                        "transactiontime": "2025-03-15 13:12:04.217381"
                     },
                     {
                         "transactionid": "47",
                         "amount": "13",
                         "sender": "scv-7",
-                        "receiver": "scv-5",
+                        "receiver": "scv-55",
                         "transactiontime": "2025-04-14 11:14:25.762528"
                     }
                 ]
@@ -2059,6 +2062,156 @@
                 "Connection"
             ]
         }
+    },
+    "/social/new/:post_id(.*)": {
+        "request": {
+            "function": "get_post",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": []
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/titles": {
+        "request": {
+            "function": "get_all_titles",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "68",
+                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
+                    },
+                    {
+                        "post_id": "81",
+                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
+                    },
+                    {
+                        "post_id": "102",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 1"
+                    },
+                    {
+                        "post_id": "103",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 2"
+                    },
+                    {
+                        "post_id": "104",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 3"
+                    },
+                    {
+                        "post_id": "105",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 4"
+                    },
+                    {
+                        "post_id": "93",
+                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
+                    },
+                    {
+                        "post_id": "106",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 5"
+                    },
+                    {
+                        "post_id": "107",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 6"
+                    },
+                    {
+                        "post_id": "108",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 7"
+                    },
+                    {
+                        "post_id": "109",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 8"
+                    },
+                    {
+                        "post_id": "110",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 9"
+                    },
+                    {
+                        "post_id": "111",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 10"
+                    },
+                    {
+                        "post_id": "112",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 11"
+                    },
+                    {
+                        "post_id": "113",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 12"
+                    },
+                    {
+                        "post_id": "114",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 13"
+                    },
+                    {
+                        "post_id": "115",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 14"
+                    },
+                    {
+                        "post_id": "116",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 15"
+                    },
+                    {
+                        "post_id": "117",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 16"
+                    },
+                    {
+                        "post_id": "118",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 17"
+                    },
+                    {
+                        "post_id": "119",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 18"
+                    },
+                    {
+                        "post_id": "120",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 19"
+                    },
+                    {
+                        "post_id": "121",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 20"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/search:search(.*)": {
+        "request": {
+            "function": "search_by_title",
+            "method": "get",
+            "params": [
+                "title"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
     "/social/like": {
         "request": {
