@@ -271,7 +271,7 @@ namespace auth::server {
             }
 
             if (token.empty()) {
-                logger_ptr->info([]{return "token is empty";});
+                logger_ptr->error([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::is_authed(token, pool_ptr)) {
@@ -297,7 +297,7 @@ namespace auth::server {
             }
 
             if (token.empty()) {
-                logger_ptr->info([]{return "token is empty";});
+                logger_ptr->error([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::is_admin(token, pool_ptr)) {
@@ -357,7 +357,7 @@ namespace auth::server {
             }
 
             if (token.empty()) {
-                logger_ptr->info([]{return "token is empty";});
+                logger_ptr->error([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -389,7 +389,7 @@ namespace auth::server {
             }
 
             if (token.empty()) {
-                logger_ptr->info([]{return "token is empty";});
+                logger_ptr->error([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -475,7 +475,7 @@ namespace auth::server {
             }
 
             if (token.empty()) {
-                logger_ptr->info([]{return "token is empty";});
+                logger_ptr->error([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -524,7 +524,7 @@ namespace auth::server {
             }
 
             if (token.empty()) {
-                logger_ptr->info([]{return "token is empty";});
+                logger_ptr->error([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
@@ -555,7 +555,7 @@ namespace auth::server {
             }
 
             if (token.empty()) {
-                logger_ptr->info([]{return "token is empty";});
+                logger_ptr->error([]{return "token is empty";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
