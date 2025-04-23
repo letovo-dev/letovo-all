@@ -2102,10 +2102,6 @@
                         "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
                     },
                     {
-                        "post_id": "81",
-                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
-                    },
-                    {
                         "post_id": "102",
                         "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 1"
                     },
@@ -2120,30 +2116,6 @@
                     {
                         "post_id": "105",
                         "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 4"
-                    },
-                    {
-                        "post_id": "93",
-                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
-                    },
-                    {
-                        "post_id": "106",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 5"
-                    },
-                    {
-                        "post_id": "107",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 6"
-                    },
-                    {
-                        "post_id": "108",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 7"
-                    },
-                    {
-                        "post_id": "109",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 8"
-                    },
-                    {
-                        "post_id": "110",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 9"
                     },
                     {
                         "post_id": "111",
@@ -2174,6 +2146,38 @@
                         "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 16"
                     },
                     {
+                        "post_id": "81",
+                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
+                    },
+                    {
+                        "post_id": "106",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 5"
+                    },
+                    {
+                        "post_id": "107",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 6"
+                    },
+                    {
+                        "post_id": "108",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 7"
+                    },
+                    {
+                        "post_id": "109",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 8"
+                    },
+                    {
+                        "post_id": "110",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 9"
+                    },
+                    {
+                        "post_id": "93",
+                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430"
+                    },
+                    {
+                        "post_id": "122",
+                        "title": ""
+                    },
+                    {
                         "post_id": "118",
                         "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 17"
                     },
@@ -2182,12 +2186,12 @@
                         "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 18"
                     },
                     {
-                        "post_id": "120",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 19"
-                    },
-                    {
                         "post_id": "121",
                         "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 20"
+                    },
+                    {
+                        "post_id": "120",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 19"
                     }
                 ]
             },
@@ -2199,6 +2203,59 @@
                 "Connection"
             ]
         }
+    },
+    "/social/saved": {
+        "request": {
+            "function": "get_saved_posts",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "81",
+                        "post_path": "letovo-wiki/docs/video_demo.mdx",
+                        "is_secret": "f",
+                        "is_published": "t",
+                        "likes": "103",
+                        "title": "\u0432\u0438\u0434\u0435 \u0434\u0435\u043c\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 \u0434\u0432\u0430",
+                        "author": "scv-7",
+                        "text": "\u044d\u0442\u043e \u043f\u043e\u0441\u0442 \u0441 \u043d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u044b\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043cn\u0438 \u043d\u043e\u0432\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u043e\u0439",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-04-23 17:36:21.293235",
+                        "avatar_pic": "/images/avatars/example_4.png",
+                        "is_liked": "f",
+                        "is_disliked": "t",
+                        "saved": "t"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/save": {
+        "request": {
+            "function": "delete_saved_post",
+            "method": "delete",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
     "/social/search:search(.*)": {
         "request": {
@@ -2215,8 +2272,21 @@
     },
     "/social/like": {
         "request": {
-            "function": "add_like",
-            "method": "post",
+            "function": "delete_like",
+            "method": "delete",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/dislike": {
+        "request": {
+            "function": "delete_dislike",
+            "method": "delete",
             "body_fields": {
                 "post_id": "String"
             },

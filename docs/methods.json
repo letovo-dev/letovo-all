@@ -368,6 +368,23 @@
             "Bearer"
         ]
     },
+    "/social/saved": {
+        "function": "get_saved_posts",
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/social/save": {
+        "function": "delete_saved_post",
+        "method": "delete",
+        "body_fields": {
+            "post_id": "String"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
     "/social/search:search(.*)": {
         "function": "search_by_title",
         "method": "get",
@@ -379,8 +396,18 @@
         ]
     },
     "/social/like": {
-        "function": "add_like",
-        "method": "post",
+        "function": "delete_like",
+        "method": "delete",
+        "body_fields": {
+            "post_id": "String"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/social/dislike": {
+        "function": "delete_dislike",
+        "method": "delete",
         "body_fields": {
             "post_id": "String"
         },
