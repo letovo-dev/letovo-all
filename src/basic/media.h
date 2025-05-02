@@ -28,7 +28,7 @@ namespace media {
 
     std::vector<std::string> get_all_files(std::string path);
 
-    bool can_i_read(std::string token, std::string file_name, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+    bool is_secret(std::string file_name, std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 } // namespace media
 
 namespace media::server {

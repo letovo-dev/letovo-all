@@ -103,6 +103,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
 
     social::server::get_authors_list(router, pool_ptr, logger_ptr);
     social::server::get_news(router, pool_ptr, logger_ptr);
+    social::server::get_all_posts(router, pool_ptr, logger_ptr);
     social::server::get_comments(router, pool_ptr, logger_ptr);
     social::server::get_post_media(router, pool_ptr, logger_ptr);
     social::server::add_like(router, pool_ptr, logger_ptr);

@@ -3,6 +3,7 @@
 namespace media {
     std::unordered_map<std::string, std::string> content_types = {
         {".html", "text/html"},
+        {".md", "text/html"},
         {".htm", "text/html"},
         {".css", "text/css"},
         {".js", "text/javascript"},
@@ -76,24 +77,31 @@ namespace media {
         return files;
     }
 
-    // not tested
-    bool can_i_read(std::string token, std::string file_name, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-        auto con = std::move(pool_ptr->getConnection());
 
-        std::vector<std::string> params = {hashing::string_from_hash(token), file_name};
-
-        pqxx::result result = con->execute_params("SELECT * FROM \"user\" left join \"file_rights\" on \"user\".role = \"file_rights\" where \"user\".username = ($1) and \"file_rights\".file_path = ($2);", params);
-
-        if (result.empty()) {
+    bool is_secret(std::string file_name, std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        if(auth::is_admin(token, pool_ptr)) {
             return false;
         }
-        return true;
+        auto con = std::move(pool_ptr->getConnection());
+        std::vector<std::string> params = {file_name};
+        pqxx::result res = con->execute_params("SELECT p.is_secret from \"posts\" p where p.post_path = ($1);", params);
+        
+        pool_ptr->returnConnection(std::move(con));
+
+        if(res.empty()) return false;
+        return res[0]["is_secret"].as<bool>();
     }
 } // namespace media
 
 namespace media::server {
     void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/media/get/:filename(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
             auto qrl = req->header().path();
             std::string relative_filename = url::get_string_after(req->header().path(), "/media/get/");
             std::string file_path = media::check_if_file_exists(relative_filename);
@@ -105,7 +113,7 @@ namespace media::server {
                 .done();
             }
 
-            if (relative_filename.find("..") != std::string::npos || relative_filename[0] == '/') {
+            if (relative_filename.find("..") != std::string::npos || relative_filename[0] == '/' || media::is_secret(relative_filename, token, pool_ptr)) {
                 return req->create_response(restinio::status_forbidden())
                 .append_header("Content-Type", "application/json; charset=utf-8")
                 .set_body(Comment::giveMe().no_access)
