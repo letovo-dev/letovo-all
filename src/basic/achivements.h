@@ -24,10 +24,6 @@ namespace achivements {
 
     int create_achivement(std::string name, int tree_id, int level, std::string pic, std::string description, int stages, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
-    pqxx::result get_achivement_categories(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
-
-    pqxx::result get_achivement_by_category(std::string category, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
-
     std::vector<std::string> achivement_pictures();
 } // namespace achivements
 
@@ -48,7 +44,4 @@ namespace achivements::server {
 
     void achivement_pictures(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
-    void get_achivement_categories(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
-
-    void get_achivement_by_category(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 } // namespace achivements::server

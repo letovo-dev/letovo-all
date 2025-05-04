@@ -100,8 +100,6 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     achivements::server::create_achivement(router, pool_ptr, logger_ptr);
     achivements::server::full_user_achivemets(router, pool_ptr, logger_ptr);
     achivements::server::achivement_pictures(router, logger_ptr);
-    achivements::server::get_achivement_categories(router, pool_ptr, logger_ptr);
-    achivements::server::get_achivement_by_category(router, pool_ptr, logger_ptr);
 
     social::server::get_authors_list(router, pool_ptr, logger_ptr);
     social::server::get_news(router, pool_ptr, logger_ptr);
@@ -119,6 +117,8 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     social::server::get_saved_posts(router, pool_ptr, logger_ptr);
     social::server::save_post(router, pool_ptr, logger_ptr);
     social::server::delete_saved_post(router, pool_ptr, logger_ptr);
+    social::server::get_post_categories(router, pool_ptr, logger_ptr);
+    social::server::get_post_by_category(router, pool_ptr, logger_ptr);
 
     media::server::get_file(router, pool_ptr, logger_ptr);
 
