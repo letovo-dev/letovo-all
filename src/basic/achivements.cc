@@ -31,6 +31,35 @@ namespace achivements {
         return result;
     }
 
+    pqxx::result get_achivement_categories(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        pqxx::result result = con->execute("select distinct a.category, a.category_name from \"achivements\" a;");
+
+        pool_ptr->returnConnection(std::move(con));
+
+        if (result.empty()) {
+            return {};
+        }
+        return result;
+    }
+
+    pqxx::result get_achivement_by_category(std::string category, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {category};
+
+        pqxx::result result = con->execute_params("select * from \"achivements\" where category = ($1);", params);
+
+        pool_ptr->returnConnection(std::move(con));
+
+        if (result.empty()) {
+            return {};
+        }
+        return result;
+    }
+
+
     bool add_achivement(std::string username, int achivement_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
 
@@ -348,6 +377,39 @@ namespace achivements::server {
     void achivement_pictures(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get("/achivements/pictures", [logger_ptr](auto req, auto) {
             return req->create_response().set_body(cp::serialize(achivements::achivement_pictures()))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+        });
+    }
+
+    void get_achivement_categories(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get("/achivements/categories", [pool_ptr, logger_ptr](auto req, auto) {
+            pqxx::result result = achivements::get_achivement_categories(pool_ptr);
+            if (result.empty()) {
+                return req->create_response(restinio::status_bad_gateway()).done();
+            }
+            return req->create_response().set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+        });
+    }
+
+    void get_achivement_by_category(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/achivements/bycat/:category([0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            auto qrl = req->header().path();
+
+            std::string category = url::get_last_url_arg(qrl);
+
+            if (category == "category" || category.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            pqxx::result result = achivements::get_achivement_by_category(category, pool_ptr);
+
+            if (result.empty()) {
+                return req->create_response(restinio::status_bad_gateway()).done();
+            }
+            return req->create_response().set_body(cp::serialize(result))
                 .append_header("Content-Type", "application/json; charset=utf-8")
                 .done();
         });

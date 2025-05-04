@@ -281,10 +281,21 @@
         ]
     },
     "/achivements/pictures": {
+        "function": "achivement_pictures",
+        "method": "get"
+    },
+    "/achivements/categories": {
+        "function": "get_achivement_categories",
+        "method": "get"
+    },
+    "/achivements/bycat/:category([0-9\\-]+)": {
         "method": "get"
     },
     "/media/get/:filename(.*)": {
-        "method": "get"
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/transactions/prepare": {
         "function": "prepare_transaction",
@@ -356,6 +367,13 @@
     },
     "/social/new/:post_id(.*)": {
         "function": "get_post",
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/social/posts": {
+        "function": "get_all_posts",
         "method": "get",
         "header_fields": [
             "Bearer"

@@ -10,11 +10,13 @@ ID = 1
 REGEX_LINE = re.compile(r':.*\)')
 METHODS_FILE = './docs/methods.json'
 RESPONSES_FILE = './docs/methods_v2.json'
+CATEGORY = 1
 
 TO_REPLACE = {
     ":post_id(.*))": "81",
     # ":username([a-zA-Z0-9\-]+)": USERNAME,
     # ":username(.*)": USERNAME,
+    r":category\([0-9\-]+": str(CATEGORY),
 }
 
 with open(METHODS_FILE, 'r') as file:
@@ -34,6 +36,9 @@ def requestUrl(url: str) -> str:
         elif 'department' in url:
             url = re.sub(REGEX_LINE, '', url)
             url = url + str(ID)
+        elif 'category' in url:
+            url = re.sub(REGEX_LINE, '', url)
+            url = url + str(CATEGORY)
     for key, value in TO_REPLACE.items():
         if key in url:
             url = re.sub(key, value, url)
@@ -81,7 +86,12 @@ if __name__ == '__main__':
         if 'request' in SEARCH_REQUESTS[url]:
             response = sendRequest(url, SEARCH_REQUESTS[url]['request'])
         else:
-            response = sendRequest(url, SEARCH_REQUESTS[url])
+            try: 
+                response = sendRequest(url, SEARCH_REQUESTS[url])
+            except Exception as e:
+                print(f'Error: {e}')
+                print(f'url: {url}')
+                exit(1)
         result[url] = {}
         result[url]['request'] = SEARCH_REQUESTS[url]
         result[url]['response'] = {}
