@@ -17,6 +17,8 @@
 
 namespace media {
     extern std::unordered_map<std::string, std::string> content_types;
+    
+    extern std::set<std::string> allowed_no_token;
 
 #define content_type(file_name) content_types[file_name]
 

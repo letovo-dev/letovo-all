@@ -47,6 +47,18 @@ namespace media {
         {".webm", "video/webm"},
     };
 
+    std::set<std::string> allowed_no_token = {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".mp4",
+        ".mp3",
+        ".mkv",
+        ".webm",
+        ".svg",
+    };
+
     std::string save_file(std::string path, std::string file_name, std::string file) {
         std::ofstream out(path + file_name, std::ios::binary);
         out << file;
@@ -100,7 +112,8 @@ namespace media::server {
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                return req->create_response(restinio::status_unauthorized()).done();
+                // return req->create_response(restinio::status_unauthorized()).done();
+                token = "";
             }
             auto qrl = req->header().path();
             std::string relative_filename = url::get_string_after(req->header().path(), "/media/get/");
@@ -131,6 +144,9 @@ namespace media::server {
             logger_ptr->info([file_path] { return fmt::format("requested file {}", file_path); });
             if (content_type.empty()) {
                 return req->create_response(restinio::status_not_found()).done();
+            }
+            if(token == "" || allowed_no_token.find(file_type) == allowed_no_token.end()) {
+                return req->create_response(restinio::status_unauthorized()).done();
             }
             return req->create_response()
                 .append_header(restinio::http_field::content_type, content_type)
