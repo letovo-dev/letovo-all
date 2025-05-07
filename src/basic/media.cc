@@ -115,6 +115,7 @@ namespace media::server {
                 // return req->create_response(restinio::status_unauthorized()).done();
                 token = "";
             }
+            auto user = auth::get_username(token, pool_ptr);
             auto qrl = req->header().path();
             std::string relative_filename = url::get_string_after(req->header().path(), "/media/get/");
             std::string file_path = media::check_if_file_exists(relative_filename);
@@ -145,7 +146,7 @@ namespace media::server {
             if (content_type.empty()) {
                 return req->create_response(restinio::status_not_found()).done();
             }
-            if(token == "" || allowed_no_token.find(file_type) == allowed_no_token.end()) {
+            if(user == "" && allowed_no_token.find(file_type) == allowed_no_token.end()) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             return req->create_response()
