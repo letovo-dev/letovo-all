@@ -27,6 +27,7 @@ struct PagesConfig {
     Path admin_avatars_path;
     Path achivements_path;
     Path media_path;
+    Path secret_example_path;
     bool create_file;
 };
 
@@ -87,6 +88,8 @@ private:
         pages_config.achivements_path.absolute = pages_config.media_path.absolute + config_map["achivements_path"].GetString();
         pages_config.achivements_path.relative = config_map["achivements_path"].GetString();
         pages_config.create_file = config_map["create_file"].GetBool();
+        pages_config.secret_example_path.absolute = pages_config.media_path.absolute + config_map["secret_example_path"].GetString();
+        pages_config.secret_example_path.relative = config_map["secret_example_path"].GetString();
 
         config_map.Parse(GetJson("./MarketConfig.json").c_str());
         market_config.bid_resolver_sleep_time = config_map["bid_resolver_sleep_time"].GetInt();

@@ -20,6 +20,7 @@ namespace media {
     
     extern std::set<std::string> allowed_no_token;
 
+
 #define content_type(file_name) content_types[file_name]
 
     std::string save_file(std::string path, std::string file_name, std::string file);
@@ -31,6 +32,16 @@ namespace media {
     std::vector<std::string> get_all_files(std::string path);
 
     bool is_secret(std::string file_name, std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    enum class FileStatus {
+        SHARED,
+        AVALUABLE,
+        HACKING,
+        NOT_FOUND,
+        SECRET,
+        UNKNOWN_TYPE,
+        UNAUTHORIZED,
+    };
 } // namespace media
 
 namespace media::server {

@@ -4,5 +4,6 @@
   "create_file": true,
   "media_path": "/pages/",
   "user_avatars_path": "images/avatars/",
-  "wiki_path": "wiki/"
+  "wiki_path": "wiki/",
+  "secret_example_path": "posts/secret_example.md"
 }

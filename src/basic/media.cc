@@ -108,12 +108,13 @@ namespace media {
 namespace media::server {
     void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/media/get/:filename(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            FileStatus status = FileStatus::AVALUABLE;
             std::string token;
+            std::string content_type;
             try {
                 token = req -> header().get_field("Bearer");
             } catch (const std::exception& e) {
-                // return req->create_response(restinio::status_unauthorized()).done();
-                token = "";
+                status = FileStatus::UNAUTHORIZED;
             }
             auto user = auth::get_username(token, pool_ptr);
             auto qrl = req->header().path();
@@ -121,33 +122,56 @@ namespace media::server {
             std::string file_path = media::check_if_file_exists(relative_filename);
 
             if (file_path.empty() || file_path == "get") {
-                return req->create_response(restinio::status_not_found())
-                .append_header("Content-Type", "application/json; charset=utf-8")
-                .set_body("empty or wrong file name")
-                .done();
+                status = FileStatus::NOT_FOUND;
+            } else if (relative_filename.find("..") != std::string::npos || relative_filename[0] == '/') {
+                status = FileStatus::HACKING;
+            } else if(media::is_secret(relative_filename, token, pool_ptr)) {
+                status = FileStatus::SECRET;
             }
-
-            if (relative_filename.find("..") != std::string::npos || relative_filename[0] == '/' || media::is_secret(relative_filename, token, pool_ptr)) {
-                return req->create_response(restinio::status_forbidden())
-                .append_header("Content-Type", "application/json; charset=utf-8")
-                .set_body(Comment::giveMe().no_access)
-                .done();
-            }
-
             std::string file_type = media::get_file_type(relative_filename);
             if (media::content_types.find(file_type) == media::content_types.end()) {
-                return req->create_response(restinio::status_not_found())
-                .append_header("Content-Type", "application/json; charset=utf-8")
-                .set_body("uncnown file type")
-                .done();
+                status = FileStatus::UNKNOWN_TYPE;
+            } else {
+                content_type = content_type(file_type);
+                if (content_type.empty()) {
+                    status = FileStatus::UNKNOWN_TYPE;
+                }
             }
-            std::string content_type = content_type(file_type);
-            logger_ptr->info([file_path] { return fmt::format("requested file {}", file_path); });
-            if (content_type.empty()) {
-                return req->create_response(restinio::status_not_found()).done();
+            if(allowed_no_token.find(file_type) != allowed_no_token.end()) {
+                status = FileStatus::SHARED;
             }
-            if(user == "" && allowed_no_token.find(file_type) == allowed_no_token.end()) {
-                return req->create_response(restinio::status_unauthorized()).done();
+            if(auth::is_admin(token, pool_ptr)) {
+                status = FileStatus::AVALUABLE;
+            }
+            logger_ptr->info([status, file_path] { return fmt::format("file {}, status {}", file_path, static_cast<int>(status)); });
+            switch(status) {
+                case FileStatus::AVALUABLE:
+                    break;
+                case FileStatus::NOT_FOUND:
+                    return req->create_response(restinio::status_not_found())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body("empty or wrong file name")
+                        .done();
+                case FileStatus::HACKING:
+                    return req->create_response(restinio::status_forbidden())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(Comment::giveMe().no_access)
+                        .done();
+                case FileStatus::SECRET:
+                    return req->create_response(restinio::status_forbidden())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(restinio::sendfile(Config::giveMe().pages_config.secret_example_path.absolute))
+                        .done();
+                case FileStatus::UNKNOWN_TYPE:
+                    return req->create_response(restinio::status_not_found())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body("unknown file type")
+                        .done();
+                case FileStatus::UNAUTHORIZED:
+                    return req->create_response(restinio::status_unauthorized())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(Comment::giveMe().no_access)
+                        .done();
             }
             return req->create_response()
                 .append_header(restinio::http_field::content_type, content_type)
