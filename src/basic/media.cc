@@ -159,7 +159,7 @@ namespace media::server {
                         .done();
                 case FileStatus::SECRET:
                     return req->create_response(restinio::status_forbidden())
-                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .append_header("Content-Type", "text/html; charset=utf-8")
                         .set_body(restinio::sendfile(Config::giveMe().pages_config.secret_example_path.absolute))
                         .done();
                 case FileStatus::UNKNOWN_TYPE:
