@@ -158,7 +158,7 @@ namespace media::server {
                         .set_body(Comment::giveMe().no_access)
                         .done();
                 case FileStatus::SECRET:
-                    return req->create_response(restinio::status_forbidden())
+                    return req->create_response(restinio::status_non_authoritative_information())
                         .append_header("Content-Type", "text/html; charset=utf-8")
                         .set_body(restinio::sendfile(Config::giveMe().pages_config.secret_example_path.absolute))
                         .done();
