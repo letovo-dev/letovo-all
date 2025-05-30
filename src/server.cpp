@@ -71,6 +71,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     auth::server::change_password(router, pool_ptr, logger_ptr);
     auth::server::change_username(router, pool_ptr, logger_ptr);
     auth::server::register_true(router, pool_ptr, logger_ptr);
+    auth::server::is_admin(router, pool_ptr, logger_ptr);
 
     user::server::user_info(router, pool_ptr, logger_ptr);
     user::server::full_user_info(router, pool_ptr, logger_ptr);

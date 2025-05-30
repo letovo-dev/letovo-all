@@ -36,7 +36,7 @@ namespace auth {
     bool is_admin(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto decoded = hashing::string_from_hash(token);
 
-        return is_rights_by_username(decoded, pool_ptr);
+        return is_rights_by_username(decoded, pool_ptr, "admin");
     }
 
     bool is_user(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
@@ -569,6 +569,24 @@ namespace auth::server {
                 return req->create_response(restinio::status_internal_server_error()).done();
             }
             
+        });
+    }
+
+    void is_admin(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/auth/isadmin/:username(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string username = url::get_last_url_arg(req->header().path());
+
+            logger_ptr->info([username] { return fmt::format("is admin request for {}", username); });
+
+            if (auth::is_rights_by_username(username, pool_ptr, "admin")) {
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+            } else {
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+            }
         });
     }
 } // namespace auth::server
