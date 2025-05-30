@@ -690,7 +690,7 @@ namespace user::server {
                 user::set_avatar(username, avatar, pool_ptr);
 
                 return req->create_response()
-                    .set_body(cp::serialize(user::user_info(username, pool_ptr)))
+                    .set_body(cp::serialize(user::full_user_info(username, pool_ptr)))
                     .append_header("Authorization", token)
                     .append_header("Content-Type", "application/json; charset=utf-8")
                     .done();
