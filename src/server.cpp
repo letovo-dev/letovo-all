@@ -101,6 +101,8 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     achivements::server::create_achivement(router, pool_ptr, logger_ptr);
     achivements::server::full_user_achivemets(router, pool_ptr, logger_ptr);
     achivements::server::achivement_pictures(router, logger_ptr);
+    achivements::server::no_department_achivements(router, pool_ptr, logger_ptr);
+    achivements::server::department_achivements_by_user(router, pool_ptr, logger_ptr);
 
     social::server::get_authors_list(router, pool_ptr, logger_ptr);
     social::server::get_news(router, pool_ptr, logger_ptr);

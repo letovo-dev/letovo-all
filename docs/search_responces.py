@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 "status_code": "response status code",
                 "headers": "response headers",
                 "text": "response text",
-                "body": "response body"
+                "body": "response body, only first 2 results"
             }
         }
     }
@@ -100,6 +100,13 @@ if __name__ == '__main__':
             if response.text != '':
                 if 'json' in response.headers['Content-Type']:
                     result[url]['response']['body'] = json.loads(response.text.replace('\\', ''))
+                    try:
+                        if "result" in result[url]['response']['body']:
+                            result[url]['response']['body']["result"] = result[url]['response']['body']["result"][:2]
+                    except:
+                        print(result[url]['response']['body'])
+                        print(f"url: {url}")
+                        exit(1)
                 elif 'text' in response.headers['Content-Type']:
                     result[url]['response']['text'] = response.text
             if response.headers != '' and response.headers != None and len(response.headers) != 0:

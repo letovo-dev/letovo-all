@@ -78,10 +78,14 @@
         ]
     },
     "/auth/register_true": {
+        "function": "register_true",
         "method": "put",
         "header_fields": [
             "Bearer"
         ]
+    },
+    "/auth/isadmin/:username(.*)": {
+        "method": "get"
     },
     "/post/:id(\\d+)": {
         "function": "get_page_content",
@@ -284,12 +288,18 @@
         "function": "achivement_pictures",
         "method": "get"
     },
-    "/achivements/categories": {
-        "function": "get_achivement_categories",
-        "method": "get"
+    "/achivements/no_dep": {
+        "function": "no_department_achivements",
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
     },
-    "/achivements/bycat/:category([0-9\\-]+)": {
-        "method": "get"
+    "/achivements/by_user": {
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
     },
     "/media/get/:filename(.*)": {
         "method": "get",
@@ -434,6 +444,7 @@
         ]
     },
     "/social/comments": {
+        "function": "add_comment",
         "method": "post",
         "body_fields": {
             "comment": "String",
@@ -442,5 +453,12 @@
         "header_fields": [
             "Bearer"
         ]
+    },
+    "/social/categories": {
+        "function": "get_post_categories",
+        "method": "get"
+    },
+    "/social/bycat/:category([0-9\\-]+)": {
+        "method": "get"
     }
 }

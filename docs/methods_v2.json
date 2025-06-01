@@ -10,7 +10,7 @@
             "status_code": "response status code",
             "headers": "response headers",
             "text": "response text",
-            "body": "response body"
+            "body": "response body, only first 2 results"
         }
     },
     "/auth/login": {
@@ -171,12 +171,31 @@
     },
     "/auth/register_true": {
         "request": {
+            "function": "register_true",
             "method": "put",
             "header_fields": [
                 "Bearer"
             ]
         },
         "response": {}
+    },
+    "/auth/isadmin/:username(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
     },
     "/post/:id(\\d+)": {
         "request": {
@@ -196,7 +215,7 @@
                 "result": [
                     {
                         "username": "scv-7",
-                        "avatar_pic": "/images/avatars/example_4.png"
+                        "avatar_pic": "images/avatars/example_5.png"
                     }
                 ]
             },
@@ -294,12 +313,12 @@
                         "username": "scv-7",
                         "userrights": "admin",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "/images/avatars/example_4.png",
+                        "avatar_pic": "images/avatars/example_5.png",
                         "active": "t",
                         "times_visited": "1",
                         "departmentid": "0",
                         "rolename": "\u043f\u0438\u043f\u0430",
-                        "registered": "f"
+                        "registered": "t"
                     }
                 ]
             },
@@ -325,10 +344,10 @@
                         "userid": "1762",
                         "username": "scv-7",
                         "userrights": "admin",
-                        "balance": "1063",
-                        "registered": "f",
+                        "balance": "1083",
+                        "registered": "t",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "/images/avatars/example_4.png",
+                        "avatar_pic": "images/avatars/example_5.png",
                         "active": "t",
                         "times_visited": "1",
                         "role": "\u043f\u0438\u043f\u0430",
@@ -373,33 +392,6 @@
                         "departmentid": "0",
                         "payment": "0",
                         "departmentname": "nowhere"
-                    },
-                    {
-                        "username": "scv-7",
-                        "roleid": "0",
-                        "rolename": "somewhere",
-                        "rang": "0",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "username": "scv-7",
-                        "roleid": "7",
-                        "rolename": "\u043f\u0438\u043f\u0430",
-                        "rang": "3",
-                        "departmentid": "0",
-                        "payment": "1000",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "username": "scv-7",
-                        "roleid": "2",
-                        "rolename": "\u0447\u0438\u0441\u0442\u0435\u043b\u044c\u0449\u0438\u043a \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432",
-                        "rang": "2",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
                     }
                 ]
             },
@@ -436,22 +428,6 @@
                         "departmentid": "0",
                         "payment": "0",
                         "departmentname": "nowhere"
-                    },
-                    {
-                        "roleid": "2",
-                        "rolename": "\u0447\u0438\u0441\u0442\u0435\u043b\u044c\u0449\u0438\u043a \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432",
-                        "rang": "2",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "roleid": "9",
-                        "rolename": "anyone",
-                        "rang": "1",
-                        "departmentid": "1",
-                        "payment": "100",
-                        "departmentname": "somewhere"
                     }
                 ]
             },
@@ -629,10 +605,7 @@
             "body": {
                 "result": [
                     "images/avatars/example_1.png",
-                    "images/avatars/example_5.png",
-                    "images/avatars/example_2.png",
-                    "images/avatars/example_4.png",
-                    "images/avatars/example_3.png"
+                    "images/avatars/example_5.png"
                 ]
             },
             "headers": [
@@ -671,14 +644,15 @@
                         "achivement_id": "2",
                         "datetime": "2025-01-16 00:32:04.305811",
                         "stage": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 2",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 2 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
                         "level": "1",
-                        "stages": "1",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -703,332 +677,18 @@
                     {
                         "id": "",
                         "username": "",
-                        "achivement_id": "7",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "20",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "25",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "26",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "27",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "11",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "39",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "17",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "33",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "31",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "34",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "12",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "10",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "18",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "15",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "40",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "13",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "21",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "5",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "19",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "37",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
                         "achivement_id": "32",
                         "datetime": "",
                         "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 32",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 32 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     },
                     {
                         "id": "",
@@ -1036,299 +696,15 @@
                         "achivement_id": "24",
                         "datetime": "",
                         "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 24",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 24 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "38",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "8",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "28",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "30",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "42",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "6",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "29",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "41",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "16",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "36",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "4",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "23",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "5",
-                        "username": "scv-7",
-                        "achivement_id": "2",
-                        "datetime": "2025-01-16 00:32:04.305811",
-                        "stage": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "22",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "3",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "14",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "35",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "9",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "1",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "0",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1379,466 +755,28 @@
             "body": {
                 "result": [
                     {
-                        "achivement_id": "42",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
                         "achivement_id": "4",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 4",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 4 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "6",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "8",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "10",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "12",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "14",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "16",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     },
                     {
                         "achivement_id": "18",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 18",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 18 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "20",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "22",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "24",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "26",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "28",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "30",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "32",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "34",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "36",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "38",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "2",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "3",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "5",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "7",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "9",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "11",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "13",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "15",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "17",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "19",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "21",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "23",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "25",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "27",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "29",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "31",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "33",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "35",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "37",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "39",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "41",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "40",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "0",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1862,14 +800,15 @@
                 "result": [
                     {
                         "achivement_id": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 1",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 1 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
                         "level": "0",
                         "stages": "1",
                         "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1909,8 +848,8 @@
             "status_code": 200,
             "body": {
                 "result": [
-                    "images/achivements/example_1.jpg",
-                    "images/achivements/example_2.jpg"
+                    "images/achivements/example_1.png",
+                    "images/achivements/example_1.jpg"
                 ]
             },
             "headers": [
@@ -1922,22 +861,49 @@
             ]
         }
     },
-    "/achivements/categories": {
+    "/achivements/no_dep": {
         "request": {
-            "function": "get_achivement_categories",
-            "method": "get"
+            "function": "no_department_achivements",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {
             "status_code": 200,
             "body": {
                 "result": [
                     {
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "20",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 20",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 20 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_tree": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "12",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 12",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 12 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_tree": "1",
+                        "level": "3",
+                        "stages": "10",
+                        "category": "2",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1950,255 +916,14 @@
             ]
         }
     },
-    "/achivements/bycat/:category([0-9\\-]+)": {
+    "/achivements/by_user": {
         "request": {
-            "method": "get"
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "achivement_id": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "0",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "3",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "5",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "7",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "9",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "11",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "13",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "15",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "17",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "19",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "21",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "23",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "25",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "27",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "29",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "31",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "33",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "35",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "37",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "39",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "41",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
+            "method": "get",
+            "header_fields": [
+                "Bearer"
             ]
-        }
+        },
+        "response": {}
     },
     "/media/get/:filename(.*)": {
         "request": {
@@ -2419,6 +1144,7 @@
     },
     "/social/comments": {
         "request": {
+            "function": "add_comment",
             "method": "post",
             "body_fields": {
                 "comment": "String",
@@ -2429,5 +1155,67 @@
             ]
         },
         "response": {}
+    },
+    "/social/categories": {
+        "request": {
+            "function": "get_post_categories",
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                    },
+                    {
+                        "category": "2",
+                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/bycat/:category([0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "2",
+                        "post_path": "posts/example_post.md",
+                        "is_secret": "t",
+                        "likes": "0",
+                        "title": "secret page",
+                        "author": "scv-7",
+                        "text": "\u044d\u0442\u043e  \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-05-02 21:11:31.404448",
+                        "saved_count": "0",
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
     }
 }

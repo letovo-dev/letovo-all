@@ -125,6 +125,21 @@ namespace achivements {
         }
         return pictures;
     }
+
+    pqxx::result department_achivements(std::string username, std::string department_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+
+        std::vector<std::string> params = {username, department_id};
+
+        pqxx::result result = con->execute_params("select * from \"user_achivements\" right join \"achivements\" on \"user_achivements\".achivement_id = \"achivements\".achivement_id where \"user_achivements\".username = ($1) or \"user_achivements\".username is null and \"achivements\".departmentid = ($2) order by \"achivement_tree\" asc, \"level\" desc;", params);
+
+        pool_ptr->returnConnection(std::move(con));
+
+        if (result.empty()) {
+            return {};
+        }
+        return result;
+    }
 } // namespace achivements
 
 namespace achivements::server {
@@ -352,6 +367,47 @@ namespace achivements::server {
                 .append_header("Content-Type", "application/json; charset=utf-8")
                 .done();
         });
+    }
+
+    void no_department_achivements(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/achivements/no_dep)", [pool_ptr, logger_ptr](auto req, auto params) {
+            std::string token = req->header().get_field("Bearer");
+            if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            std::string username = auth::get_username(token, pool_ptr);
+            pqxx::result result = achivements::department_achivements(username, "-1", pool_ptr);
+
+            return req->create_response().set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+        });
+    }
+
+    void department_achivements_by_user(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/achivements/by_user)", [pool_ptr, logger_ptr](auto req, auto) {
+            auto qrl = req->header().path();
+
+            std::string token = req->header().get_field("Bearer");
+            if (token.empty()) {
+                logger_ptr->info([]{return "token is empty";});
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            std::string username = auth::get_username(token, pool_ptr);
+
+            pqxx::result result = user::full_user_info(username, pool_ptr);
+
+            if (result.empty()) {
+                return req->create_response(restinio::status_bad_gateway()).done();
+            }
+
+            result = achivements::department_achivements(username, result[0]["departmentid"].as<std::string>(), pool_ptr);
+
+            return req->create_response().set_body(cp::serialize(result))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+            });
     }
 
 } // namespace achivements::server

@@ -10,7 +10,7 @@
             "status_code": "response status code",
             "headers": "response headers",
             "text": "response text",
-            "body": "response body"
+            "body": "response body, only first 2 results"
         }
     },
     "/auth/login": {
@@ -23,7 +23,7 @@
             }
         },
         "response": {},
-        "explanation": "The method being described here, called \"enable_auth\", uses a POST request to enable authentication. The request includes two fields: 'login' and 'password'. Essentially, this method allows one to log in by providing a username ('login') and password ('password')."
+        "explanation": "This method enables authentication by processing a POST request with specific fields: `login` as a string and `password` as a string. The response to this method is not specified."
     },
     "/auth/reg": {
         "request": {
@@ -36,7 +36,7 @@
             }
         },
         "response": {},
-        "explanation": "The method described enables registration by processing a POST request. It requires three fields in the body of the request: 'login', 'password', and 'temp_token'. This process likely allows users to sign up for an account using their login details and a temporary token, facilitating user registration on a system or platform."
+        "explanation": "This method enables registration functionality. It accepts POST requests with parameters including 'login', 'password', and 'temp_token'. The purpose of this interaction appears to validate these inputs to facilitate account creation."
     },
     "/auth/amiauthed": {
         "request": {
@@ -59,7 +59,7 @@
                 "Connection"
             ]
         },
-        "explanation": "The method being described checks if a user is authenticated by using an API endpoint. It sends a GET request with a 'Bearer' token in the headers to this '/auth/amiauthed' endpoint. The response indicates whether the authentication was successful (status_code 200) and provides details about the status ('f', likely meaning 'false'), server information, date of request, content type, length, and connection settings."
+        "explanation": "This method checks if a user is authenticated by looking at a specific header field labeled 'Bearer'. If authentication details are present, it returns a status indicating that the user is indeed authorized ('f' likely stands for False in this context). The response includes standard HTTP headers like Server, Date, Content-Type, etc., but no data body."
     },
     "/auth/amiadmin": {
         "request": {
@@ -82,7 +82,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method checks if the user making the request has administrative privileges. If the user is an admin, it returns a status of 'f' (false), indicating they are indeed an admin. The method uses a 'Bearer' token in its header for authentication."
+        "explanation": "The method checks if the user is an administrator by using a GET request with a Bearer token. The response indicates whether the user has admin status or not."
     },
     "/auth/isactive/:username(.*)": {
         "request": {
@@ -102,7 +102,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method checks if a user with a specific username is active. It uses the GET request to fetch this information and returns a status code of 200 with a 't' in the body to indicate that the user is indeed active. The response also includes standard HTTP headers for server, date, content type, content length, and connection details."
+        "explanation": "This method checks if a user with a given username is active. When accessed using GET request on this specific route with a username, it returns a status code of 200 indicating success along with 't' which typically signifies that the user is indeed active. Other headers like Server, Date, Content-Type, etc., provide metadata about the response."
     },
     "/auth/isuser/:username(.*)": {
         "request": {
@@ -122,7 +122,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method checks if a user with the specified username exists. It sends a GET request to retrieve this information and returns a status code of 200 along with a 't' value in the body to indicate that the user was found. The response includes standard HTTP headers for server, date, content type, content length, and connection details."
+        "explanation": "This method checks if a specific user exists by using their username. It performs a GET request to determine the status of the user, returning a 200 HTTP status code along with 't' as an indicator that the user is indeed present. The response includes standard headers for web communication like Server, Date, Content-Type, Content-Length and Connection."
     },
     "/auth/delete": {
         "request": {
@@ -133,7 +133,7 @@
             ]
         },
         "response": {},
-        "explanation": "The provided code snippet represents a route definition in an API context. This specific route handles DELETE requests for enabling deletion functionality with authentication enabled through a 'Bearer' token-based system.\n\nIn simpler terms:\n- The `/auth/delete` endpoint allows you to delete something (presumably data) via a DELETE HTTP request.\n- It requires that your request carries an authorization header containing a 'Bearer' token, which is a common method for authentication in APIs. This token acts as proof of identity or permission to perform the operation.\n- There's no explicit response defined here; typically, this would be followed by instructions on how the API handles successful (e.g., status code 204) or unsuccessful deletion responses.\n\nIn essence, it enables a secure way to delete resources with proper authentication and authorization."
+        "explanation": "The provided information describes a method that enables and performs a DELETE request. Specifically:\n\n- **Function**: `enable_delete` - This function activates or initializes the process for deleting something (based on HTTP DELETE protocol).\n\n- **Method**: `delete` - It indicates that an HTTP DELETE operation will be carried out.\n\n- **Header Fields**: ['Bearer'] - This suggests that the request will include a \"Bearer\" token in its headers, typically used for authentication. \n\nIn essence, this method allows for the deletion of resources over HTTP by invoking a DELETE request with proper authorization via a Bearer token."
     },
     "/auth/add_userrights": {
         "request": {
@@ -148,7 +148,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method allows you to add new rights or permissions for a specified user by using the PUT HTTP request method. You need to provide the 'username' of the user and 'rights' which defines the permissions they should have. The request must include an authentication token in the header, typically in the format 'Bearer [token]'."
+        "explanation": "The method 'add_userrights' allows you to grant additional rights to a user by using a PUT request. The username of the user and their new rights are provided in the body fields, while authentication is handled through a Bearer token in the header."
     },
     "/auth/change_username": {
         "request": {
@@ -162,7 +162,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method allows a user to change their username by sending a PUT request with their new desired username in the body. The request must include an authorization token (Bearer) in the headers."
+        "explanation": "The given information describes an API method named `change_username`. This method allows a user to update their username by sending a PUT request with new username data in the body of the request. The request needs to include authentication through a 'Bearer' token, which is typically used for authorization purposes. Essentially, it facilitates the process of changing a user's name within a system or application."
     },
     "/auth/change_password": {
         "request": {
@@ -177,17 +177,37 @@
             ]
         },
         "response": {},
-        "explanation": "This method allows a user to change their password. It requires a PUT request with a \"new_password\" field and an optional \"unlogin\" flag as parameters. The request should be made using a token authenticated 'Bearer' header."
+        "explanation": "The provided JSON describes a REST API endpoint that allows users to change their password. \n\n- Method: A `PUT` request is used which indicates that we are modifying existing data.\n- Path: `/auth/change_password` signifies the specific route for changing authentication information, particularly passwords.\n\nParameters:\n- `function`: \"change_password\" indicates the action being performed - altering a password.\n- `method`: \"put\" confirms this is an update operation. \n- `body_fields`: Requires two fields to be sent in the body of the request: `unlogin` (a boolean flag likely for logging out after changing password) and `new_password` (the new password string).\n- `header_fields`: An 'Authorization' header with a \"Bearer\" token is expected, used for authentication purposes.\n\nIn summary: This API endpoint handles the secure process of updating a user's password via a HTTP `PUT` request, necessitating confirmation through an existing session token and providing details like whether to log out after updating."
     },
     "/auth/register_true": {
         "request": {
+            "function": "register_true",
             "method": "put",
             "header_fields": [
                 "Bearer"
             ]
         },
         "response": {},
-        "explanation": "This code snippet represents an API endpoint definition for a PUT request. The endpoint requires a \"Bearer\" token in its headers for authentication purposes. However, no specific response is defined for this request. In simpler terms, the method defines that when a PUT request arrives with a \"Bearer\" token in its header, it expects to process and handle this kind of request but does not specify what happens after receiving it or how it should respond."
+        "explanation": "This code snippet appears to define a route for registering a user in an application. The method `register_true` utilizes HTTP's PUT method to process registration requests. It includes 'Bearer' as part of its header fields which indicates the use of JSON Web Tokens (JWT) for authentication, suggesting that the server verifies the identity of the user by checking this token before processing the registration request. The response details are not provided, implying that a standard HTTP status code will be sent back along with any necessary data or errors related to the registration process."
+    },
+    "/auth/isadmin/:username(.*)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "status": "t"
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        },
+        "explanation": "This method checks if a user with a specific username has administrative privileges. When a GET request is made to this endpoint using the specified username, it returns a status code of 200 with a 't' in the body, indicating that the user is an admin. It also sends standard HTTP headers like Server, Date, Content-Type, etc., in response."
     },
     "/post/:id(\\d+)": {
         "request": {
@@ -195,7 +215,7 @@
             "method": "get"
         },
         "response": {},
-        "explanation": "The method `get_page_content` retrieves the content of a webpage identified by its numerical ID. When called via GET request with a path '/post/:id', it processes this to fetch details from the page corresponding to that specific ID."
+        "explanation": "The method 'get_page_content' retrieves content from a webpage identified by its unique 'id'. This operation occurs when a GET request is made to an endpoint formatted as '/post/:id(\\\\d+)'. The ':id(\\\\d+)' part signifies that the 'id' is expected to be a numerical value included in the URL."
     },
     "/post/author/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -208,7 +228,7 @@
                 "result": [
                     {
                         "username": "scv-7",
-                        "avatar_pic": "/images/avatars/example_4.png"
+                        "avatar_pic": "images/avatars/example_5.png"
                     }
                 ]
             },
@@ -220,7 +240,7 @@
                 "Connection"
             ]
         },
-        "explanation": "The method retrieves information about a specific user on a platform by their username. It returns details like the user's name and profile picture."
+        "explanation": "The method retrieves information about a specific author from a web page using their username. It sends a GET request to a specified URL containing the username in a route parameter. Upon receiving a successful response (with status code 200), it returns data including the username and an avatar picture associated with that user."
     },
     "/post/add_page_content": {
         "request": {
@@ -228,7 +248,7 @@
             "method": "post"
         },
         "response": {},
-        "explanation": "This method adds content to a webpage using a POST request."
+        "explanation": "The `add_page_by_content` method, when accessed via a POST request, adds new content to an existing web page."
     },
     "/post/add_page": {
         "request": {
@@ -240,7 +260,7 @@
             }
         },
         "response": {},
-        "explanation": "The method allows adding a new page by providing its path and text content through a POST request."
+        "explanation": "The `add_page_by_page` method adds a new page using POST request with two fields: `post_path` (a string representing the path of the page) and `text` (a string containing the content of the page). It doesn't specify how or where this operation is performed, only what needs to be provided for it to work."
     },
     "/post/update_likes": {
         "request": {
@@ -252,7 +272,7 @@
             }
         },
         "response": {},
-        "explanation": "The \"update_likes\" method allows you to modify the number of likes on a post by sending a request with the ID of the post and the new like count. It accepts an integer for the post_id and another integer representing the updated likes, then processes these values to adjust the post's like count in the system."
+        "explanation": "The method \"update_likes\" allows for modifying the number of likes on a post. It uses the HTTP PUT request with two parameters: 'post_id' (an integer identifying the specific post) and 'likes' (the new like count, also an integer)."
     },
     "/post/delete/:id(\\d+)": {
         "request": {
@@ -263,7 +283,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code snippet describes a route for handling HTTP DELETE requests on a server. Specifically, when such a request targets an endpoint with the path `/post/delete/:id(\\\\d+)`, where `:id` is a placeholder for an integer (denoted by `(\\\\d+)`), it triggers a function named 'enable_delete'. This function enables deletion of content from posts. The request includes a header field named 'Bearer', which is commonly used for authentication purposes in API requests. The response details associated with this route are not specified, implying that the implementation could provide either confirmation or an error message after processing the delete operation."
+        "explanation": "This code snippet represents a route in a web application framework like Express.js. It defines a route that handles HTTP DELETE requests for deleting an item based on its unique ID.\n\nHere's a simple explanation:\n\n1. **Route**: The route `/post/delete/:id` specifies which path this operation should be executed from. The `:id` part means that there will be a dynamic parameter in the URL, which is assumed to represent the ID of the post to delete.\n\n2. **Method**: It uses the HTTP method `DELETE`, indicating that when someone wants to perform this operation (deletion), they send an HTTP request with this method to the specified path.\n\n3. **Request Information**:\n   - **Function**: The string `'enable_delete'` suggests a custom function or method name within the application logic, indicating what specific deletion-related logic needs to be executed.\n   - **Header Fields**: `Bearer` implies that there is a requirement for an API token prefixed with \"Bearer\" in the request headers. This is often used when securing API endpoints requiring user authentication.\n\n4. **Response**:\n   - The response object `{}` indicates that this route does not return any specific content upon successful execution of its logic; it could be silently acknowledging the deletion operation without providing additional details or status codes directly from this endpoint's response body.\n\nIn essence, this setup allows for deleting a post by specifying its ID in the URL when making an HTTP DELETE request to `/post/delete/:id`. The deleted action is then executed according to the defined function (`enable_delete`) and requiring proper authentication through a \"Bearer\" token in headers."
     },
     "/post/favourite/": {
         "request": {
@@ -274,7 +294,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method retrieves favorite posts using a GET request with a Bearer token for authentication."
+        "explanation": "This method retrieves a user's favorite posts. It uses a GET request with a Bearer token in the header for authentication. The response provides details of the user's favorite content."
     },
     "/post/favourite": {
         "request": {
@@ -288,7 +308,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method adds a post to your list of favorite posts. You provide the ID of the post you want to favorite, and use a token (the 'Bearer' in the header) for authentication."
+        "explanation": "This method is used to add a post as a favorite. When called via POST with a 'post_id' parameter specifying the desired post and a valid 'Bearer' token in the header, it adds that post to the user's favorites list."
     },
     "/post/favourite/:id(\\d+)": {
         "request": {
@@ -298,7 +318,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code snippet describes a route in an API where a DELETE request is being handled. Specifically:\n\n- The path `/post/favourite/:id(\\\\d+)` indicates that this route is related to handling operations on posts marked as favorites. Here, `:id` is a parameter for the ID of the post and `(\\\\d+)` signifies that the ID will be a digit.\n\nThe 'request' section specifies:\n- `'method': 'delete'` means you're deleting something at this endpoint.\n- `'header_fields': ['Bearer']` suggests you need to provide an authentication token prefixed with \"Bearer\" in your request headers for authorization purposes.\n\nThe 'response' section indicates that the server will return nothing (`{}`) after processing this DELETE request, implying a simple operation where the API doesn't require any data back from the client side post the operation (like deleting or updating something).\n\nIn short, this route handles removing favorite status for a specific post by its ID with authentication."
+        "explanation": "This method is designed to delete a favorite item based on its ID. It uses the DELETE HTTP request method and requires an \"Authorization\" header with a Bearer token for authentication. The ':id' parameter represents the unique identifier of the favorite item being targeted for deletion, which must be a numeric value."
     },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -314,12 +334,12 @@
                         "username": "scv-7",
                         "userrights": "admin",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "/images/avatars/example_4.png",
+                        "avatar_pic": "images/avatars/example_5.png",
                         "active": "t",
                         "times_visited": "1",
                         "departmentid": "0",
                         "rolename": "\u043f\u0438\u043f\u0430",
-                        "registered": "f"
+                        "registered": "t"
                     }
                 ]
             },
@@ -331,7 +351,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This code snippet describes a route for handling requests to retrieve information about a user specified by their username. When this route receives a GET request with a specific username format (alphanumeric characters and dashes), it calls a function named 'user_info' to fetch the details of that user. The response includes the status code 200 indicating success, user data like ID, rights, join date, etc., headers such as server version, content type, length, and connection settings."
+        "explanation": "This code snippet defines a route for retrieving user information. When this route is accessed with a specific username as part of the URL path, it calls the `user_info` function to get details about that user. The response includes HTTP status code 200 indicating success, the user's data such as ID, rights, joined time, avatar picture, activity status, visited times, department ID, role name, and registration status. It also specifies server-related headers like Server, Date, Content-Type, Content-Length, and Connection in the response."
     },
     "/user/full/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -346,10 +366,10 @@
                         "userid": "1762",
                         "username": "scv-7",
                         "userrights": "admin",
-                        "balance": "1063",
-                        "registered": "f",
+                        "balance": "1083",
+                        "registered": "t",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "/images/avatars/example_4.png",
+                        "avatar_pic": "images/avatars/example_5.png",
                         "active": "t",
                         "times_visited": "1",
                         "role": "\u043f\u0438\u043f\u0430",
@@ -367,7 +387,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves detailed information about a user identified by their username. When called with a specific username as input, it returns details like UserID, username, rights, balance, registration date, avatar picture, status, visits count, role, paycheck, department ID and name for that user. The method is executed using the GET request HTTP method."
+        "explanation": "The method retrieves full user information for a specific user by their username. It returns details like ID, username, rights, balance, registration date, avatar, activity status, visited times, role, paycheck, department ID and name. The response includes status code 200 indicating success."
     },
     "/user/roles/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -395,33 +415,6 @@
                         "departmentid": "0",
                         "payment": "0",
                         "departmentname": "nowhere"
-                    },
-                    {
-                        "username": "scv-7",
-                        "roleid": "0",
-                        "rolename": "somewhere",
-                        "rang": "0",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "username": "scv-7",
-                        "roleid": "7",
-                        "rolename": "\u043f\u0438\u043f\u0430",
-                        "rang": "3",
-                        "departmentid": "0",
-                        "payment": "1000",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "username": "scv-7",
-                        "roleid": "2",
-                        "rolename": "\u0447\u0438\u0441\u0442\u0435\u043b\u044c\u0449\u0438\u043a \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432",
-                        "rang": "2",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
                     }
                 ]
             },
@@ -433,7 +426,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves information about roles assigned to a specific user. When called with a user's username as input, it returns details such as their role IDs, names, ranks, payment amounts, and associated departments. The data returned includes multiple roles that the user might have if they are assigned more than one role."
+        "explanation": "This method retrieves the roles associated with a specific username. It takes the username as input (in the format /user/roles/:username), performs a GET operation to access user role information, and returns the roles in the response. The response includes details like role ID, role name, rank, department ID, payment amount, and department name for the requested user."
     },
     "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -459,22 +452,6 @@
                         "departmentid": "0",
                         "payment": "0",
                         "departmentname": "nowhere"
-                    },
-                    {
-                        "roleid": "2",
-                        "rolename": "\u0447\u0438\u0441\u0442\u0435\u043b\u044c\u0449\u0438\u043a \u0441\u043e\u0440\u0442\u0438\u0440\u043e\u0432",
-                        "rang": "2",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "roleid": "9",
-                        "rolename": "anyone",
-                        "rang": "1",
-                        "departmentid": "1",
-                        "payment": "100",
-                        "departmentname": "somewhere"
                     }
                 ]
             },
@@ -486,7 +463,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves information about inactive roles associated with a given username. It returns details like role ID, name, rank, department ID, payment level, and department name for each inactive role linked to that user. The response includes the status code and headers related to the API call."
+        "explanation": "This method retrieves information about inactive roles associated with a specific username. It returns details such as role ID, name, rank, department ID, payment level, and department name for each inactive role linked to that user."
     },
     "/user/add_role": {
         "request": {
@@ -503,7 +480,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method adds a role for a user. It requires the username, role ID, role name, and department as inputs through a POST request with a 'Bearer' token in the headers."
+        "explanation": "The method `add_user_role` adds a specific role to a user. It takes inputs like the user's username, the ID of the role, the name of the role, and optionally, the department they belong to, using a 'Bearer' token for authentication."
     },
     "/user/delete_role": {
         "request": {
@@ -511,7 +488,7 @@
             "method": "delete"
         },
         "response": {},
-        "explanation": "The `delete_user_role` method is being invoked via a DELETE request. This action removes a specific role associated with a user."
+        "explanation": "The method `delete_user_role` performs a DELETE operation to remove or delete a role associated with a user. It likely interacts with a system's backend where roles and users are managed to perform this action."
     },
     "/user/create_role": {
         "request": {
@@ -528,7 +505,7 @@
             ]
         },
         "response": {},
-        "explanation": "The provided JSON describes a method that allows for creating a new role through a POST request. This method expects specific data fields in the body of the request such as 'payment', 'role', 'department', and 'rang'. The header includes an authorization token prefixed with 'Bearer'. In essence, this operation enables users to define or create roles by supplying necessary parameters.\n\nThe explanation is:\nThis API method creates a new role when provided with specific details through a POST request. It requires data fields for payment, role description, department identifier, and rang value in the request body, and uses an 'Authorization Bearer' token in the headers for authentication."
+        "explanation": "This method creates a new role using provided data such as payment amount, role name, department ID, and rank. It requires authentication via a 'Bearer' token in the header."
     },
     "/user/department/roles/:department([0-9]+)": {
         "request": {
@@ -563,7 +540,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves information about roles associated with a specific department. It accepts the ID of the department as input (which must be a number) and returns details like role IDs, names, ranks, IDs related to the department, and payments for each role. The output is structured in JSON format and includes status codes for HTTP responses along with headers like server name, date, content type, length, and connection status."
+        "explanation": "This method retrieves role information for a specified department. Specifically, it fetches details like role ID, name, rank, associated department's ID, and payment related to those roles from the system. The response includes these details in JSON format along with standard HTTP headers."
     },
     "/user/department/name/:department([0-9]+)": {
         "request": {
@@ -587,7 +564,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves department names from a server using the GET request. It takes in an input of a specific department number and returns information about that department in the form of a JSON response. The status code 200 indicates successful retrieval, and additional headers detail technical metadata such as date and content type."
+        "explanation": "The method being described is a GET request function designed to retrieve department names. When invoked with an ID for a specific department (represented by \":department([0-9]+)\"), it returns details about that department in the form of a JSON response. The result includes the department's name, which here is 'somewhere'. This operation doesn't detail how the retrieval occurs but specifies what kind of request and expected outcome this function provides."
     },
     "/user/set_department": {
         "request": {
@@ -602,7 +579,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method allows you to change a user's department by providing their username and the new department name. It requires a \"Bearer\" token in the headers for authentication."
+        "explanation": "This method allows changing the department of a user by using their username and specifying the new department. It requires an API call with a \"put\" method, including a 'Bearer' token in the headers for authentication. The body needs to include the 'department' and 'username' fields for processing."
     },
     "/user/department/roles": {
         "request": {
@@ -631,7 +608,7 @@
                 "Connection"
             ]
         },
-        "explanation": "The method retrieves information about all departments in a system. It sends a GET request to access this data and expects a response that includes details like department IDs and names. The successful response status code 200 indicates the operation was completed without errors."
+        "explanation": "This method retrieves information about all departments using a GET request. It returns the department IDs and names in a JSON format, along with standard HTTP response headers."
     },
     "/user/department/start/:department(.*)": {
         "request": {
@@ -649,7 +626,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This code represents a route definition for a web server application. The route `/user/department/start/:department` matches specific URLs that include department information after '/user/department/start/'. \n\nWhen this route is accessed using a GET method, the application invokes a function named `starter_role`. This function returns a response with a status code of 200 indicating success, and the content \"11\". Additionally, it sends several HTTP headers including 'Server', 'Date', 'Content-Type', 'Content-Length', and 'Connection' as part of the response.\n\nIn essence, when a GET request is made to this URL pattern with a department identifier, `starter_role` function performs some action or logic resulting in an HTTP 200 status code along with headers being sent back."
+        "explanation": "This method retrieves information about a specific department's role. It uses GET request to call function 'starter_role' with department name as parameter, returns 200 status code indicating success along with server date, content type, length and connection headers. The text returned is '11'."
     },
     "/user/all_avatars": {
         "request": {
@@ -661,10 +638,7 @@
             "body": {
                 "result": [
                     "images/avatars/example_1.png",
-                    "images/avatars/example_5.png",
-                    "images/avatars/example_2.png",
-                    "images/avatars/example_4.png",
-                    "images/avatars/example_3.png"
+                    "images/avatars/example_5.png"
                 ]
             },
             "headers": [
@@ -675,7 +649,7 @@
                 "Connection"
             ]
         },
-        "explanation": "The method `all_avatars` uses a GET request to fetch a list of available avatars. It returns the names of the avatar images as an array in the response body."
+        "explanation": "The `all_avatars` method retrieves a list of all available avatars in the system. It sends a GET request to access this information. The response includes the status code (200 indicating success) and the list of avatar image paths, like 'images/avatars/example_1.png' and 'images/avatars/example_5.png'."
     },
     "/user/set_avatar": {
         "request": {
@@ -688,7 +662,7 @@
             ]
         },
         "response": {},
-        "explanation": "The \"/user/set_avatar\" method allows a user to change their avatar by sending a PUT request with an 'avatar' field containing the new image data. This operation requires authentication using a 'Bearer' token. The response for this action is not specified in the provided information."
+        "explanation": "This method allows a user to change their avatar by sending a PUT request with an avatar image as the body field and including a \"Bearer\" token in the headers."
     },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -705,14 +679,15 @@
                         "achivement_id": "2",
                         "datetime": "2025-01-16 00:32:04.305811",
                         "stage": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 2",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 2 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
                         "level": "1",
-                        "stages": "1",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -724,7 +699,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This code snippet defines a route for fetching achievements of a user in an application. When accessed with GET request using URL '/achivements/user/:username([a-zA-Z0-9\\\\-]+)', it calls the function 'user_achivemets' to retrieve specific user's achievements. The response includes details like achievement ID, username, date/time, stages, pictures, names, descriptions, trees, levels, stages, categories, and category names in JSON format along with standard HTTP headers for server communication."
+        "explanation": "This method retrieves achievement information for a user specified by their username. It returns details about a specific achievement including ID, name, description, associated stage, picture URL, tree category, level, stages, department ID and its category name. The method uses GET request to fetch this data."
     },
     "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -738,332 +713,18 @@
                     {
                         "id": "",
                         "username": "",
-                        "achivement_id": "7",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "20",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "25",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "26",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "27",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "11",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "39",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "17",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "33",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "31",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "34",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "12",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "10",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "18",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "15",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "40",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "13",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "21",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "5",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "19",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "37",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
                         "achivement_id": "32",
                         "datetime": "",
                         "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 32",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 32 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     },
                     {
                         "id": "",
@@ -1071,299 +732,15 @@
                         "achivement_id": "24",
                         "datetime": "",
                         "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 24",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 24 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "38",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "8",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "28",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "30",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "42",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "6",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "29",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "41",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "16",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "36",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "4",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "23",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "5",
-                        "username": "scv-7",
-                        "achivement_id": "2",
-                        "datetime": "2025-01-16 00:32:04.305811",
-                        "stage": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "22",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "3",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "14",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "35",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "9",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "1",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "0",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1375,7 +752,7 @@
                 "Connection"
             ]
         },
-        "explanation": "The provided code snippet appears to be a JSON response from an API call, likely related to user achievements in some kind of game or application. Here's a simplified summary:\n\n1. The response contains data about various user achievements (`'achievements'` key), organized under different categories and stages.\n2. Each achievement has details like the unique ID (`'achivement_id'`), completion date (`'datetime'`), category, description (`'achivement_decsription'`), etc.\n3. The JSON structure lists multiple achievements for users (like `'scv-7'`) with their respective details.\n4. It also includes headers indicating the API's server, date, content type, length, and connection details.\n\nIn essence, this code snippet represents a structured data set containing information about user achievements in an application or game system."
+        "explanation": "This method retrieves full achievement details for a user specified by their username. It makes a GET request to fetch information about all achievements associated with that user, including IDs, names, descriptions, stages required, pictures, categories, levels, and other related data. The response includes the retrieved achievement details in JSON format along with standard HTTP headers."
     },
     "/achivements/add": {
         "request": {
@@ -1390,7 +767,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method allows adding an achievement to a user's profile. To use this function, you need to provide two pieces of information: \n1) The username of the user whose achievement should be added.\n2) An integer representing the specific achievement ID.\n\nThe request is made using the 'POST' HTTP method and must include a \"Bearer\" token in the headers for authentication purposes. Upon successful execution of this function, it adds the specified achievement to the provided user's profile without detailing the technical process or implementation methods used."
+        "explanation": "This method adds an achievement for a user by taking their username and achievement ID as inputs through a POST request. The request needs to include a 'Bearer' token in its headers."
     },
     "/achivements/delete": {
         "request": {
@@ -1405,7 +782,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method allows you to delete an achievement associated with a specific user by providing the user's username and the ID of the achievement to be deleted. It requires authentication through a 'Bearer' token."
+        "explanation": "The method `delete_achievement` performs a DELETE operation to remove an achievement. It requires two inputs: `username`, identified as a string, and `achivement_id`, defined as an integer. The operation utilizes a 'Bearer' type header for authentication purposes."
     },
     "/achivements/tree/:tree_id([0-9]+)": {
         "request": {
@@ -1417,466 +794,28 @@
             "body": {
                 "result": [
                     {
-                        "achivement_id": "42",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
                         "achivement_id": "4",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 4",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 4 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "6",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "8",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "10",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "12",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "14",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "16",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     },
                     {
                         "achivement_id": "18",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 18",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 18 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "20",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "22",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "24",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "26",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "28",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "30",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "32",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "34",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "36",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "38",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "2",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "3",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "5",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "7",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "9",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "11",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "13",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "15",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "17",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "19",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "21",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "23",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "25",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "27",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "29",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "31",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "33",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "35",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "37",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "39",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "41",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "40",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "0",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1888,7 +827,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves information about achievements organized in a tree structure. It takes an ID of the specific tree as input parameter. The response includes details like achievement IDs, images, names, descriptions, levels, stages, categories and category names related to that particular tree."
+        "explanation": "This method retrieves achievement tree information for a specific tree by its ID. It sends a GET request to access this data, receives a response with details about achievements like their IDs, pictures, names, descriptions, and categories, among other things, and returns this structured data along with standard server HTTP headers."
     },
     "/achivements/info/:achivement_id([0-9]+)": {
         "request": {
@@ -1901,14 +840,15 @@
                 "result": [
                     {
                         "achivement_id": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 1",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 1 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
                         "level": "0",
                         "stages": "1",
                         "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1920,7 +860,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves information about a specific achievement. It takes an ID of the achievement as input and returns details like its name, description, associated category, tree, level, stages, and image. The response includes this data in JSON format along with standard HTTP headers for status and content delivery."
+        "explanation": "This method retrieves information about a specific achievement (based on its ID) from a system. It makes a GET request to retrieve this data which includes details like the achievement's ID, picture, name, description, associated tree ID, level, stages, category, and department ID. The response typically comes with standard HTTP headers providing server information and content details."
     },
     "/achivements/create": {
         "request": {
@@ -1939,7 +879,7 @@
             ]
         },
         "response": {},
-        "explanation": "The `create_achivement` method allows users to create new achievements through a POST request. It requires information such as name, tree ID, level, picture, description, and stages in its body fields, and needs an 'Authorization' header with the token 'Bearer'. The response for this action is not specified."
+        "explanation": "This method creates a new achievement. It accepts details like name, tree ID, level, picture, description, and stages as inputs via a POST request. The 'Bearer' authentication header is also required."
     },
     "/achivements/pictures": {
         "request": {
@@ -1950,8 +890,8 @@
             "status_code": 200,
             "body": {
                 "result": [
-                    "images/achivements/example_1.jpg",
-                    "images/achivements/example_2.jpg"
+                    "images/achivements/example_1.png",
+                    "images/achivements/example_1.jpg"
                 ]
             },
             "headers": [
@@ -1962,24 +902,51 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves pictures associated with achievements. It makes a GET request to access the achievement images stored in specified locations ('images/achivements/example_1.jpg', 'images/achivements/example_2.jpg') and returns them along with server details like date, content type etc. as part of its response."
+        "explanation": "The method retrieves a list of achievement picture file paths."
     },
-    "/achivements/categories": {
+    "/achivements/no_dep": {
         "request": {
-            "function": "get_achivement_categories",
-            "method": "get"
+            "function": "no_department_achivements",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
         },
         "response": {
             "status_code": 200,
             "body": {
                 "result": [
                     {
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "20",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 20",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 20 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_tree": "1",
+                        "level": "3",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
+                    },
+                    {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "12",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 12",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 12 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_tree": "1",
+                        "level": "3",
+                        "stages": "10",
+                        "category": "2",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     }
                 ]
             },
@@ -1991,258 +958,17 @@
                 "Connection"
             ]
         },
-        "explanation": "The method retrieves categories of achievements. It sends a GET request to obtain data about these categories. The response includes status code 200 indicating success, details on categories like their ID and name, along with some server headers providing additional metadata."
+        "explanation": "This method retrieves information about achievements that do not belong to any department. It accepts a request with a 'Bearer' token in the header and returns a JSON response containing details of multiple unnamed achievements (with IDs 20 and 12). The response includes achievement names, descriptions, categories, trees, levels, stages, pictures, and timestamps. There's also information about the default department ID being set to '-1', suggesting these are global or shared achievements not tied to specific departments."
     },
-    "/achivements/bycat/:category([0-9\\-]+)": {
+    "/achivements/by_user": {
         "request": {
-            "method": "get"
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "achivement_id": "1",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "0",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "3",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "5",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "7",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "9",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "11",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "13",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "15",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "17",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "19",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "21",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "23",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "25",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "27",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "29",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "31",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "33",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "35",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "37",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "39",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    },
-                    {
-                        "achivement_id": "41",
-                        "achivement_pic": "/img/logo2.jpg",
-                        "achivement_name": "peepee2",
-                        "achivement_decsription": "poopoo",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
+            "method": "get",
+            "header_fields": [
+                "Bearer"
             ]
         },
-        "explanation": "The method retrieves a list of achievements organized by category from a server. It fetches data for all achievements within a specified category (identified by the numeric parameter in the URL) and returns this information as part of its response. The returned data includes details about each achievement such as ID, image path, name, description, level, stages, and category."
+        "response": {},
+        "explanation": "This method retrieves achievements associated with a specific user. It uses a GET request with a \"Bearer\" header field for authentication to fetch the desired data."
     },
     "/media/get/:filename(.*)": {
         "request": {
@@ -2252,7 +978,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code snippet defines a route in an API that handles GET requests for files. When a GET request is made to this route using a specific file name (represented by :filename), the server will respond with whatever content corresponds to that file without any additional processing or modifications. The 'Bearer' header field indicates that some form of authentication token, typically used for access authorization in APIs, is required for accessing files through this endpoint."
+        "explanation": "This code snippet represents a route configuration in an application. The path `/media/get/:filename(.*)` indicates that this specific URL endpoint should respond to HTTP GET requests with a certain structure for its request header and body.\n\nThe `:filename` part of the path signifies a parameter that can be used inside your application logic, where you might need to retrieve or process files based on the filename provided in the URL.\n\nThe `request` object within the dictionary describes this GET request:\n\n- **Method**: The request is being made using the HTTP GET method. This means retrieving data from the server at the specified endpoint.\n- **Header Fields**: It requires a 'Bearer' token to be included in the headers of the HTTP request. Typically, such tokens are used for authentication purposes.\n\nThe `response` part indicates what should happen after receiving the request or how it should respond:\n\n- Since there's no further description under 'response', it implies that you need to define the appropriate response data, status code, and any other details inside your application based on this route configuration.\n\nIn essence, when someone attempts to access `http://yourapp.com/media/get/somefilename`, they are making a GET request expecting the server to retrieve or deliver some file (`somefilename`) using an authentication token (Bearer token). The specifics of how that file is handled, what data is returned, etc., depend on your application's implementation."
     },
     "/transactions/prepare": {
         "request": {
@@ -2267,7 +993,7 @@
             ]
         },
         "response": {},
-        "explanation": "The \"prepare_transaction\" method sends a POST request to the '/transactions/prepare' endpoint. This method requires two parameters: \n1) 'receiver' - which must be a string indicating who the transaction is being sent to.\n2) 'amount' - an integer representing how much money is involved in the transaction.\n\nIt also necessitates an \"Authorization\" header, specifically using a 'Bearer' token. \n\nThis operation seems designed to initiate or prepare for a financial transaction by providing details about who it's going to and its value, setting up the base information that will then likely be used to fully process the transaction."
+        "explanation": "This method allows you to prepare a transaction by sending a POST request. You need to provide two pieces of information: \n\n1. `receiver`: The recipient's identifier as a string.\n2. `amount`: The amount being transferred, specified as an integer.\n\nThe request should include an authentication header with the keyword \"Bearer\" to authenticate the user or client making the transaction preparation request."
     },
     "/transactions/send": {
         "request": {
@@ -2281,7 +1007,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method uses a POST request to perform a transfer operation. It requires a unique transaction ID ('tr_id') in the body of the request and authentication through an authorization header that includes a 'Bearer' token. The response details are not provided, suggesting it might return information related to the transfer operation."
+        "explanation": "This method is used for transferring funds. It uses a POST request with a \"transfer\" function, requiring an ID (tr_id) as a string in the body of the request. The request needs to be authenticated using a 'Bearer' token. There's no explicit response provided, so it likely returns a status indicating success or failure of the transfer operation."
     },
     "/transactions/balance": {
         "request": {
@@ -2292,7 +1018,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method retrieves a user's current balance by using an HTTP GET request on the '/transactions/balance' endpoint. The request includes a 'Bearer' token in the header for authentication purposes. The response will return the user's balance information."
+        "explanation": "This code represents a method in an API setup where '/transactions/balance' acts as the endpoint URL. When using the HTTP GET method with 'Bearer' authentication headers, the function 'get_balance' is called by this endpoint. The purpose of this method is to retrieve or check the current balance associated with a specific account or user session that's authenticated via the 'Bearer' token."
     },
     "/transactions/my": {
         "request": {
@@ -2302,7 +1028,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code snippet represents a GET request with an authorization header for accessing my transactions. Essentially, it retrieves data related to personal transactions."
+        "explanation": "This code snippet describes a GET request for a specific endpoint '/transactions/my'. The request includes an authorization header named 'Bearer', which likely contains an access token. The response details are not provided, implying that no data is expected to be returned from this request. In essence, the method is requesting transaction-related information associated with a particular user or account identified by '/transactions/my'."
     },
     "/social/authors": {
         "request": {
@@ -2322,7 +1048,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This code describes a method that fetches a list of authors using a GET request. When called, it returns a status code of 200 indicating success, along with an empty list as the body and several headers for server communication."
+        "explanation": "This method retrieves a list of authors. It uses GET request to fetch this information from the '/social/authors' endpoint. The response indicates successful operation (status code 200) and returns an empty result list, suggesting there are no author records at this moment. The response includes standard HTTP headers for serving the data."
     },
     "/social/news:search(.*)": {
         "request": {
@@ -2337,7 +1063,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code snippet represents a function call for fetching news using an API. The main actions performed by this method are:\n\n1. **Function Call**: `get_news` - This indicates that a specific news retrieval process is being executed.\n\n2. **HTTP Method**: `GET` - This signifies that the request to fetch data will be made via GET, commonly used for retrieving information from a server without altering it.\n\n3. **Parameters**:\n   - `start`: Specifies where in the result set this particular call should start (indicating pagination or offsetting).\n   - `size`: Determines how many results should be returned per request.\n   \n4. **Header Field**: `Bearer` - Suggests that the API call will use a Bearer token for authentication, which is often used in OAuth systems to securely authenticate requests.\n\nIn summary, this method initiates an HTTP GET request to retrieve news items starting from a specific offset and returning up to a defined number of results, using a Bearer token for authorization."
+        "explanation": "The method is searching for news using a GET request. It requires specifying a starting point ('start'), number of items to retrieve ('size'), and includes an authorization token in the header fields named 'Bearer'. The response will contain the fetched news data, but details on how it retrieves or formats this information are not provided here."
     },
     "/social/comments:search(.*)": {
         "request": {
@@ -2353,7 +1079,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code snippet defines a URL route that handles requests for searching comments. When this route receives a GET request with specific parameters (post_id, start index, size limit) and an authentication token in the header (Bearer), it calls a function named `get_comments`. This function is expected to process the request details and return any relevant comment data as output. The response from `get_comments` will then be sent back to the client making the request.\n\nIn essence, this route allows users to fetch comments for a specific post with pagination support using HTTP GET requests and authentication via an API token."
+        "explanation": "This method retrieves comments for a specific post from a social platform. It uses an HTTP GET request with parameters like post ID, starting point of comments to fetch, number of comments to return, and a Bearer token for authentication. The response provides the comments data related to the given post id."
     },
     "/social/media/pics/:post_id(.*)": {
         "request": {
@@ -2376,7 +1102,7 @@
                 "Connection"
             ]
         },
-        "explanation": "This method retrieves media content (like images or videos) associated with a specific post using its ID. When called via a GET request to `/social/media/pics/:post_id`, it returns metadata about the server and HTTP status code, along with an array of media results if available. The 'headers' field lists information such as server type, date, content type, length, and connection details."
+        "explanation": "This method retrieves media (like images) associated with a specific post by its ID from a social media platform. It uses an HTTP GET request to access this information, specifically targeting URLs that include the '/social/media/pics/:post_id' path pattern. The response will indicate success (HTTP status code 200) and provide any relevant server headers along with the body containing the list of media associated with the requested post ID."
     },
     "/social/new/:post_id(.*)": {
         "request": {
@@ -2387,7 +1113,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method retrieves a specific post by its ID from a social network system. It uses a GET request with a 'Bearer' authentication header to access the post details specified by ':post_id'. The response will contain information about that particular post."
+        "explanation": "This method retrieves a specific post using its ID. It requires an authorization header for GET request to access the post with the given ID.\n\nThe key points are:\n- Method: Retrieves details of a particular post.\n- Request:\n  - Function: 'get_post'\n  - HTTP method: 'GET'\n  - Header field: Requires 'Bearer' token for authentication\n- Response:\n  - No specific response format mentioned, but it implies the server will return the requested post data"
     },
     "/social/posts": {
         "request": {
@@ -2398,7 +1124,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method retrieves all posts from a social platform using the GET request and a Bearer token for authentication."
+        "explanation": "This method retrieves all posts using a GET request. It requires a \"Bearer\" token in the header for authentication. The response details are not provided."
     },
     "/social/titles": {
         "request": {
@@ -2409,7 +1135,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code represents a request made to an API endpoint (using the GET method) which aims to retrieve all available titles. The request includes a 'Bearer' token in the headers for authentication purposes. The response from this operation is yet to be defined. In simpler terms, it's asking for a list of all titles with proper authorization."
+        "explanation": "The method described here retrieves all titles using a GET request and authentication provided via 'Bearer' token. It is designed to interact with an API endpoint for title-related data acquisition."
     },
     "/social/saved": {
         "request": {
@@ -2420,7 +1146,7 @@
             ]
         },
         "response": {},
-        "explanation": "This code snippet describes a web API endpoint that allows users to retrieve their saved posts. When a GET request is made to this endpoint with a \"Bearer\" authentication header, the server processes the 'get_saved_posts' function to fetch and return the user's saved content."
+        "explanation": "This code represents a request to retrieve saved posts. The user sends an HTTP GET request to '/social/saved', including their authentication token in a 'Bearer' header field. The response will contain the saved posts data."
     },
     "/social/save": {
         "request": {
@@ -2434,7 +1160,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method deletes a saved post by using its ID. It requires an access token (Bearer) for authorization."
+        "explanation": "This method deletes a saved post using its ID. It requires an authorization token (Bearer) to perform the action."
     },
     "/social/search:search(.*)": {
         "request": {
@@ -2448,7 +1174,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method performs a search operation using a title-based query. It accepts a request with details including a 'title' parameter to search for and utilizes a 'Bearer' authentication token. The response of this action isn't specified in the provided information. Essentially, it's searching for something based on its title."
+        "explanation": "This method searches for something based on a title using a GET request. It includes a \"Bearer\" token in the header fields for authentication and utilizes a function called 'search_by_title'. The actual search details like what exactly is being searched are not specified here, just that it's related to searching by title."
     },
     "/social/like": {
         "request": {
@@ -2462,7 +1188,7 @@
             ]
         },
         "response": {},
-        "explanation": "This method deletes a like on a post."
+        "explanation": "The method being described here appears to involve deleting a \"like\" on a post using a DELETE request. The function `delete_like` is called with an ID of the post as its parameter and utilizes an API token (Bearer) in the headers for authentication. Essentially, this method removes a like from a specified post."
     },
     "/social/dislike": {
         "request": {
@@ -2476,10 +1202,11 @@
             ]
         },
         "response": {},
-        "explanation": "The provided code snippet represents an API endpoint definition for a DELETE request aimed at removing a dislike for a specific post. \n\nHere's a simplified explanation:\n\nThis method allows users to delete their dislike action from a certain post by making a DELETE request. The required data includes the 'post_id' of the post that the user wants to remove their dislike for, and an authentication token in the header under 'Bearer'. Once this request is made successfully, the API response will return an empty object `{}` indicating that the dislike has been deleted from the specified post."
+        "explanation": "This method is designed to remove a dislike on a specific post. It requires an API key (Bearer token) for authentication and the ID of the post as its input parameters. Its main function is to delete the dislike related to that post."
     },
     "/social/comments": {
         "request": {
+            "function": "add_comment",
             "method": "post",
             "body_fields": {
                 "comment": "String",
@@ -2490,6 +1217,70 @@
             ]
         },
         "response": {},
-        "explanation": "This method allows you to post a comment on a specific post by providing the comment text and the ID of the post. You must authenticate using a 'Bearer' token for this operation. The response will indicate whether the comment was successfully posted or not, but does not provide any details about the content or outcome beyond that."
+        "explanation": "This method allows users to post comments on a specific post by using a POST request. Users need to provide two pieces of information: the comment they want to add and the ID of the post they are commenting on. The request also needs to include an authorization token in the header, typically in the form 'Bearer <token>'."
+    },
+    "/social/categories": {
+        "request": {
+            "function": "get_post_categories",
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                    },
+                    {
+                        "category": "2",
+                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        },
+        "explanation": "This code describes a function that retrieves categories from social media posts. When called via GET request, it returns data about certain categories, their IDs ('category') and names ('category_name'). The response status code 200 indicates success. It also mentions the method of operation is not detailed here but could include server information like date, content type, length, and connection details for network communication."
+    },
+    "/social/bycat/:category([0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "2",
+                        "post_path": "posts/example_post.md",
+                        "is_secret": "t",
+                        "likes": "0",
+                        "title": "secret page",
+                        "author": "scv-7",
+                        "text": "\u044d\u0442\u043e  \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-05-02 21:11:31.404448",
+                        "saved_count": "0",
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        },
+        "explanation": "This method retrieves information about a specific category on a social platform. It accepts GET requests and returns details of posts belonging to that category in JSON format, including post ID, path, title, author, text content, date posted, saved count, etc., along with HTTP headers like status code, server name, date, content type, length, and connection settings."
     }
 }
