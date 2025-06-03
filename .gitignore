@@ -63,3 +63,5 @@ node_modules/*
 */pages/wiki/*
 
 */pages/videos/*
+
+*.tar

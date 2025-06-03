@@ -8,6 +8,7 @@ run_flag=true
 logging=true
 generate=false
 generate_full=false
+docker_image=false
 # Read and parse BuildConfig.json
 config_file="./BuildConfig.json"
 
@@ -28,8 +29,12 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'gptoifdhs:' OPTION; do
+while getopts 'dgptoifdhs:' OPTION; do
     case "$OPTION" in
+        d)
+            echo "building docker image"
+            docker_image=true
+            ;;
         i) 
             ehco "installing"
             run_flag=false
@@ -82,6 +87,17 @@ while getopts 'gptoifdhs:' OPTION; do
             ;;
     esac
 done
+
+if [ $docker_image = true ]; then
+    cd src
+    echo "building docker image"
+    docker build \
+        --build-arg MAIN_FILE="$work_file" \
+        --build-arg BUILD_FILES="$build_files" \
+        -t letovo-server:latest .
+    docker save letovo-server:latest -o letovo-server-docker.tar
+    exit 0
+fi
 
 if [ $run_flag = true ]; then
     if [ $generate = true ]; then

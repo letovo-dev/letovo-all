@@ -161,6 +161,8 @@ int main() {
         using request_handler_t = restinio::router::express_router_t<>;
     };
 
+    std::cout << "----- " << Config::giveMe().current_path << std::endl;
+
     restinio::run(restinio::on_thread_pool<traits>(Config::giveMe().server_config.thread_pool_size)
                       .address(Config::giveMe().server_config.adress)
                       .port(Config::giveMe().server_config.port)

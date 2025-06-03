@@ -73,6 +73,7 @@ namespace media {
 
     std::string check_if_file_exists(std::string file_name) {
         std::string full_path = Config::giveMe().pages_config.media_path.absolute + file_name;
+        std::cout << "Checking file: " << full_path << std::endl;
         std::ifstream file(full_path);
         if (file.good()) {
             return full_path;
@@ -143,7 +144,7 @@ namespace media::server {
             if(auth::is_admin(token, pool_ptr)) {
                 status = FileStatus::AVALUABLE;
             }
-            logger_ptr->info([status, file_path] { return fmt::format("file {}, status {}", file_path, static_cast<int>(status)); });
+            logger_ptr->info([status, file_path, relative_filename] { return fmt::format("relative_filename {}, file {}, status {}", relative_filename, file_path, static_cast<int>(status)); });
             switch(status) {
                 case FileStatus::AVALUABLE:
                     break;

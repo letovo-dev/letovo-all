@@ -2,4 +2,4 @@
 
 К сожалению, эта статья еще не открыта. Откройте ее, чтобы прочитать!
 
-![vid](http://localhost/api/media/get/videos/example_1.mp4)
+![/api/media/get/videos/example_1.mp4](http://45.140.178.217/api/media/get/videos/example_1.mp4)

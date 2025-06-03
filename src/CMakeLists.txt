@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.5...4.0.1)
 
-project(hello_world)
+project(letovo_server)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
