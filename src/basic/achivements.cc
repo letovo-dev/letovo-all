@@ -409,5 +409,28 @@ namespace achivements::server {
                 .done();
             });
     }
+    void qr_code_by_achivement(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/achivements/qr_code/:achivement_id([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            auto qrl = req->header().path();
 
+            std::string achivement_id = url::get_last_url_arg(qrl);
+
+            if (achivement_id == "qr_code" || achivement_id.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            int id = std::stoi(achivement_id);
+
+            // here we should get a qr_path from database and send a file by that path
+
+            std::string relative_filename = "images/uploaded/temp_qr.png";
+            
+            std::string file_path = media::check_if_file_exists(relative_filename);
+
+            return req->create_response()
+                .append_header(restinio::http_field::content_type, "image/png; charset=utf-8")
+                .set_body(restinio::sendfile(file_path))
+                .done();
+        });
+    }
 } // namespace achivements::server
