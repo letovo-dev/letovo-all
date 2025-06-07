@@ -419,6 +419,8 @@ namespace achivements::server {
                 return req->create_response(restinio::status_bad_request()).done();
             }
 
+            logger_ptr ->info([achivement_id] { return fmt::format("achivement_id = {}", achivement_id); });
+
             int id = std::stoi(achivement_id);
 
             // here we should get a qr_path from database and send a file by that path
