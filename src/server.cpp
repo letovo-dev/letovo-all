@@ -162,7 +162,9 @@ int main() {
         using request_handler_t = restinio::router::express_router_t<>;
     };
 
-    std::cout << "----- " << Config::giveMe().current_path << std::endl;
+    logger_ptr->info([] {
+        return fmt::format("Server is starting at {}:{}", Config::giveMe().server_config.adress, Config::giveMe().server_config.port);
+    });
 
     restinio::run(restinio::on_thread_pool<traits>(Config::giveMe().server_config.thread_pool_size)
                       .address(Config::giveMe().server_config.adress)

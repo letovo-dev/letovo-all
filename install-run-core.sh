@@ -78,6 +78,7 @@ while getopts 'dgptoifdhs:' OPTION; do
             echo "  -s: skip pre-run checks"
             echo "  -g: generate methods.json"
             echo "  -f: generate methods_v2.json. only run with -g"
+            echo "  -d: build docker image for backend"
             echo "  -h: show this help message"
             exit 0
             ;;
