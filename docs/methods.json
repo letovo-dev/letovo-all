@@ -465,10 +465,39 @@
             "Bearer"
         ]
     },
+    "/post/rename_category": {
+        "function": "rename_category",
+        "method": "put",
+        "body_fields": {
+            "old_name": "String",
+            "new_name": "String"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
     "/post/delete": {
+        "function": "delete_post",
         "method": "delete",
         "body_fields": {
             "post_id": "Int"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/post/update": {
+        "method": "put",
+        "body_fields": {
+            "post_id": "Int",
+            "is_secret": "Bool",
+            "likes": "Int",
+            "dislikes": "Int",
+            "saved": "Int",
+            "title": "String",
+            "author": "String",
+            "text": "String",
+            "category": "String"
         },
         "header_fields": [
             "Bearer"

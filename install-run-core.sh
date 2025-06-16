@@ -8,6 +8,7 @@ run_flag=true
 logging=true
 generate=false
 generate_full=false
+generate_ai=false
 docker_image=false
 # Read and parse BuildConfig.json
 config_file="./BuildConfig.json"
@@ -29,7 +30,7 @@ echo "test file $test_file"
 echo "work file $work_file"
 echo "build files: $build_files"
 
-while getopts 'dgptoifdhs:' OPTION; do
+while getopts 'dgptoifdhas:' OPTION; do
     case "$OPTION" in
         d)
             echo "building docker image"
@@ -66,6 +67,10 @@ while getopts 'dgptoifdhs:' OPTION; do
         f)
             echo "genereate methods_v2.json"
             generate_full=true
+            ;;
+        a)
+            echo "generate documentation with AI"
+            generate_ai=true
             ;;
         h)
             echo "Usage: ./install-run-core.sh [-i] [-f <file>] [-t] [-d <debug>] [-o] [-s] [-p] [-g] [-f] [-h]"
@@ -105,6 +110,9 @@ if [ $run_flag = true ]; then
         .venv/bin/python3 ./docs/search_methods.py
         if [ $generate_full = true ]; then
             .venv/bin/python3 ./docs/search_responces.py
+        fi
+        if [ $generate_ai = true ]; then
+            .venv/bin/python3 ./docs/ai_gen_docs.py
         fi
         exit 0
     fi

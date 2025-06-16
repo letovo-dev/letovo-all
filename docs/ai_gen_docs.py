@@ -33,7 +33,7 @@ def method_prompt(method_data: dict) -> str:
 
 
 system_prompt()
-with open("methods_v2.json", "r") as file:
+with open("./docs/methods_v2.json", "r") as file:
     data = json.load(file)
     i = 0
     for method in data:
