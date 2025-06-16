@@ -59,6 +59,8 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     page::server::get_favourite_posts(router, pool_ptr, logger_ptr);
     page::server::post_add_favourite_post(router, pool_ptr, logger_ptr);
     page::server::delete_favourite_post(router, pool_ptr, logger_ptr);
+    page::server::update_post(router, pool_ptr, logger_ptr);
+    page::server::rename_category(router, pool_ptr, logger_ptr);
 
     auth::server::enable_reg(router, pool_ptr, logger_ptr);
     auth::server::enable_auth(router, pool_ptr, logger_ptr);
