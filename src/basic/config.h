@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdlib> 
+
 #ifndef CONFIG_H
     #define CONFIG_H
 
@@ -70,8 +72,18 @@ private:
         sql_config.connections_count = config_map["connections"].GetInt();
 
         config_map.Parse(GetJson("./ServerConfig.json").c_str());
-        server_config.adress = config_map["adress"].GetString();
-        server_config.port = config_map["port"].GetInt();
+        const char* env_adress = std::getenv("SERVER_ADRESS");
+        if (env_adress) {
+            server_config.adress = env_adress;
+        } else {
+            server_config.adress = config_map["adress"].GetString();
+        }
+        const char* env_port = std::getenv("SERVER_PORT");
+        if (env_port) {
+            server_config.port = std::stoi(env_port);
+        } else {
+            server_config.port = config_map["port"].GetInt();
+        }
         server_config.thread_pool_size = config_map["thread_pool_size"].GetInt();
         server_config.certs_path = config_map["certs_path"].GetString();
         server_config.update_hashes = config_map["update_hashes"].GetBool();
