@@ -15,11 +15,11 @@ namespace assist{
         } else {
             new_map["is_secret"] = std::any(false);
         }
-        if(new_body.HasMember("is_published") && new_body["is_published"].GetBool()) {
-            new_map["is_published"] = std::any(true);
-        } else {
-            new_map["is_published"] = std::any(false);
-        }
+        // if(new_body.HasMember("is_published") && new_body["is_published"].GetBool()) {
+        //     new_map["is_published"] = std::any(true);
+        // } else {
+        //     new_map["is_published"] = std::any(false);
+        // }
         if(new_body.HasMember("post_path")) {
             std::string post_path = new_body["post_path"].GetString();
             new_map["post_path"] = std::any(post_path);

@@ -10,11 +10,12 @@
 #include "./basic/checks.h"
 
 // server functions
-#include "./basic/achivements.h"
+#include "./letovo-soc-net/achivements.h"
 #include "./basic/auth.h"
 #include "./basic/config.h"
 #include "./basic/media.h"
-#include "./basic/page_server.h"
+#include "./letovo-soc-net/page_server.h"
+#include "./letovo-soc-net/authors.h"
 #include "./basic/user_data.h"
 #include "./market/transactions.h"
 #include "./letovo-soc-net/social.h"
@@ -51,10 +52,9 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
 
     page::server::get_page_content(router, pool_ptr, logger_ptr);
     page::server::get_page_author(router, pool_ptr, logger_ptr);
-    page::server::add_page_by_content(router, pool_ptr, logger_ptr);
-    page::server::add_page_by_page(router, pool_ptr, logger_ptr);
+    page::server::add_page(router, pool_ptr, logger_ptr);
     page::server::update_likes(router, pool_ptr, logger_ptr);
-    page::server::enable_delete(router, pool_ptr, logger_ptr);
+    page::server::delete_post(router, pool_ptr, logger_ptr);
 
     page::server::get_favourite_posts(router, pool_ptr, logger_ptr);
     page::server::post_add_favourite_post(router, pool_ptr, logger_ptr);
@@ -103,6 +103,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     achivements::server::achivement_pictures(router, logger_ptr);
     achivements::server::no_department_achivements(router, pool_ptr, logger_ptr);
     achivements::server::department_achivements_by_user(router, pool_ptr, logger_ptr);
+    achivements::server::qr_code_by_achivement(router, pool_ptr, logger_ptr);
 
     social::server::get_authors_list(router, pool_ptr, logger_ptr);
     social::server::get_news(router, pool_ptr, logger_ptr);
@@ -122,6 +123,8 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     social::server::delete_saved_post(router, pool_ptr, logger_ptr);
     social::server::get_post_categories(router, pool_ptr, logger_ptr);
     social::server::get_post_by_category(router, pool_ptr, logger_ptr);
+
+    authors::server::get_avaluable_authors(router, pool_ptr, logger_ptr);
 
     media::server::get_file(router, pool_ptr, logger_ptr);
 

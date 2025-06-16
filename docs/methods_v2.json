@@ -47,7 +47,7 @@
         "response": {
             "status_code": 200,
             "body": {
-                "status": "f"
+                "status": "t"
             },
             "headers": [
                 "Server",
@@ -69,7 +69,7 @@
         "response": {
             "status_code": 200,
             "body": {
-                "status": "f"
+                "status": "t"
             },
             "headers": [
                 "Server",
@@ -197,108 +197,6 @@
             ]
         }
     },
-    "/post/:id(\\d+)": {
-        "request": {
-            "function": "get_page_content",
-            "method": "get"
-        },
-        "response": {}
-    },
-    "/post/author/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "get_page_author",
-            "method": "get"
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "username": "scv-7",
-                        "avatar_pic": "images/avatars/example_5.png"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
-    },
-    "/post/add_page_content": {
-        "request": {
-            "function": "add_page_by_content",
-            "method": "post"
-        },
-        "response": {}
-    },
-    "/post/add_page": {
-        "request": {
-            "function": "add_page_by_page",
-            "method": "post",
-            "body_fields": {
-                "post_path": "String",
-                "text": "String"
-            }
-        },
-        "response": {}
-    },
-    "/post/update_likes": {
-        "request": {
-            "function": "update_likes",
-            "method": "put",
-            "body_fields": {
-                "post_id": "Int",
-                "likes": "Int"
-            }
-        },
-        "response": {}
-    },
-    "/post/delete/:id(\\d+)": {
-        "request": {
-            "function": "enable_delete",
-            "method": "delete",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/post/favourite/": {
-        "request": {
-            "function": "get_favourite_posts",
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/post/favourite": {
-        "request": {
-            "function": "post_add_favourite_post",
-            "method": "post",
-            "body_fields": {
-                "post_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/post/favourite/:id(\\d+)": {
-        "request": {
-            "method": "delete",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "user_info",
@@ -313,7 +211,7 @@
                         "username": "scv-7",
                         "userrights": "admin",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "images/avatars/example_5.png",
+                        "avatar_pic": "images/avatars/example_1.png",
                         "active": "t",
                         "times_visited": "1",
                         "departmentid": "0",
@@ -344,10 +242,10 @@
                         "userid": "1762",
                         "username": "scv-7",
                         "userrights": "admin",
-                        "balance": "1083",
+                        "balance": "262",
                         "registered": "t",
                         "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "images/avatars/example_5.png",
+                        "avatar_pic": "images/avatars/example_1.png",
                         "active": "t",
                         "times_visited": "1",
                         "role": "\u043f\u0438\u043f\u0430",
@@ -629,6 +527,471 @@
         },
         "response": {}
     },
+    "/media/get/:filename(.*)": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/transactions/prepare": {
+        "request": {
+            "function": "prepare_transaction",
+            "method": "post",
+            "body_fields": {
+                "receiver": "String",
+                "amount": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/transactions/send": {
+        "request": {
+            "function": "transfer",
+            "method": "post",
+            "body_fields": {
+                "tr_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/transactions/balance": {
+        "request": {
+            "function": "get_balance",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "text": "262",
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/transactions/my": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "transactionid": "19",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-8",
+                        "transactiontime": "2025-02-23 12:55:16.552781"
+                    },
+                    {
+                        "transactionid": "20",
+                        "amount": "100",
+                        "sender": "scv-7",
+                        "receiver": "scv-8",
+                        "transactiontime": "2025-02-23 13:09:05.239221"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/authors": {
+        "request": {
+            "function": "get_authors_list",
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": []
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/news:search(.*)": {
+        "request": {
+            "function": "get_news",
+            "method": "get",
+            "params": [
+                "start",
+                "size"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/comments:search(.*)": {
+        "request": {
+            "function": "get_comments",
+            "method": "get",
+            "params": [
+                "post_id",
+                "start",
+                "size"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/media/pics/:post_id(.*)": {
+        "request": {
+            "function": "get_post_media",
+            "method": "get",
+            "header_fields": [
+                "pics"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": []
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/new/:post_id(.*)": {
+        "request": {
+            "function": "get_post",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": []
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/posts": {
+        "request": {
+            "function": "get_all_posts",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "256",
+                        "post_path": "",
+                        "is_secret": "f",
+                        "likes": "100",
+                        "title": "header",
+                        "author": "scv13",
+                        "text": "test text",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-06-16 18:42:12.525258",
+                        "saved_count": "0",
+                        "category": "0",
+                        "category_name": "",
+                        "avatar_pic": "/images/avatars/example_5.png",
+                        "is_liked": "f",
+                        "is_disliked": "f",
+                        "saved": "f"
+                    },
+                    {
+                        "post_id": "2",
+                        "post_path": "posts/example_post.md",
+                        "is_secret": "t",
+                        "likes": "0",
+                        "title": "secret page",
+                        "author": "scv-7",
+                        "text": "\u044d\u0442\u043e  \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-05-02 21:11:31.404448",
+                        "saved_count": "0",
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "avatar_pic": "images/avatars/example_1.png",
+                        "is_liked": "f",
+                        "is_disliked": "f",
+                        "saved": "f"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/titles": {
+        "request": {
+            "function": "get_all_titles",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "102",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 1"
+                    },
+                    {
+                        "post_id": "103",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 2"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/saved": {
+        "request": {
+            "function": "get_saved_posts",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "102",
+                        "post_path": "",
+                        "is_secret": "f",
+                        "likes": "-32",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 1",
+                        "author": "scv-7",
+                        "text": "\u044d\u0442\u043e \u043f\u043e\u0441\u0442 \u0441 \u043d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u044b\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043cn\u0438 \u043d\u043e\u0432\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u043e\u0439",
+                        "dislikes": "82",
+                        "parent_id": "",
+                        "date": "2025-04-23 17:36:21.293235",
+                        "saved_count": "0",
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "avatar_pic": "images/avatars/example_1.png",
+                        "is_liked": "f",
+                        "is_disliked": "f",
+                        "saved": "t"
+                    },
+                    {
+                        "post_id": "104",
+                        "post_path": "",
+                        "is_secret": "f",
+                        "likes": "6",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 3",
+                        "author": "scv-7",
+                        "text": "\u044d\u0442\u043e \u043f\u043e\u0441\u0442 \u0441 \u043d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u044b\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043cn\u0438 \u043d\u043e\u0432\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u043e\u0439",
+                        "dislikes": "11",
+                        "parent_id": "",
+                        "date": "2025-04-23 17:36:21.293235",
+                        "saved_count": "1",
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "avatar_pic": "images/avatars/example_1.png",
+                        "is_liked": "f",
+                        "is_disliked": "f",
+                        "saved": "t"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/save": {
+        "request": {
+            "function": "delete_saved_post",
+            "method": "delete",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/search:search(.*)": {
+        "request": {
+            "function": "search_by_title",
+            "method": "get",
+            "params": [
+                "title"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/like": {
+        "request": {
+            "function": "delete_like",
+            "method": "delete",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/dislike": {
+        "request": {
+            "function": "delete_dislike",
+            "method": "delete",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/comments": {
+        "request": {
+            "function": "add_comment",
+            "method": "post",
+            "body_fields": {
+                "comment": "String",
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/categories": {
+        "request": {
+            "function": "get_post_categories",
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "category": "0",
+                        "category_name": ""
+                    },
+                    {
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/social/bycat/:category([0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "2",
+                        "post_path": "posts/example_post.md",
+                        "is_secret": "t",
+                        "likes": "0",
+                        "title": "secret page",
+                        "author": "scv-7",
+                        "text": "\u044d\u0442\u043e  \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-05-02 21:11:31.404448",
+                        "saved_count": "0",
+                        "category": "1",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "user_achivemets",
@@ -876,12 +1239,12 @@
                     {
                         "id": "",
                         "username": "",
-                        "achivement_id": "20",
+                        "achivement_id": "32",
                         "datetime": "",
                         "stage": "",
                         "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 20",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 20 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 32",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 32 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
                         "level": "3",
                         "stages": "10",
@@ -892,12 +1255,12 @@
                     {
                         "id": "",
                         "username": "",
-                        "achivement_id": "12",
+                        "achivement_id": "24",
                         "datetime": "",
                         "stage": "",
                         "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 12",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 12 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 24",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 24 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
                         "achivement_tree": "1",
                         "level": "3",
                         "stages": "10",
@@ -918,260 +1281,47 @@
     },
     "/achivements/by_user": {
         "request": {
+            "function": "department_achivements_by_user",
             "method": "get",
             "header_fields": [
                 "Bearer"
             ]
-        },
-        "response": {}
-    },
-    "/media/get/:filename(.*)": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/transactions/prepare": {
-        "request": {
-            "function": "prepare_transaction",
-            "method": "post",
-            "body_fields": {
-                "receiver": "String",
-                "amount": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/transactions/send": {
-        "request": {
-            "function": "transfer",
-            "method": "post",
-            "body_fields": {
-                "tr_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/transactions/balance": {
-        "request": {
-            "function": "get_balance",
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/transactions/my": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/authors": {
-        "request": {
-            "function": "get_authors_list",
-            "method": "get"
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": []
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
-    },
-    "/social/news:search(.*)": {
-        "request": {
-            "function": "get_news",
-            "method": "get",
-            "params": [
-                "start",
-                "size"
-            ],
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/comments:search(.*)": {
-        "request": {
-            "function": "get_comments",
-            "method": "get",
-            "params": [
-                "post_id",
-                "start",
-                "size"
-            ],
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/media/pics/:post_id(.*)": {
-        "request": {
-            "function": "get_post_media",
-            "method": "get",
-            "header_fields": [
-                "pics"
-            ]
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": []
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
-    },
-    "/social/new/:post_id(.*)": {
-        "request": {
-            "function": "get_post",
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/posts": {
-        "request": {
-            "function": "get_all_posts",
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/titles": {
-        "request": {
-            "function": "get_all_titles",
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/saved": {
-        "request": {
-            "function": "get_saved_posts",
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/save": {
-        "request": {
-            "function": "delete_saved_post",
-            "method": "delete",
-            "body_fields": {
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/search:search(.*)": {
-        "request": {
-            "function": "search_by_title",
-            "method": "get",
-            "params": [
-                "title"
-            ],
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/like": {
-        "request": {
-            "function": "delete_like",
-            "method": "delete",
-            "body_fields": {
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/dislike": {
-        "request": {
-            "function": "delete_dislike",
-            "method": "delete",
-            "body_fields": {
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/comments": {
-        "request": {
-            "function": "add_comment",
-            "method": "post",
-            "body_fields": {
-                "comment": "String",
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {}
-    },
-    "/social/categories": {
-        "request": {
-            "function": "get_post_categories",
-            "method": "get"
         },
         "response": {
             "status_code": 200,
             "body": {
                 "result": [
                     {
-                        "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "id": "5",
+                        "username": "scv-7",
+                        "achivement_id": "2",
+                        "datetime": "2025-01-16 00:32:04.305811",
+                        "stage": "1",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 2",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 2 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "10",
+                        "category": "2",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "-1"
                     },
                     {
+                        "id": "",
+                        "username": "",
+                        "achivement_id": "14",
+                        "datetime": "",
+                        "stage": "",
+                        "achivement_pic": "images/achivements/example_1.png",
+                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 14",
+                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 14 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
+                        "achivement_tree": "1",
+                        "level": "1",
+                        "stages": "10",
                         "category": "2",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "departmentid": "0"
                     }
                 ]
             },
@@ -1184,8 +1334,31 @@
             ]
         }
     },
-    "/social/bycat/:category([0-9\\-]+)": {
+    "/achivements/qr_code/:achivement_id([0-9]+)": {
         "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/post/:id(\\d+)": {
+        "request": {
+            "function": "get_page_content",
+            "method": "get"
+        },
+        "response": {}
+    },
+    "/post/author/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "function": "get_page_author",
             "method": "get"
         },
         "response": {
@@ -1193,19 +1366,143 @@
             "body": {
                 "result": [
                     {
-                        "post_id": "2",
-                        "post_path": "posts/example_post.md",
-                        "is_secret": "t",
-                        "likes": "0",
-                        "title": "secret page",
-                        "author": "scv-7",
-                        "text": "\u044d\u0442\u043e  \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
-                        "dislikes": "0",
-                        "parent_id": "",
-                        "date": "2025-05-02 21:11:31.404448",
-                        "saved_count": "0",
-                        "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "username": "scv-7",
+                        "avatar_pic": "images/avatars/example_1.png"
+                    }
+                ]
+            },
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/post/add_page": {
+        "request": {
+            "function": "add_page",
+            "method": "post",
+            "body_fields": {
+                "post_path": "String",
+                "category": "String",
+                "title": "String",
+                "is_secret": "Bool",
+                "author": "String",
+                "likes": "Int",
+                "dislikes": "Int",
+                "saved": "Int",
+                "text": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/update_likes": {
+        "request": {
+            "function": "update_likes",
+            "method": "put",
+            "body_fields": {
+                "post_id": "Int",
+                "likes": "Int"
+            }
+        },
+        "response": {}
+    },
+    "/post/favourite/": {
+        "request": {
+            "function": "get_favourite_posts",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/post/favourite": {
+        "request": {
+            "function": "post_add_favourite_post",
+            "method": "post",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite/:id(\\d+)": {
+        "request": {
+            "function": "delete_favourite_post",
+            "method": "delete",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/delete": {
+        "request": {
+            "method": "delete",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/authors_list": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "userid": "1762",
+                        "username": "scv-7",
+                        "passwdhash": "905566266843721762",
+                        "userrights": "admin",
+                        "jointime": "2024-12-05 23:52:49.393567",
+                        "avatar_pic": "images/avatars/example_1.png",
+                        "active": "t",
+                        "role": "7",
+                        "balance": "262",
+                        "registered": "t",
+                        "times_visited": "1",
+                        "author": "f"
+                    },
+                    {
+                        "userid": "123",
+                        "username": "scv2",
+                        "passwdhash": "password2",
+                        "userrights": "public_author",
+                        "jointime": "2024-09-15 10:42:23.247485",
+                        "avatar_pic": "/images/avatars/example_5.png",
+                        "active": "t",
+                        "role": "0",
+                        "balance": "1000",
+                        "registered": "f",
+                        "times_visited": "1",
+                        "author": "f"
                     }
                 ]
             },

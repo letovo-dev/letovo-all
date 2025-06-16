@@ -5,16 +5,17 @@
     "basic/pqxx_cp.cc",
     "basic/hash.cc",
     "basic/assist_funcs.cc",
-    "basic/page_server.cc",
     "basic/url_parser.cc",
     "basic/user_data.cc",
     "basic/checks.cc",
-    "basic/achivements.cc",
     "basic/media.cc",
     "market/transactions.cc",
     "market/actives.cc",
     "market/DOM.cc",
-    "letovo-soc-net/social.cc"
+    "letovo-soc-net/social.cc",
+    "letovo-soc-net/achivements.cc",
+    "letovo-soc-net/page_server.cc",
+    "letovo-soc-net/authors.cc"
   ],
   "required_sub_repos": {
     "letovo-secrets": "https://github.com/letovo-dev/letovo-secrets.git",
