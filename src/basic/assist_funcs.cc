@@ -117,4 +117,16 @@ namespace assist{
 
         create_file(Config::giveMe().pages_config.wiki_path.absolute + filePath, mdx_template_text, logger_ptr);
     }
+
+    void fix_new_lines(std::string &content) {
+        size_t pos = 0;
+
+        const std::string from = "\n";
+        const std::string to   = "\\n";  // обратный слэш в строковом литерале нужно экранировать
+
+        while ((pos = content.find(from, pos)) != std::string::npos) {
+            content.replace(pos, from.length(), to);
+            pos += to.length();  // двигаемся дальше, чтобы не зациклиться
+        }
+    }
 }
