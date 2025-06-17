@@ -30,6 +30,7 @@ using router_t = rr::express_router_t<>;
 
 void hi(
     std::unique_ptr<restinio::router::express_router_t<>>& router,
+    std::shared_ptr<cp::ConnectionsManager>& pool_ptr,
     std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr
 ) {
     router.get()->http_get("/hi", [logger_ptr](auto req, auto) {
@@ -48,7 +49,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
 ) {
     auto router = std::make_unique<router::express_router_t<>>();
 
-    hi(router, logger_ptr);
+    hi(router, pool_ptr, logger_ptr);
 
     page::server::get_page_content(router, pool_ptr, logger_ptr);
     page::server::get_page_author(router, pool_ptr, logger_ptr);
