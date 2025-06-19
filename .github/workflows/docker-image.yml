@@ -15,4 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: ./install-run.sh -d
+      run: docker build \
+        --build-arg MAIN_FILE="server.cpp" \
+        --build-arg BUILD_FILES="basic/auth.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc basic/media.cc basic/qr_worker.cc market/transactions.cc market/actives.cc market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc letovo-soc-net/page_server.cc letovo-soc-net/authors.cc" \
+        -t letovo-server:latest . && docker save letovo-server:latest -o letovo-server-docker.tar
