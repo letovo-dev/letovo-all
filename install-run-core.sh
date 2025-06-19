@@ -158,6 +158,8 @@ else
     else
        sudo apt-get install build-essential
        sudo apt-get install librestinio-dev
+       sudo apt-get install libqrencode-dev
+       sudo apt-get install libpng-dev
     fi
     echo "install nginx"
     sudo $pack_manager nginx
@@ -180,4 +182,5 @@ else
     sudo $pack_manager rapidjson-dev
     echo "install libpqxx-dev"
     sudo $pack_manager libpqxx-dev
+    
 fi

@@ -18,6 +18,8 @@ if("$ENV{ROS_DISTRO}" STRGREATER "debian")
     # pkg_check_modules(HTTPLIB cpp-httplib REQUIRED)s
     pkg_check_modules(FMT fmt REQUIRED)
     pkg_check_modules(RESTINIO librestinio-dev REQUIRED)
+    pkg_check_modules(PNG libpng REQUIRED)
+    pkg_check_modules(QRENCODE libqrencode REQUIRED)
     # set(httplib_path ${HTTPLIB_LIBRARIES})
 else()
     # # 3. fmtlib

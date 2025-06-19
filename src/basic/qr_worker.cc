@@ -98,7 +98,7 @@ namespace qr::server {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
             std::string username = auth::get_username(token, pool_ptr);
-            std::string data = fmt::format("http://{}/ach_getter/{}/{}", Config::giveMe().server_config.adress, achivement_id, username);
+            std::string data = fmt::format("https://{}/ach_getter/{}/{}", Config::giveMe().server_config.adress, achivement_id, username);
             std::string filename_str = fmt::format("achivmenet_{}_{}.png", achivement_id, username);
             if(!qr::file_exists(filename_str)) {
                 const char* filename = filename_str.c_str();
@@ -131,7 +131,7 @@ namespace qr::server {
             if(post_id == "qr" || post_id.empty()) {
                 return req->create_response(restinio::status_non_authoritative_information()).done();
             }
-            std::string data = fmt::format("http://{}/api/post/reveal_secret/{}", Config::giveMe().server_config.adress, post_id);
+            std::string data = fmt::format("https://{}/api/post/reveal_secret/{}", Config::giveMe().server_config.adress, post_id);
             std::string filename_str = fmt::format("post_{}.png", post_id);
             if(!qr::file_exists(filename_str)) {
                 const char* filename = filename_str.c_str();
