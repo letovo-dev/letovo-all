@@ -13,13 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: change dir
+        run: |
+          cd src
+
       - name: Build Docker image
         run: |
           docker build \
             --build-arg MAIN_FILE="server.cpp" \
             --build-arg BUILD_FILES="basic/auth.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc basic/media.cc basic/qr_worker.cc market/transactions.cc market/actives.cc market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc letovo-soc-net/page_server.cc letovo-soc-net/authors.cc" \
             -t letovo-server:latest \
-            ./src
+            .
 
   save:
     runs-on: ubuntu-latest
