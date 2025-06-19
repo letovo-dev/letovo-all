@@ -14,7 +14,6 @@ INCLUDE(FindPkgConfig)
 if("$ENV{DEBUG}" STREQUAL "t")
     add_compile_options(-g)
 endif()
-
 if("$ENV{ROS_DISTRO}" STRGREATER "debian")
     # pkg_check_modules(HTTPLIB cpp-httplib REQUIRED)s
     pkg_check_modules(FMT fmt REQUIRED)
@@ -51,4 +50,4 @@ set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")
 
 add_executable(server_starter ${SOURCES})
 
-target_link_libraries(server_starter restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq -lssl -lcrypto)
+target_link_libraries(server_starter restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq -lssl -lcrypto -lpng -lqrencode)

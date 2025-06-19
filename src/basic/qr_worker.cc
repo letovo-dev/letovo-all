@@ -73,4 +73,75 @@ namespace qr {
         QRcode_free(q);
         return true;
     }
+
+    inline bool file_exists(const std::string& name) {
+        struct stat buffer;   
+        return (stat (name.c_str(), &buffer) == 0); 
+      }
+      
+}
+
+namespace qr::server {
+    void achivement_qr(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/achivements/qr/:achivement_id([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            std::string token;
+            auto qrl = req->header().path();
+
+            std::string achivement_id = url::get_last_url_arg(qrl);
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if(achivement_id == "qr" || achivement_id.empty()) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+            std::string username = auth::get_username(token, pool_ptr);
+            std::string data = fmt::format("http://{}/ach_getter/{}/{}", Config::giveMe().server_config.adress, achivement_id, username);
+            std::string filename_str = fmt::format("achivmenet_{}_{}.png", achivement_id, username);
+            if(!qr::file_exists(filename_str)) {
+                const char* filename = filename_str.c_str();
+                qr::GenerateQRCode(data.c_str(), filename);
+            }
+            
+            return req->create_response()
+                .append_header(restinio::http_field::content_type, "image/png")
+                .set_body(restinio::sendfile(filename_str))
+                .done();
+            
+        });
+    }
+
+    void page_qr(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/post/qr/:post_id([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            std::string token;
+            auto qrl = req->header().path();
+
+            std::string post_id = url::get_last_url_arg(qrl);
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if(!auth::is_admin(token, pool_ptr)) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if(post_id == "qr" || post_id.empty()) {
+                return req->create_response(restinio::status_non_authoritative_information()).done();
+            }
+            std::string data = fmt::format("http://{}/api/post/reveal_secret/{}", Config::giveMe().server_config.adress, post_id);
+            std::string filename_str = fmt::format("post_{}.png", post_id);
+            if(!qr::file_exists(filename_str)) {
+                const char* filename = filename_str.c_str();
+                qr::GenerateQRCode(data.c_str(), filename);
+            }
+
+            return req->create_response()
+                .append_header(restinio::http_field::content_type, "image/png")
+                .set_body(restinio::sendfile(filename_str))
+                .done();
+        });
+    }
 }

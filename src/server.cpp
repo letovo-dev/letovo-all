@@ -17,6 +17,7 @@
 #include "./letovo-soc-net/page_server.h"
 #include "./letovo-soc-net/authors.h"
 #include "./basic/user_data.h"
+#include "./basic/qr_worker.h"
 #include "./market/transactions.h"
 #include "./letovo-soc-net/social.h"
 
@@ -130,6 +131,9 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     authors::server::get_avaluable_authors(router, pool_ptr, logger_ptr);
 
     media::server::get_file(router, pool_ptr, logger_ptr);
+
+    qr::server::achivement_qr(router, pool_ptr, logger_ptr);
+    qr::server::page_qr(router, pool_ptr, logger_ptr);
 
     return router;
 }

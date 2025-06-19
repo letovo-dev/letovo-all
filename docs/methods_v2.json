@@ -536,6 +536,43 @@
         },
         "response": {}
     },
+    "/achivements/qr/:achivement_id([0-9]+)": {
+        "request": {
+            "function": "achivement_qr",
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
+    "/post/qr/:post_id([0-9]+)": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "headers": [
+                "Server",
+                "Date",
+                "Content-Type",
+                "Content-Length",
+                "Connection"
+            ]
+        }
+    },
     "/transactions/prepare": {
         "request": {
             "function": "prepare_transaction",
@@ -728,7 +765,7 @@
                         "post_path": "posts/example_post_2.md",
                         "is_secret": "f",
                         "likes": "0",
-                        "title": "-",
+                        "title": "\u041d\u043e\u0432\u043e\u0435 \u043a\u0440\u0430\u0441\u0438\u0432\u043e\u0435 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u0435",
                         "author": "scv-7",
                         "text": "\u044d\u0442\u043e \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
                         "dislikes": "0",
@@ -736,27 +773,27 @@
                         "date": "2025-05-02 22:03:07.486935",
                         "saved_count": "0",
                         "category": "0",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442",
+                        "category_name": "\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f \u0422\u041e\u041f",
                         "avatar_pic": "images/avatars/example_1.png",
                         "is_liked": "f",
                         "is_disliked": "f",
                         "saved": "f"
                     },
                     {
-                        "post_id": "2",
-                        "post_path": "posts/example_post.md",
-                        "is_secret": "t",
+                        "post_id": "264",
+                        "post_path": "posts/example_post_3.md",
+                        "is_secret": "f",
                         "likes": "0",
-                        "title": "secret page",
-                        "author": "scv-7",
-                        "text": "\u044d\u0442\u043e  \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
+                        "title": "\u041e\u0431\u0440\u0430\u0437\u0435\u0446 \u041c\u0414",
+                        "author": "-",
+                        "text": "",
                         "dislikes": "0",
                         "parent_id": "",
-                        "date": "2025-05-02 21:11:31.404448",
+                        "date": "2025-06-17 02:13:00.511784",
                         "saved_count": "0",
-                        "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "avatar_pic": "images/avatars/example_1.png",
+                        "category": "0",
+                        "category_name": "0",
+                        "avatar_pic": "",
                         "is_liked": "f",
                         "is_disliked": "f",
                         "saved": "f"
@@ -785,12 +822,12 @@
             "body": {
                 "result": [
                     {
-                        "post_id": "103",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 2"
+                        "post_id": "112",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 65"
                     },
                     {
-                        "post_id": "102",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 1"
+                        "post_id": "285",
+                        "title": "sdfsdf"
                     }
                 ]
             },
@@ -828,26 +865,26 @@
                         "date": "2025-04-23 17:36:21.293235",
                         "saved_count": "0",
                         "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442=20\u0412\u0410\u041f\u0412\u0410\u041f",
                         "avatar_pic": "images/avatars/example_1.png",
                         "is_liked": "f",
                         "is_disliked": "f",
                         "saved": "t"
                     },
                     {
-                        "post_id": "104",
+                        "post_id": "110",
                         "post_path": "",
                         "is_secret": "f",
-                        "likes": "6",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 3",
+                        "likes": "10",
+                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 9",
                         "author": "scv-7",
                         "text": "\u044d\u0442\u043e \u043f\u043e\u0441\u0442 \u0441 \u043d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u044b\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043cn\u0438 \u043d\u043e\u0432\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u043e\u0439",
-                        "dislikes": "11",
+                        "dislikes": "2",
                         "parent_id": "",
                         "date": "2025-04-23 17:36:21.293235",
                         "saved_count": "1",
                         "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
+                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442=20\u0412\u0410\u041f\u0412\u0410\u041f",
                         "avatar_pic": "images/avatars/example_1.png",
                         "is_liked": "f",
                         "is_disliked": "f",
@@ -941,11 +978,11 @@
                 "result": [
                     {
                         "category": "0",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category_name": "0"
                     },
                     {
-                        "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
+                        "category": "0",
+                        "category_name": "\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f \u0422\u041e\u041f"
                     }
                 ]
             },
@@ -962,35 +999,7 @@
         "request": {
             "method": "get"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "post_id": "2",
-                        "post_path": "posts/example_post.md",
-                        "is_secret": "t",
-                        "likes": "0",
-                        "title": "secret page",
-                        "author": "scv-7",
-                        "text": "\u044d\u0442\u043e  \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
-                        "dislikes": "0",
-                        "parent_id": "",
-                        "date": "2025-05-02 21:11:31.404448",
-                        "saved_count": "0",
-                        "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -1390,10 +1399,10 @@
                 "title": "String",
                 "is_secret": "Bool",
                 "author": "String",
+                "text": "String",
                 "likes": "Int",
                 "dislikes": "Int",
-                "saved": "Int",
-                "text": "String"
+                "saved": "Int"
             },
             "header_fields": [
                 "Bearer"
@@ -1482,16 +1491,17 @@
     },
     "/post/update": {
         "request": {
+            "function": "update_post",
             "method": "put",
             "body_fields": {
-                "post_id": "Int",
-                "is_secret": "Bool",
-                "likes": "Int",
-                "dislikes": "Int",
-                "saved": "Int",
+                "post_id": "String",
+                "text": "String",
+                "is_secret": "String",
+                "likes": "String",
+                "dislikes": "String",
+                "saved_count": "String",
                 "title": "String",
                 "author": "String",
-                "text": "String",
                 "category": "String"
             },
             "header_fields": [

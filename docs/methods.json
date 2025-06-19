@@ -179,6 +179,19 @@
             "Bearer"
         ]
     },
+    "/achivements/qr/:achivement_id([0-9]+)": {
+        "function": "achivement_qr",
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/post/qr/:post_id([0-9]+)": {
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
     "/transactions/prepare": {
         "function": "prepare_transaction",
         "method": "post",
@@ -424,10 +437,10 @@
             "title": "String",
             "is_secret": "Bool",
             "author": "String",
+            "text": "String",
             "likes": "Int",
             "dislikes": "Int",
-            "saved": "Int",
-            "text": "String"
+            "saved": "Int"
         },
         "header_fields": [
             "Bearer"
@@ -487,16 +500,17 @@
         ]
     },
     "/post/update": {
+        "function": "update_post",
         "method": "put",
         "body_fields": {
-            "post_id": "Int",
-            "is_secret": "Bool",
-            "likes": "Int",
-            "dislikes": "Int",
-            "saved": "Int",
+            "post_id": "String",
+            "text": "String",
+            "is_secret": "String",
+            "likes": "String",
+            "dislikes": "String",
+            "saved_count": "String",
             "title": "String",
             "author": "String",
-            "text": "String",
             "category": "String"
         },
         "header_fields": [
