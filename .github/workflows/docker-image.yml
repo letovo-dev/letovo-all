@@ -18,4 +18,15 @@ jobs:
       run: docker build \
         --build-arg MAIN_FILE="server.cpp" \
         --build-arg BUILD_FILES="basic/auth.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc basic/media.cc basic/qr_worker.cc market/transactions.cc market/actives.cc market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc letovo-soc-net/page_server.cc letovo-soc-net/authors.cc" \
-        -t letovo-server:latest . && docker save letovo-server:latest -o letovo-server-docker.tar
+        -t letovo-server:latest \
+        .
+  save:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Save Docker image as artifact
+      run: |
+        docker save letovo-server:latest | gzip > letovo-server.tar.gz
+    - uses: actions/upload-artifact@v4
+      with:
+        name: letovo-server-image
