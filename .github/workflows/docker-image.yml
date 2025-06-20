@@ -30,10 +30,10 @@ jobs:
     steps:
       - name: Save Docker image as artifact
         run: |
-          docker save letovo-server:latest | gzip > letovo-server.tar.gz
+          docker save letovo-server:latest -o letovo-server-docker.tar
 
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
           name: letovo-server-image
-          path: letovo-server.tar.gz
+          path: letovo-server-docker.tar
