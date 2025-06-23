@@ -2,6 +2,10 @@ import json
 import requests
 import re
 
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 USERNAME = 'scv-7'
 PASSWORD = '7'
 TOKEN = '5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9'
@@ -99,7 +103,12 @@ if __name__ == '__main__':
             result[url]['response']['status_code'] = response.status_code
             if response.text != '':
                 if 'json' in response.headers['Content-Type']:
-                    result[url]['response']['body'] = json.loads(response.text.replace('\\', ''))
+                    try:
+                        result[url]['response']['body'] = json.loads(response.text.replace('\\', ''))
+                    except:
+                        print(f"Error parsing JSON for URL: {url}")
+                        print(response.text)
+                        exit(1)
                     try:
                         if "result" in result[url]['response']['body']:
                             result[url]['response']['body']["result"] = result[url]['response']['body']["result"][:2]

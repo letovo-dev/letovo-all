@@ -46,7 +46,7 @@ def search_in_file(file_path, active_functions) -> dict:
                         print(f'Duplicate method {last} in file {file_path}')
                     res[last] = {}
                     res[last]['function'] = last_function
-                    res[last]['method'] = last_method
+                    res[last]['method'] = last_method.upper()
                     if fields != {}:
                         res[last]['body_fields'] = fields
                     if params != []:
@@ -94,14 +94,10 @@ def search(directory):
     for file in config_files():
         if file[-3:] != '.cc':
             continue
-        # try:
-        # print(f'Reading file {file}, {os.path.exists(file)}')
         try:
             results.update(search_in_file(file, active_functions))
         except UnicodeDecodeError:
             pass
-            # print(f"Error reading file {file_path}")
-    # print(*active_functions, sep='\n')
     return results
 
 

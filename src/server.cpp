@@ -57,6 +57,8 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     page::server::add_page(router, pool_ptr, logger_ptr);
     page::server::update_likes(router, pool_ptr, logger_ptr);
     page::server::delete_post(router, pool_ptr, logger_ptr);
+    page::server::add_media(router, pool_ptr, logger_ptr);
+    page::server::delete_media(router, pool_ptr, logger_ptr);
 
     page::server::get_favourite_posts(router, pool_ptr, logger_ptr);
     page::server::post_add_favourite_post(router, pool_ptr, logger_ptr);

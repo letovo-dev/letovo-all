@@ -16,7 +16,7 @@
     "/auth/login": {
         "request": {
             "function": "enable_auth",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "login": "String",
                 "password": "String"
@@ -27,7 +27,7 @@
     "/auth/reg": {
         "request": {
             "function": "enable_reg",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "login": "String",
                 "password": "String",
@@ -39,89 +39,41 @@
     "/auth/amiauthed": {
         "request": {
             "function": "am_i_authed",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "status": "t"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/auth/amiadmin": {
         "request": {
             "function": "am_i_admin",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "status": "t"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/auth/isactive/:username(.*)": {
         "request": {
             "function": "is_user_active",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "status": "t"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/auth/isuser/:username(.*)": {
         "request": {
             "function": "is_user",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "status": "t"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/auth/delete": {
         "request": {
             "function": "enable_delete",
-            "method": "delete",
+            "method": "DELETE",
             "header_fields": [
                 "Bearer"
             ]
@@ -131,7 +83,7 @@
     "/auth/add_userrights": {
         "request": {
             "function": "add_userrights",
-            "method": "put",
+            "method": "PUT",
             "body_fields": {
                 "username": "String",
                 "rights": "String"
@@ -145,7 +97,7 @@
     "/auth/change_username": {
         "request": {
             "function": "change_username",
-            "method": "put",
+            "method": "PUT",
             "body_fields": {
                 "new_username": "String"
             },
@@ -158,7 +110,7 @@
     "/auth/change_password": {
         "request": {
             "function": "change_password",
-            "method": "put",
+            "method": "PUT",
             "body_fields": {
                 "unlogin": "Bool",
                 "new_password": "String"
@@ -172,7 +124,7 @@
     "/auth/register_true": {
         "request": {
             "function": "register_true",
-            "method": "put",
+            "method": "PUT",
             "header_fields": [
                 "Bearer"
             ]
@@ -200,148 +152,35 @@
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "user_info",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "userid": "1762",
-                        "username": "scv-7",
-                        "userrights": "admin",
-                        "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "images/avatars/example_1.png",
-                        "active": "t",
-                        "times_visited": "1",
-                        "departmentid": "0",
-                        "rolename": "\u043f\u0438\u043f\u0430",
-                        "registered": "t"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/full/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "full_user_info",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "userid": "1762",
-                        "username": "scv-7",
-                        "userrights": "admin",
-                        "balance": "262",
-                        "registered": "t",
-                        "jointime": "2024-12-05 23:52:49.393567",
-                        "avatar_pic": "images/avatars/example_1.png",
-                        "active": "t",
-                        "times_visited": "1",
-                        "role": "\u043f\u0438\u043f\u0430",
-                        "paycheck": "1000",
-                        "departmentid": "0",
-                        "departmentname": "nowhere"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/roles/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "user_roles",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "username": "scv-7",
-                        "roleid": "9",
-                        "rolename": "anyone",
-                        "rang": "1",
-                        "departmentid": "1",
-                        "payment": "100",
-                        "departmentname": "somewhere"
-                    },
-                    {
-                        "username": "scv-7",
-                        "roleid": "1",
-                        "rolename": "anyone",
-                        "rang": "1",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "user_unactive_roles",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "roleid": "0",
-                        "rolename": "somewhere",
-                        "rang": "0",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "roleid": "1",
-                        "rolename": "anyone",
-                        "rang": "1",
-                        "departmentid": "0",
-                        "payment": "0",
-                        "departmentname": "nowhere"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/add_role": {
         "request": {
             "function": "add_user_role",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "username": "String",
                 "role_id": "Int",
@@ -357,14 +196,14 @@
     "/user/delete_role": {
         "request": {
             "function": "delete_user_role",
-            "method": "delete"
+            "method": "DELETE"
         },
         "response": {}
     },
     "/user/create_role": {
         "request": {
             "function": "create_role",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "payment": "Int",
                 "role": "String",
@@ -380,64 +219,21 @@
     "/user/department/roles/:department([0-9]+)": {
         "request": {
             "function": "department_roles",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "roleid": "11",
-                        "rolename": "starter",
-                        "rang": "0",
-                        "departmentid": "1",
-                        "payment": "-10"
-                    },
-                    {
-                        "roleid": "9",
-                        "rolename": "anyone",
-                        "rang": "1",
-                        "departmentid": "1",
-                        "payment": "100"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/department/name/:department([0-9]+)": {
         "request": {
             "function": "department_name",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "department": "somewhere"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/set_department": {
         "request": {
             "function": "set_users_department",
-            "method": "put",
+            "method": "PUT",
             "body_fields": {
                 "department": "String",
                 "username": "String"
@@ -451,69 +247,23 @@
     "/user/department/roles": {
         "request": {
             "function": "all_departments",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "departmentid": "0",
-                        "departmentname": "nowhere"
-                    },
-                    {
-                        "departmentid": "1",
-                        "departmentname": "somewhere"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/department/start/:department(.*)": {
         "request": {
             "function": "starter_role",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "text": "11",
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/all_avatars": {
         "request": {
             "function": "all_avatars",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    "images/avatars/example_1.png",
-                    "images/avatars/example_5.png"
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/user/set_avatar": {
         "request": {
@@ -539,21 +289,12 @@
     "/achivements/qr/:achivement_id([0-9]+)": {
         "request": {
             "function": "achivement_qr",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/post/qr/:post_id([0-9]+)": {
         "request": {
@@ -576,7 +317,7 @@
     "/transactions/prepare": {
         "request": {
             "function": "prepare_transaction",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "receiver": "String",
                 "amount": "Int"
@@ -590,7 +331,7 @@
     "/transactions/send": {
         "request": {
             "function": "transfer",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "tr_id": "String"
             },
@@ -603,22 +344,12 @@
     "/transactions/balance": {
         "request": {
             "function": "get_balance",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "text": "262",
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/transactions/my": {
         "request": {
@@ -659,26 +390,14 @@
     "/social/authors": {
         "request": {
             "function": "get_authors_list",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": []
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/news:search(.*)": {
         "request": {
             "function": "get_news",
-            "method": "get",
+            "method": "GET",
             "params": [
                 "start",
                 "size"
@@ -692,7 +411,7 @@
     "/social/comments:search(.*)": {
         "request": {
             "function": "get_comments",
-            "method": "get",
+            "method": "GET",
             "params": [
                 "post_id",
                 "start",
@@ -707,204 +426,57 @@
     "/social/media/pics/:post_id(.*)": {
         "request": {
             "function": "get_post_media",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "pics"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": []
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/new/:post_id(.*)": {
         "request": {
             "function": "get_post",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": []
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/posts": {
         "request": {
             "function": "get_all_posts",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "post_id": "3",
-                        "post_path": "posts/example_post_2.md",
-                        "is_secret": "f",
-                        "likes": "0",
-                        "title": "\u041d\u043e\u0432\u043e\u0435 \u043a\u0440\u0430\u0441\u0438\u0432\u043e\u0435 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u0435",
-                        "author": "scv-7",
-                        "text": "\u044d\u0442\u043e \u043d\u0435 \u0432\u0430\u0436\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442, \u0435\u0433\u043e \u043c\u043e\u0436\u043d\u043e \u0438\u0433\u043d\u043e\u0440\u0438\u0440\u043e\u0432\u0430\u0442\u044c",
-                        "dislikes": "0",
-                        "parent_id": "",
-                        "date": "2025-05-02 22:03:07.486935",
-                        "saved_count": "0",
-                        "category": "0",
-                        "category_name": "\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f \u0422\u041e\u041f",
-                        "avatar_pic": "images/avatars/example_1.png",
-                        "is_liked": "f",
-                        "is_disliked": "f",
-                        "saved": "f"
-                    },
-                    {
-                        "post_id": "264",
-                        "post_path": "posts/example_post_3.md",
-                        "is_secret": "f",
-                        "likes": "0",
-                        "title": "\u041e\u0431\u0440\u0430\u0437\u0435\u0446 \u041c\u0414",
-                        "author": "-",
-                        "text": "",
-                        "dislikes": "0",
-                        "parent_id": "",
-                        "date": "2025-06-17 02:13:00.511784",
-                        "saved_count": "0",
-                        "category": "0",
-                        "category_name": "0",
-                        "avatar_pic": "",
-                        "is_liked": "f",
-                        "is_disliked": "f",
-                        "saved": "f"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/titles": {
         "request": {
             "function": "get_all_titles",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "post_id": "112",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 65"
-                    },
-                    {
-                        "post_id": "285",
-                        "title": "sdfsdf"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/saved": {
         "request": {
             "function": "get_saved_posts",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "post_id": "102",
-                        "post_path": "",
-                        "is_secret": "f",
-                        "likes": "-32",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 1",
-                        "author": "scv-7",
-                        "text": "\u044d\u0442\u043e \u043f\u043e\u0441\u0442 \u0441 \u043d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u044b\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043cn\u0438 \u043d\u043e\u0432\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u043e\u0439",
-                        "dislikes": "82",
-                        "parent_id": "",
-                        "date": "2025-04-23 17:36:21.293235",
-                        "saved_count": "0",
-                        "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442=20\u0412\u0410\u041f\u0412\u0410\u041f",
-                        "avatar_pic": "images/avatars/example_1.png",
-                        "is_liked": "f",
-                        "is_disliked": "f",
-                        "saved": "t"
-                    },
-                    {
-                        "post_id": "110",
-                        "post_path": "",
-                        "is_secret": "f",
-                        "likes": "10",
-                        "title": "\u0442\u0435\u0441\u0442\u043e\u0432\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f 9",
-                        "author": "scv-7",
-                        "text": "\u044d\u0442\u043e \u043f\u043e\u0441\u0442 \u0441 \u043d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u044b\u043c \u0442\u0435\u043a\u0441\u0442\u043e\u043cn\u0438 \u043d\u043e\u0432\u043e\u0439 \u0441\u0442\u0440\u043e\u043a\u043e\u0439",
-                        "dislikes": "2",
-                        "parent_id": "",
-                        "date": "2025-04-23 17:36:21.293235",
-                        "saved_count": "1",
-                        "category": "1",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442=20\u0412\u0410\u041f\u0412\u0410\u041f",
-                        "avatar_pic": "images/avatars/example_1.png",
-                        "is_liked": "f",
-                        "is_disliked": "f",
-                        "saved": "t"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/save": {
         "request": {
             "function": "delete_saved_post",
-            "method": "delete",
+            "method": "DELETE",
             "body_fields": {
                 "post_id": "String"
             },
@@ -917,7 +489,7 @@
     "/social/search:search(.*)": {
         "request": {
             "function": "search_by_title",
-            "method": "get",
+            "method": "GET",
             "params": [
                 "title"
             ],
@@ -930,7 +502,7 @@
     "/social/like": {
         "request": {
             "function": "delete_like",
-            "method": "delete",
+            "method": "DELETE",
             "body_fields": {
                 "post_id": "String"
             },
@@ -943,7 +515,7 @@
     "/social/dislike": {
         "request": {
             "function": "delete_dislike",
-            "method": "delete",
+            "method": "DELETE",
             "body_fields": {
                 "post_id": "String"
             },
@@ -956,7 +528,7 @@
     "/social/comments": {
         "request": {
             "function": "add_comment",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "comment": "String",
                 "post_id": "String"
@@ -970,30 +542,9 @@
     "/social/categories": {
         "request": {
             "function": "get_post_categories",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "category": "0",
-                        "category_name": "0"
-                    },
-                    {
-                        "category": "0",
-                        "category_name": "\u041a\u0430\u0442\u0435\u0433\u043e\u0440\u0438\u044f \u0422\u041e\u041f"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/social/bycat/:category([0-9\\-]+)": {
         "request": {
@@ -1004,95 +555,21 @@
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "user_achivemets",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "id": "5",
-                        "username": "scv-7",
-                        "achivement_id": "2",
-                        "datetime": "2025-01-16 00:32:04.305811",
-                        "stage": "1",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 2",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 2 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "full_user_achivemets",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "32",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 32",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 32 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "3",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "24",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 24",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 24 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "3",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/add": {
         "request": {
             "function": "add_achivement",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "username": "String",
                 "achivement_id": "Int"
@@ -1106,7 +583,7 @@
     "/achivements/delete": {
         "request": {
             "function": "delete_achivement",
-            "method": "delete",
+            "method": "DELETE",
             "body_fields": {
                 "username": "String",
                 "achivement_id": "Int"
@@ -1120,83 +597,21 @@
     "/achivements/tree/:tree_id([0-9]+)": {
         "request": {
             "function": "achivements_tree",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "achivement_id": "4",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 4",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 4 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "3",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    },
-                    {
-                        "achivement_id": "18",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 18",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 18 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "3",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/info/:achivement_id([0-9]+)": {
         "request": {
             "function": "achivement_info",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "achivement_id": "1",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 1",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 1 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "0",
-                        "stages": "1",
-                        "category": "1",
-                        "category_name": "\u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/create": {
         "request": {
             "function": "create_achivement",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "name": "String",
                 "tree_id": "Int",
@@ -1214,134 +629,29 @@
     "/achivements/pictures": {
         "request": {
             "function": "achivement_pictures",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    "images/achivements/example_1.png",
-                    "images/achivements/example_1.jpg"
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/no_dep": {
         "request": {
             "function": "no_department_achivements",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "32",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 32",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 32 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "3",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "24",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 24",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 24 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "3",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/by_user": {
         "request": {
             "function": "department_achivements_by_user",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "id": "5",
-                        "username": "scv-7",
-                        "achivement_id": "2",
-                        "datetime": "2025-01-16 00:32:04.305811",
-                        "stage": "1",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 2",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 2 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "-1"
-                    },
-                    {
-                        "id": "",
-                        "username": "",
-                        "achivement_id": "14",
-                        "datetime": "",
-                        "stage": "",
-                        "achivement_pic": "images/achivements/example_1.png",
-                        "achivement_name": "\u0430\u0447\u0438\u0432\u043a\u0430 \u043d\u043e\u043c\u0435\u0440 14",
-                        "achivement_decsription": "\u0447\u0442\u043e\u0431\u044b \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0430\u0447\u0438\u0432\u043a\u0443 14 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u043d\u043e \u043d\u0430\u0434\u043e \u0447\u0442\u043e-\u0442\u043e \u0441\u0434\u0435\u043b\u0430\u0442\u044c",
-                        "achivement_tree": "1",
-                        "level": "1",
-                        "stages": "10",
-                        "category": "2",
-                        "category_name": "\u043d\u0435 \u0434\u0435\u0444\u043e\u043b\u0442",
-                        "departmentid": "0"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/achivements/qr_code/:achivement_id([0-9]+)": {
         "request": {
@@ -1361,38 +671,21 @@
     "/post/:id(\\d+)": {
         "request": {
             "function": "get_page_content",
-            "method": "get"
+            "method": "GET"
         },
         "response": {}
     },
     "/post/author/:username([a-zA-Z0-9\\-]+)": {
         "request": {
             "function": "get_page_author",
-            "method": "get"
+            "method": "GET"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "username": "scv-7",
-                        "avatar_pic": "images/avatars/example_1.png"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/post/add_page": {
         "request": {
             "function": "add_page",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "post_path": "String",
                 "category": "String",
@@ -1413,7 +706,7 @@
     "/post/update_likes": {
         "request": {
             "function": "update_likes",
-            "method": "put",
+            "method": "PUT",
             "body_fields": {
                 "post_id": "Int",
                 "likes": "Int"
@@ -1424,25 +717,17 @@
     "/post/favourite/": {
         "request": {
             "function": "get_favourite_posts",
-            "method": "get",
+            "method": "GET",
             "header_fields": [
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Length",
-                "Connection"
-            ]
-        }
+        "response": {}
     },
     "/post/favourite": {
         "request": {
             "function": "post_add_favourite_post",
-            "method": "post",
+            "method": "POST",
             "body_fields": {
                 "post_id": "Int"
             },
@@ -1455,7 +740,7 @@
     "/post/favourite/:id(\\d+)": {
         "request": {
             "function": "delete_favourite_post",
-            "method": "delete",
+            "method": "DELETE",
             "header_fields": [
                 "Bearer"
             ]
@@ -1465,7 +750,7 @@
     "/post/rename_category": {
         "request": {
             "function": "rename_category",
-            "method": "put",
+            "method": "PUT",
             "body_fields": {
                 "old_name": "String",
                 "new_name": "String"
@@ -1479,7 +764,7 @@
     "/post/delete": {
         "request": {
             "function": "delete_post",
-            "method": "delete",
+            "method": "DELETE",
             "body_fields": {
                 "post_id": "Int"
             },
@@ -1492,7 +777,7 @@
     "/post/update": {
         "request": {
             "function": "update_post",
-            "method": "put",
+            "method": "PUT",
             "body_fields": {
                 "post_id": "String",
                 "text": "String",
@@ -1503,6 +788,32 @@
                 "title": "String",
                 "author": "String",
                 "category": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/add_media": {
+        "request": {
+            "function": "add_media",
+            "method": "POST",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/delete_media": {
+        "request": {
+            "function": "delete_media",
+            "method": "DELETE",
+            "body_fields": {
+                "post_id": "Int"
             },
             "header_fields": [
                 "Bearer"

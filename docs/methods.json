@@ -1,7 +1,7 @@
 {
     "/auth/login": {
         "function": "enable_auth",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "login": "String",
             "password": "String"
@@ -9,7 +9,7 @@
     },
     "/auth/reg": {
         "function": "enable_reg",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "login": "String",
             "password": "String",
@@ -18,36 +18,36 @@
     },
     "/auth/amiauthed": {
         "function": "am_i_authed",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/auth/amiadmin": {
         "function": "am_i_admin",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/auth/isactive/:username(.*)": {
         "function": "is_user_active",
-        "method": "get"
+        "method": "GET"
     },
     "/auth/isuser/:username(.*)": {
         "function": "is_user",
-        "method": "get"
+        "method": "GET"
     },
     "/auth/delete": {
         "function": "enable_delete",
-        "method": "delete",
+        "method": "DELETE",
         "header_fields": [
             "Bearer"
         ]
     },
     "/auth/add_userrights": {
         "function": "add_userrights",
-        "method": "put",
+        "method": "PUT",
         "body_fields": {
             "username": "String",
             "rights": "String"
@@ -58,7 +58,7 @@
     },
     "/auth/change_username": {
         "function": "change_username",
-        "method": "put",
+        "method": "PUT",
         "body_fields": {
             "new_username": "String"
         },
@@ -68,7 +68,7 @@
     },
     "/auth/change_password": {
         "function": "change_password",
-        "method": "put",
+        "method": "PUT",
         "body_fields": {
             "unlogin": "Bool",
             "new_password": "String"
@@ -79,7 +79,7 @@
     },
     "/auth/register_true": {
         "function": "register_true",
-        "method": "put",
+        "method": "PUT",
         "header_fields": [
             "Bearer"
         ]
@@ -89,23 +89,23 @@
     },
     "/user/:username([a-zA-Z0-9\\-]+)": {
         "function": "user_info",
-        "method": "get"
+        "method": "GET"
     },
     "/user/full/:username([a-zA-Z0-9\\-]+)": {
         "function": "full_user_info",
-        "method": "get"
+        "method": "GET"
     },
     "/user/roles/:username([a-zA-Z0-9\\-]+)": {
         "function": "user_roles",
-        "method": "get"
+        "method": "GET"
     },
     "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
         "function": "user_unactive_roles",
-        "method": "get"
+        "method": "GET"
     },
     "/user/add_role": {
         "function": "add_user_role",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "username": "String",
             "role_id": "Int",
@@ -118,11 +118,11 @@
     },
     "/user/delete_role": {
         "function": "delete_user_role",
-        "method": "delete"
+        "method": "DELETE"
     },
     "/user/create_role": {
         "function": "create_role",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "payment": "Int",
             "role": "String",
@@ -135,15 +135,15 @@
     },
     "/user/department/roles/:department([0-9]+)": {
         "function": "department_roles",
-        "method": "get"
+        "method": "GET"
     },
     "/user/department/name/:department([0-9]+)": {
         "function": "department_name",
-        "method": "get"
+        "method": "GET"
     },
     "/user/set_department": {
         "function": "set_users_department",
-        "method": "put",
+        "method": "PUT",
         "body_fields": {
             "department": "String",
             "username": "String"
@@ -154,15 +154,15 @@
     },
     "/user/department/roles": {
         "function": "all_departments",
-        "method": "get"
+        "method": "GET"
     },
     "/user/department/start/:department(.*)": {
         "function": "starter_role",
-        "method": "get"
+        "method": "GET"
     },
     "/user/all_avatars": {
         "function": "all_avatars",
-        "method": "get"
+        "method": "GET"
     },
     "/user/set_avatar": {
         "method": "put",
@@ -181,7 +181,7 @@
     },
     "/achivements/qr/:achivement_id([0-9]+)": {
         "function": "achivement_qr",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
@@ -194,7 +194,7 @@
     },
     "/transactions/prepare": {
         "function": "prepare_transaction",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "receiver": "String",
             "amount": "Int"
@@ -205,7 +205,7 @@
     },
     "/transactions/send": {
         "function": "transfer",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "tr_id": "String"
         },
@@ -215,7 +215,7 @@
     },
     "/transactions/balance": {
         "function": "get_balance",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
@@ -228,11 +228,11 @@
     },
     "/social/authors": {
         "function": "get_authors_list",
-        "method": "get"
+        "method": "GET"
     },
     "/social/news:search(.*)": {
         "function": "get_news",
-        "method": "get",
+        "method": "GET",
         "params": [
             "start",
             "size"
@@ -243,7 +243,7 @@
     },
     "/social/comments:search(.*)": {
         "function": "get_comments",
-        "method": "get",
+        "method": "GET",
         "params": [
             "post_id",
             "start",
@@ -255,42 +255,42 @@
     },
     "/social/media/pics/:post_id(.*)": {
         "function": "get_post_media",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "pics"
         ]
     },
     "/social/new/:post_id(.*)": {
         "function": "get_post",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/social/posts": {
         "function": "get_all_posts",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/social/titles": {
         "function": "get_all_titles",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/social/saved": {
         "function": "get_saved_posts",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/social/save": {
         "function": "delete_saved_post",
-        "method": "delete",
+        "method": "DELETE",
         "body_fields": {
             "post_id": "String"
         },
@@ -300,7 +300,7 @@
     },
     "/social/search:search(.*)": {
         "function": "search_by_title",
-        "method": "get",
+        "method": "GET",
         "params": [
             "title"
         ],
@@ -310,7 +310,7 @@
     },
     "/social/like": {
         "function": "delete_like",
-        "method": "delete",
+        "method": "DELETE",
         "body_fields": {
             "post_id": "String"
         },
@@ -320,7 +320,7 @@
     },
     "/social/dislike": {
         "function": "delete_dislike",
-        "method": "delete",
+        "method": "DELETE",
         "body_fields": {
             "post_id": "String"
         },
@@ -330,7 +330,7 @@
     },
     "/social/comments": {
         "function": "add_comment",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "comment": "String",
             "post_id": "String"
@@ -341,22 +341,22 @@
     },
     "/social/categories": {
         "function": "get_post_categories",
-        "method": "get"
+        "method": "GET"
     },
     "/social/bycat/:category([0-9\\-]+)": {
         "method": "get"
     },
     "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
         "function": "user_achivemets",
-        "method": "get"
+        "method": "GET"
     },
     "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
         "function": "full_user_achivemets",
-        "method": "get"
+        "method": "GET"
     },
     "/achivements/add": {
         "function": "add_achivement",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "username": "String",
             "achivement_id": "Int"
@@ -367,7 +367,7 @@
     },
     "/achivements/delete": {
         "function": "delete_achivement",
-        "method": "delete",
+        "method": "DELETE",
         "body_fields": {
             "username": "String",
             "achivement_id": "Int"
@@ -378,15 +378,15 @@
     },
     "/achivements/tree/:tree_id([0-9]+)": {
         "function": "achivements_tree",
-        "method": "get"
+        "method": "GET"
     },
     "/achivements/info/:achivement_id([0-9]+)": {
         "function": "achivement_info",
-        "method": "get"
+        "method": "GET"
     },
     "/achivements/create": {
         "function": "create_achivement",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "name": "String",
             "tree_id": "Int",
@@ -401,18 +401,18 @@
     },
     "/achivements/pictures": {
         "function": "achivement_pictures",
-        "method": "get"
+        "method": "GET"
     },
     "/achivements/no_dep": {
         "function": "no_department_achivements",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/achivements/by_user": {
         "function": "department_achivements_by_user",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
@@ -422,15 +422,15 @@
     },
     "/post/:id(\\d+)": {
         "function": "get_page_content",
-        "method": "get"
+        "method": "GET"
     },
     "/post/author/:username([a-zA-Z0-9\\-]+)": {
         "function": "get_page_author",
-        "method": "get"
+        "method": "GET"
     },
     "/post/add_page": {
         "function": "add_page",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "post_path": "String",
             "category": "String",
@@ -448,7 +448,7 @@
     },
     "/post/update_likes": {
         "function": "update_likes",
-        "method": "put",
+        "method": "PUT",
         "body_fields": {
             "post_id": "Int",
             "likes": "Int"
@@ -456,14 +456,14 @@
     },
     "/post/favourite/": {
         "function": "get_favourite_posts",
-        "method": "get",
+        "method": "GET",
         "header_fields": [
             "Bearer"
         ]
     },
     "/post/favourite": {
         "function": "post_add_favourite_post",
-        "method": "post",
+        "method": "POST",
         "body_fields": {
             "post_id": "Int"
         },
@@ -473,14 +473,14 @@
     },
     "/post/favourite/:id(\\d+)": {
         "function": "delete_favourite_post",
-        "method": "delete",
+        "method": "DELETE",
         "header_fields": [
             "Bearer"
         ]
     },
     "/post/rename_category": {
         "function": "rename_category",
-        "method": "put",
+        "method": "PUT",
         "body_fields": {
             "old_name": "String",
             "new_name": "String"
@@ -491,7 +491,7 @@
     },
     "/post/delete": {
         "function": "delete_post",
-        "method": "delete",
+        "method": "DELETE",
         "body_fields": {
             "post_id": "Int"
         },
@@ -501,7 +501,7 @@
     },
     "/post/update": {
         "function": "update_post",
-        "method": "put",
+        "method": "PUT",
         "body_fields": {
             "post_id": "String",
             "text": "String",
@@ -512,6 +512,26 @@
             "title": "String",
             "author": "String",
             "category": "String"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/post/add_media": {
+        "function": "add_media",
+        "method": "POST",
+        "body_fields": {
+            "post_id": "Int"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/post/delete_media": {
+        "function": "delete_media",
+        "method": "DELETE",
+        "body_fields": {
+            "post_id": "Int"
         },
         "header_fields": [
             "Bearer"

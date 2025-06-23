@@ -14,14 +14,14 @@ def system_prompt() -> str:
             {"role": "user", "content": reuqest}
         ]
     )
-    # print(responce.message.content)
+    # # print(responce.message.content)
 
 def method_prompt(method_data: dict) -> str:
     message = str(method_data)
     additional_message = """
     please write really simple and short explanation what the method is doing, not how it is doing or how it could be done
     """
-    print(message)
+    # print(message)
     message += additional_message
     resonce: ChatResponse = chat(model="qwen2", messages=
                                  [
@@ -40,10 +40,13 @@ with open("./docs/methods_v2.json", "r") as file:
         if i == 0:
             i = 1
             continue
-        print(method)
+        # print(method)
         expl = method_prompt({method: data[method]})
-        print("========================================")
+        # print("========================================")
         data[method]['explanation'] = expl
+        print(f"Method {method} done")
 
 with open("methods_ai_expl.json", "w") as file:
     json.dump(data, file, indent=4)
+
+print("Done")
