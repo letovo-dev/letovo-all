@@ -166,8 +166,9 @@ else
     sudo $pack_manager nginx
     sudo "prepare nginx"
     sudo cp ./docs/nginx.conf /etc/nginx/nginx.conf
-    sudo rm -rf /etc/nginx/sergei-scv.ru
-    sudo cp -r ./certs/sergei-scv.ru /etc/nginx
+    sudo rm -rf /etc/nginx/certs
+    sudo cp -r ./certs /etc/nginx
+    sudo ln -s /etc/nginx/certs/letovocorp.ru /etc/nginx/certs/default #TODO: Customizatio
     sudo systemctl restart nginx
     echo "install cmake"
     sudo $pack_manager cmake 
