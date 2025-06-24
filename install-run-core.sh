@@ -58,7 +58,8 @@ while getopts 'dgptoifdhas:' OPTION; do
             ;;
         p)
             echo "pulling changes from git"
-            git pull origin main
+            git pull
+            git submodule update --recursive --remote
             ;;
         g)
             echo "generate methods.json"
