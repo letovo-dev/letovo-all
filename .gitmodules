@@ -7,3 +7,6 @@
 [submodule "src/python-helpers"]
 	path = src/python-helpers
 	url = git@github.com:letovo-dev/python-helpers.git
+[submodule "certs"]
+	path = certs
+	url = git@github.com:letovo-dev/certs.git
