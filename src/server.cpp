@@ -91,7 +91,7 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     user::server::set_users_department(router, pool_ptr, logger_ptr);
     user::server::all_departments(router, pool_ptr, logger_ptr);
     user::server::starter_role(router, pool_ptr, logger_ptr);
-    user::server::all_avatars(router, logger_ptr);
+    user::server::all_avatars(router, pool_ptr, logger_ptr);
     user::server::set_avatar(router, pool_ptr, logger_ptr);
 
     transactions::server::prepare_transaction(router, pool_ptr, logger_ptr);

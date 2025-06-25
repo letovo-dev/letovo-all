@@ -307,11 +307,18 @@ namespace user {
         pool_ptr->returnConnection(std::move(con));
     }
 
-    std::vector<std::string> all_avatars() {
+    std::vector<std::string> all_avatars(bool is_admin) {
         std::vector<std::string> avatars;
         for (const auto& entry : std::filesystem::directory_iterator(Config::giveMe().pages_config.user_avatars_path.absolute)) {
             if (std::filesystem::is_regular_file(entry.status())) {
                 avatars.push_back(Config::giveMe().pages_config.user_avatars_path.relative + entry.path().filename().string());
+            }
+        }
+        if(is_admin) {
+            for (const auto& entry : std::filesystem::directory_iterator(Config::giveMe().pages_config.admin_avatars_path.absolute)) {
+                if (std::filesystem::is_regular_file(entry.status())) {
+                    avatars.push_back(Config::giveMe().pages_config.admin_avatars_path.relative + entry.path().filename().string());
+                }
             }
         }
         return avatars;
@@ -646,11 +653,18 @@ namespace user::server {
         });
     }
 
-    void all_avatars(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get("/user/all_avatars", [logger_ptr](auto req, auto) {
+    void all_avatars(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get("/user/all_avatars", [logger_ptr, pool_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
             return req->create_response()
                 .append_header("Content-Type", "application/json; charset=utf-8")
-                .set_body(cp::serialize(user::all_avatars()))
+                .set_body(cp::serialize(user::all_avatars(auth::is_admin(token, pool_ptr))))
                 .done();
         });
     }

@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  letovo-server:
+    image: letovo-server:latest
+    container_name: letovo-server
+    restart: unless-stopped
+    volumes:
+      - /mnt/server-media:/app/pages
+
+    ports:
+      - "8080:8080"
+
+  letovo-front:
+    image: letovo-front:latest
+    container_name: letovo-front
+    restart: unless-stopped
+    depends_on:
+      - letovo-server
+    ports:
+      - "3000:3000"
+    env_file:
+      - /home/zahar/letovo/front-env
+
+  letovo-flask-uploader:
+    image: flask-uploader:latest
+    container_name: letovo-flask-uploader
+    restart: unless-stopped
+    volumes:
+      - /mnt/server-media:/app/pages
+    ports:
+      - "8880:8880"
+
+  cadvisor:
+    container_name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "9000:8080"
+    volumes: 
+      - "/:/rootfs"
+      - "/var/run:/var/run"
+      - "/sys:/sys"
+      - "/var/lib/docker/:/var/lib/docker"
+      - "/dev/disk/:/dev/disk"
+    privileged: true
+    devices: 
+      - "/dev/kmsg"

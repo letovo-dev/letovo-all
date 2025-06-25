@@ -48,6 +48,8 @@ RUN apt update && apt install -y \
         libpqxx-dev \
         libpq-dev \
         libssl-dev \
+        libqrencode-dev \
+        libpng-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -58,7 +60,7 @@ COPY --from=builder /app/build/server_starter .
 # Копируем все файлы с "Config" в имени рядом с бинарем
 COPY --from=builder /app/*Config* ./
 
-COPY --from=builder /app/pages /app/pages
+# COPY --from=builder /app/pages /app/pages
 
 EXPOSE 8080
 
