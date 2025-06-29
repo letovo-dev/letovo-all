@@ -10,6 +10,8 @@ services:
 
     ports:
       - "8080:8080"
+    environment:
+      - SQL_PASSWORD=${SQL_PASSWORD}
 
   letovo-front:
     image: letovo-front:latest

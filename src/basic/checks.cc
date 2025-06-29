@@ -7,9 +7,13 @@ namespace pre_run_checks {
     }
 
     void check_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-        pqxx::result all_deps = user::all_departments(pool_ptr);
-        std::cout << "got all departments\n";
         bool failed = false;
+        pqxx::result all_deps = user::all_departments(pool_ptr);
+        if(all_deps.size() == 0) {
+            pre_run_checks::print("no deps found!", 91);
+            failed = true;
+        } else 
+            std::cout << "got " << all_deps.size() << " departments\n";
         for (auto row : all_deps) {
             std::string dep_name = row["departmentname"].as<std::string>();
             int dep_id = row["departmentid"].as<int>();

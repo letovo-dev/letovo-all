@@ -66,7 +66,10 @@ private:
         rapidjson::Document config_map;
         config_map.Parse(GetJson("./SqlConnectionConfig.json").c_str());
         sql_config.user = config_map["user"].GetString();
-        sql_config.password = config_map["password"].GetString();
+        const char *env_password = std::getenv("SQL_PASSWORD");
+        if (env_password) {
+            sql_config.password = env_password;
+        } else sql_config.password = config_map["password"].GetString();
         sql_config.dbname = config_map["dbname"].GetString();
         sql_config.hostaddr = config_map["host"].GetString();
         sql_config.connections_count = config_map["connections"].GetInt();

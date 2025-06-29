@@ -65,38 +65,34 @@ SECURITY DEFINER;
 * normalize_post_categories - нормализует категории
 ```sql
 CREATE OR REPLACE FUNCTION normalize_post_categories()
-RETURNS void AS $$
+RETURNS void AS
+$$
 DECLARE
     rec RECORD;
-    new_cat INTEGER;
+    cat_id INTEGER;
 BEGIN
-    -- 1) Выровнять дубликаты под один ID
-    WITH mapped AS (
-        SELECT
-            category_name,
-            MIN(category) AS cat_id
-        FROM posts
-        WHERE category IS NOT NULL
-        GROUP BY category_name
-    )
-    UPDATE posts p
-    SET category = m.cat_id
-    FROM mapped m
-    WHERE p.category_name = m.category_name
-      AND (p.category IS NULL OR p.category <> m.cat_id);
+    FOR rec IN SELECT DISTINCT category_name FROM posts LOOP
+        IF rec.category_name IS NULL OR trim(rec.category_name) = '' THEN
+            CONTINUE;
+        END IF;
 
-    -- 2) Присвоить новые ID тем, у кого ещё нет
-    FOR rec IN
-        SELECT DISTINCT category_name
-        FROM posts
-        WHERE category IS NULL
-    LOOP
-        new_cat := nextval('posts_category_seq');
+        SELECT category_id INTO cat_id
+        FROM post_category
+        WHERE category_name = rec.category_name;
+
+        IF NOT FOUND THEN
+            INSERT INTO post_category (category_name) 
+            VALUES (rec.category_name)
+            RETURNING category_id INTO cat_id;
+        END IF;
+
         UPDATE posts
-        SET category = new_cat
-        WHERE category_name = rec.category_name
-          AND category IS NULL;
+        SET category = cat_id
+        WHERE category_name = rec.category_name;
+
+        RAISE NOTICE 'Assigned category_id: % for category_name: %', cat_id, rec.category_name;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
+
 ```

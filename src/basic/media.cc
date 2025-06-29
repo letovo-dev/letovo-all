@@ -95,6 +95,9 @@ namespace media {
         if(auth::is_admin(token, pool_ptr)) {
             return false;
         }
+        if(file_name[0] != '/') {
+            file_name = '/' + file_name;
+        }
         auto con = std::move(pool_ptr->getConnection());
         std::vector<std::string> params = {file_name};
         pqxx::result res = con->execute_params("SELECT p.is_secret from \"posts\" p where p.post_path = ($1);", params);

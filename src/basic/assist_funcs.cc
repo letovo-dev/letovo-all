@@ -121,12 +121,21 @@ namespace assist{
     void fix_new_lines(std::string &content) {
         size_t pos = 0;
 
-        const std::string from = "\n";
-        const std::string to   = "\\n";  // обратный слэш в строковом литерале нужно экранировать
+        std::string from = "\n";
+        std::string to   = "\\n";
 
         while ((pos = content.find(from, pos)) != std::string::npos) {
             content.replace(pos, from.length(), to);
-            pos += to.length();  // двигаемся дальше, чтобы не зациклиться
+            pos += to.length();
+        }
+
+        from = "\"";
+        to   = "\\\"";
+
+        pos = 0;
+        while ((pos = content.find(from, pos)) != std::string::npos) {
+            content.replace(pos, from.length(), to);
+            pos += to.length();
         }
     }
 }
