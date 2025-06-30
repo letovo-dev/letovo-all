@@ -107,8 +107,10 @@ namespace auth {
         try {
             con->execute_params("INSERT INTO \"user\" (userid, username, passwdhash, userrights, jointime) VALUES($1, $2, $3, '', now());", params, true);
         } catch (const pqxx::unique_violation& e) {
+            pool_ptr->returnConnection(std::move(con));
             return false;
         }
+        pool_ptr->returnConnection(std::move(con));
         return true;
     }
 
@@ -237,7 +239,7 @@ namespace auth::server {
                     std::string passwordHash = std::to_string(std::hash<std::string>{}(passwordHeader));
                     std::string userid = std::to_string(std::hash<std::string>{}(loginHeader)).substr(0, 5);
 
-                    if (!auth::reg(userid, loginHeader, passwordHash, pool_ptr)) {
+                    if (!auth::reg(loginHeader, passwordHash, userid, pool_ptr)) {
                         logger_ptr->warn([endpoint, loginHeader] { return fmt::format("user {} already exists", loginHeader); });
                         return req->create_response(restinio::status_forbidden())
                             .append_header("Content-Type", "application/json; charset=utf-8")
@@ -301,6 +303,35 @@ namespace auth::server {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
             if (auth::is_admin(token, pool_ptr)) {
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+            } else {
+                return req->create_response(restinio::status_ok()).set_body("{\"status\": \"f\"}")
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+            }
+        });
+    }
+
+    void am_i_uploader(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/auth/amiuploader)", [pool_ptr, logger_ptr](auto req, auto) {
+            std::string token;
+            try {
+                token = req -> header().get_field("Bearer");
+            } catch (const std::exception& e) {
+                logger_ptr->info([]{return "can't get token";});
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+
+            if (token.empty()) {
+                logger_ptr->error([]{return "token is empty";});
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            if (
+                auth::is_rights_by_username(hashing::string_from_hash(token), pool_ptr, "moder") 
+                || auth::is_admin(token, pool_ptr)
+            ) {
                 return req->create_response(restinio::status_ok()).set_body("{\"status\": \"t\"}")
                 .append_header("Content-Type", "application/json; charset=utf-8")
                 .done();

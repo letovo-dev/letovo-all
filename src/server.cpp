@@ -65,12 +65,14 @@ std::unique_ptr<restinio::router::express_router_t<>> create(
     page::server::delete_favourite_post(router, pool_ptr, logger_ptr);
     page::server::update_post(router, pool_ptr, logger_ptr);
     page::server::rename_category(router, pool_ptr, logger_ptr);
+    page::server::reveal_secret_page(router, pool_ptr, logger_ptr);
 
     auth::server::enable_reg(router, pool_ptr, logger_ptr);
     auth::server::enable_auth(router, pool_ptr, logger_ptr);
     auth::server::add_userrights(router, pool_ptr, logger_ptr);
     auth::server::am_i_authed(router, pool_ptr, logger_ptr);
     auth::server::am_i_admin(router, pool_ptr, logger_ptr);
+    auth::server::am_i_uploader(router, pool_ptr, logger_ptr);
     auth::server::enable_delete(router, pool_ptr, logger_ptr);
     auth::server::is_user_active(router, pool_ptr, logger_ptr);
     auth::server::is_user(router, pool_ptr, logger_ptr);

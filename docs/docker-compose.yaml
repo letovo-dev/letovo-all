@@ -5,11 +5,12 @@ services:
     image: letovo-server:latest
     container_name: letovo-server
     restart: unless-stopped
+    network_mode: "host"
+
     volumes:
       - /mnt/server-media:/app/pages
+      - /mnt/server-configs:/app/configs
 
-    ports:
-      - "8080:8080"
     environment:
       - SQL_PASSWORD=${SQL_PASSWORD}
 
@@ -26,7 +27,7 @@ services:
 
   letovo-flask-uploader:
     image: flask-uploader:latest
-    container_name: letovo-flask-uploader
+    container_name: flask-uploader
     restart: unless-stopped
     volumes:
       - /mnt/server-media:/app/pages

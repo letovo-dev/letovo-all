@@ -64,7 +64,7 @@ private:
         current_path = std::filesystem::current_path().string();
 
         rapidjson::Document config_map;
-        config_map.Parse(GetJson("./SqlConnectionConfig.json").c_str());
+        config_map.Parse(GetJson("./configs/SqlConnectionConfig.json").c_str());
         sql_config.user = config_map["user"].GetString();
         const char *env_password = std::getenv("SQL_PASSWORD");
         if (env_password) {
@@ -74,7 +74,7 @@ private:
         sql_config.hostaddr = config_map["host"].GetString();
         sql_config.connections_count = config_map["connections"].GetInt();
 
-        config_map.Parse(GetJson("./ServerConfig.json").c_str());
+        config_map.Parse(GetJson("./configs/ServerConfig.json").c_str());
         const char* env_adress = std::getenv("SERVER_ADRESS");
         if (env_adress) {
             server_config.adress = env_adress;
@@ -91,7 +91,7 @@ private:
         server_config.certs_path = config_map["certs_path"].GetString();
         server_config.update_hashes = config_map["update_hashes"].GetBool();
 
-        config_map.Parse(GetJson("./PagesConfig.json").c_str());
+        config_map.Parse(GetJson("./configs/PagesConfig.json").c_str());
         pages_config.media_path.absolute = current_path + config_map["media_path"].GetString();
         pages_config.media_path.relative = config_map["media_path"].GetString();
         pages_config.wiki_path.absolute = pages_config.media_path.absolute + config_map["wiki_path"].GetString();
@@ -106,7 +106,7 @@ private:
         pages_config.secret_example_path.absolute = pages_config.media_path.absolute + config_map["secret_example_path"].GetString();
         pages_config.secret_example_path.relative = config_map["secret_example_path"].GetString();
 
-        config_map.Parse(GetJson("./MarketConfig.json").c_str());
+        config_map.Parse(GetJson("./configs/MarketConfig.json").c_str());
         market_config.bid_resolver_sleep_time = config_map["bid_resolver_sleep_time"].GetInt();
         market_config.junk_user = config_map["junk_user"].GetString();
 

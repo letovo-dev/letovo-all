@@ -54,13 +54,7 @@ RUN apt update && apt install -y \
 
 WORKDIR /app
 
-# Копируем готовый бинарник из стадии сборки
 COPY --from=builder /app/build/server_starter .
-
-# Копируем все файлы с "Config" в имени рядом с бинарем
-COPY --from=builder /app/*Config* ./
-
-# COPY --from=builder /app/pages /app/pages
 
 EXPOSE 8080
 
