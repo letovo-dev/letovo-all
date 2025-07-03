@@ -6,13 +6,9 @@ services:
     container_name: letovo-server
     restart: unless-stopped
     network_mode: "host"
-
     volumes:
       - /mnt/server-media:/app/pages
       - /mnt/server-configs:/app/configs
-
-    environment:
-      - SQL_PASSWORD=${SQL_PASSWORD}
 
   letovo-front:
     image: letovo-front:latest
@@ -48,3 +44,21 @@ services:
     privileged: true
     devices: 
       - "/dev/kmsg"
+
+  hotfix-bot:
+    image: hotfix-bot:latest
+    container_name: hotfix-bot
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - /mnt/server-configs:/app/configs
+      - /mnt/server-media:/app/pages
+
+  latency-bot:
+    image: latency_bot:latest
+    container_name: latency-bot
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - /mnt/server-configs:/app/configs
+      - /mnt/server-media:/app/pages

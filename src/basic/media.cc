@@ -150,6 +150,7 @@ namespace media::server {
             logger_ptr->info([status, file_path, relative_filename] { return fmt::format("relative_filename {}, file {}, status {}", relative_filename, file_path, static_cast<int>(status)); });
             switch(status) {
                 case FileStatus::AVALUABLE:
+                case FileStatus::SHARED:
                     break;
                 case FileStatus::NOT_FOUND:
                     return req->create_response(restinio::status_not_found())
