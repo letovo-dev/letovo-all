@@ -328,6 +328,7 @@ namespace user {
 namespace user::server {
     void user_info(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/user/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /user/:username";});
             auto qrl = req->header().path();
 
             std::string username = url::get_last_url_arg(qrl);
@@ -353,6 +354,7 @@ namespace user::server {
 
     void full_user_info(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/user/full/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /user/full/:username";});
             auto qrl = req->header().path();
 
             std::string username = url::get_last_url_arg(qrl);
@@ -379,6 +381,7 @@ namespace user::server {
     void user_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         // TODO: not working as it should: shows only the last role, not all of them idk why
         router.get()->http_get(R"(/user/roles/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /user/roles/:username";});
             auto qrl = req->header().path();
 
             std::string username = url::get_last_url_arg(qrl);
@@ -402,6 +405,7 @@ namespace user::server {
     void user_unactive_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         // TODO: not working as it should: shows only the last role, not all of them idk why
         router.get()->http_get(R"(/user/unactive_roles/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /user/unactive_roles/:username";});
             auto qrl = req->header().path();
 
             std::string username = url::get_last_url_arg(qrl);
@@ -424,6 +428,7 @@ namespace user::server {
 
     void add_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/user/add_role", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /user/add_role";});
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
@@ -471,12 +476,14 @@ namespace user::server {
 
     void delete_user_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_delete("/user/delete_role", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /user/delete_role";});
             return req->create_response(restinio::status_not_implemented()).done();
         });
     }
 
     void create_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/user/create_role", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /user/create_role";});
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
@@ -515,6 +522,7 @@ namespace user::server {
 
     void department_roles(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/user/department/roles/:department([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /user/department/roles/:department";});
             auto qrl = req->header().path();
 
             std::string department = url::get_last_url_arg(qrl);
@@ -540,6 +548,7 @@ namespace user::server {
 
     void department_name(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/user/department/name/:department([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /user/department/name/:department";});
             auto qrl = req->header().path();
 
             std::string department = url::get_last_url_arg(qrl);
@@ -565,6 +574,7 @@ namespace user::server {
 
     void set_users_department(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put("/user/set_department", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /user/set_department";});
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
             std::string token;
@@ -615,6 +625,7 @@ namespace user::server {
 
     void all_departments(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get("/user/department/roles", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /user/department/roles";});
             pqxx::result result = user::all_departments(pool_ptr);
 
             if (result.empty()) {
@@ -629,6 +640,7 @@ namespace user::server {
 
     void starter_role(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/user/department/start/:department(.*))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /user/department/start/:department";});
             auto qrl = req->header().path();
 
             std::string department = url::get_last_url_arg(qrl);
@@ -655,6 +667,7 @@ namespace user::server {
 
     void all_avatars(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get("/user/all_avatars", [logger_ptr, pool_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /user/all_avatars";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -671,6 +684,7 @@ namespace user::server {
 
     void set_avatar(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put("/user/set_avatar", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /user/set_avatar";});
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 

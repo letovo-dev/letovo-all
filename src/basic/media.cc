@@ -112,6 +112,7 @@ namespace media {
 namespace media::server {
     void get_file(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/media/get/:filename(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /media/get/:filename";});
             FileStatus status = FileStatus::AVALUABLE;
             std::string token;
             std::string content_type;

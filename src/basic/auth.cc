@@ -183,6 +183,7 @@ namespace auth::server {
                      std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                      std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/auth/login", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/login";});
             std::string endpoint = req->remote_endpoint().address().to_string();
             logger_ptr->info([endpoint] { return fmt::format("auth request from {}", endpoint); });
 
@@ -218,6 +219,7 @@ namespace auth::server {
                     std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                     std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/auth/reg", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/reg";});
             std::string endpoint = req->remote_endpoint().address().to_string();
 
             logger_ptr->info([endpoint] { return fmt::format("reg request from {}", endpoint); });
@@ -264,6 +266,7 @@ namespace auth::server {
 
     void am_i_authed(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/auth/amiauthed)", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/amiauthed";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -290,6 +293,7 @@ namespace auth::server {
 
     void am_i_admin(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/auth/amiadmin)", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/amiadmin";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -316,6 +320,7 @@ namespace auth::server {
 
     void am_i_uploader(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/auth/amiuploader)", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/amiuploader";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -344,7 +349,8 @@ namespace auth::server {
     }
 
     void is_user_active(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/auth/isactive/:username(.*))", [pool_ptr](auto req, auto) {
+        router.get()->http_get(R"(/auth/isactive/:username(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/isactive/:username";});
             std::string username = url::get_last_url_arg(req->header().path());
 
             if (auth::is_active(username, pool_ptr)) {
@@ -361,6 +367,7 @@ namespace auth::server {
 
     void is_user(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/auth/isuser/:username(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/isuser/:username";});
             std::string username = url::get_last_url_arg(req->header().path());
 
             logger_ptr->info([username] { return fmt::format("is user request for {}", username); });
@@ -379,6 +386,7 @@ namespace auth::server {
 
     void enable_delete(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_delete(R"(/auth/delete)", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/delete";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -411,6 +419,7 @@ namespace auth::server {
 
     void add_userrights(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put(R"(/auth/add_userrights)", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/add_userrights";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -455,6 +464,7 @@ namespace auth::server {
 
     void change_username(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put(R"(/auth/change_username)", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/change_username";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -497,6 +507,7 @@ namespace auth::server {
     }
     void change_password(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put("/auth/change_password", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/change_password";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -543,6 +554,7 @@ namespace auth::server {
 
     void add_new_user(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/auth/add_user", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/add_user";});
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
 
@@ -577,6 +589,7 @@ namespace auth::server {
 
     void register_true(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_put("/auth/register_true", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/register_true";});
             std::string token;
             try {
                 token = req -> header().get_field("Bearer");
@@ -605,6 +618,7 @@ namespace auth::server {
 
     void is_admin(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/auth/isadmin/:username(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /auth/isadmin/:username";});
             std::string username = url::get_last_url_arg(req->header().path());
 
             logger_ptr->info([username] { return fmt::format("is admin request for {}", username); });

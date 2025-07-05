@@ -84,6 +84,7 @@ namespace qr {
 namespace qr::server {
     void achivement_qr(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/achivements/qr/:achivement_id([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /achivements/qr/:achivement_id";});
             std::string token;
             auto qrl = req->header().path();
 
@@ -115,6 +116,7 @@ namespace qr::server {
 
     void page_qr(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/post/qr/:post_id([0-9]+))", [pool_ptr, logger_ptr](auto req, auto params) {
+            logger_ptr->trace([]{return "called /post/qr/:post_id";});
             std::string token;
             auto qrl = req->header().path();
 
