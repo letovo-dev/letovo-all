@@ -40,7 +40,32 @@ void hi(
         logger_ptr->info([] { return fmt::format("hi recieved"); });
 
         std::cout << "endpoint: " << endpoint.address().to_string() << std::endl;
-        return req->create_response().set_body(endpoint.address().to_string()).done();
+        return req->create_response()
+        .set_body(endpoint.address().to_string())
+        .append_header(restinio::http_field::content_type, "text/plain; charset=utf-8")
+        .append_header(restinio::http_field::set_cookie, "session=1234567890; Path=/api; HttpOnly; Secure")
+        .append_header(restinio::http_field::set_cookie, "session2=0987654321; Path=/api; HttpOnly; Secure")
+        .done();
+    });
+    router.get()->http_get("/test", [logger_ptr](auto req, auto) {
+        asio_ns::ip::tcp::endpoint endpoint = req->remote_endpoint();
+
+        std::cout << req->header().get_field("Cookie") << std::endl;
+
+        logger_ptr->info([] { return fmt::format("test recieved"); });
+
+        std::cout << "endpoint: " << endpoint.address().to_string() << std::endl;
+        return req->create_response()
+        .set_body("test")
+        .append_header(restinio::http_field::content_type, "text/plain; charset=utf-8")
+        .done();
+    });
+    router.get()->http_post("/token_getter", [logger_ptr](auto req, auto) {
+        rapidjson::Document new_body;
+        new_body.Parse(req->body().c_str());
+        return req->create_response()
+        .set_body(std::to_string(std::hash<std::string>{}(new_body["token"].GetString())))
+        .done();
     });
 }
 
