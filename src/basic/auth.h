@@ -27,6 +27,8 @@ namespace auth {
     bool change_username(std::string username, std::string new_username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
     bool change_password(std::string username, std::string new_password, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
     bool register_true(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+    void save_cookie(const std::string &cookie, const std::string username, const std::string useragent, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+    std::string get_cookie(const std::string &header);
 } // namespace auth
 namespace auth::server {
     void enable_reg(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);

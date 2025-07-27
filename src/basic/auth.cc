@@ -176,6 +176,30 @@ namespace auth {
 
         return true;
     }
+
+    void save_cookie(const std::string &cookie, const std::string username, const std::string useragent, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        std::vector<std::string> params = {cookie, username, useragent};
+
+        auto con = std::move(pool_ptr->getConnection());
+
+        con->execute_params("INSERT INTO \"cookies\" (cookie, username, useragent) VALUES($1, $2, $3);", params, true);
+
+        pool_ptr->returnConnection(std::move(con));
+    }
+
+    std::string get_cookie(const std::string &header) {
+        if (header.empty()) {
+            return "";
+        }
+        if(header.find("AuthCookie=") != std::string::npos) {
+            std::string cookie = header.substr(header.find("AuthCookie=") + 11);
+            if (cookie.find(";") != std::string::npos) {
+                cookie = cookie.substr(0, cookie.find(";"));
+            }
+            return cookie;
+        }
+        return "";
+    }
 } // namespace auth
 
 namespace auth::server {
@@ -200,12 +224,24 @@ namespace auth::server {
                     return req->create_response(restinio::status_unauthorized()).append_header_date_field().connection_close().done();
                 } else {
                     auto token = hashing::hash_from_string(loginHeader);
-
-                    return req->create_response()
+                    auto responce = req->create_response()
                         .set_body(cp::serialize(user))
                         .append_header("Authorization", token)
-                        .append_header("Content-Type", "application/json; charset=utf-8")
-                        .done();
+                        .append_header("Content-Type", "application/json; charset=utf-8"); 
+                    std::string cookie = req->header().has_field("Cookie") ? auth::get_cookie(req->header().get_field("Cookie")) : ""; 
+                    std::string useragent = req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "";
+                    
+                    if(cookie.empty()) {
+                        cookie = "AuthCookie=" + loginHeader + "; Path=/api; HttpOnly; Secure; Max-Age=864000;";
+                        auth::save_cookie(loginHeader, loginHeader, useragent, pool_ptr);
+                        responce.append_header(restinio::http_field::set_cookie, cookie);
+                    } else {
+                        if(cookie != loginHeader) {
+                            auth::save_cookie(cookie, loginHeader, useragent, pool_ptr);
+                        }
+                    }
+
+                    return responce.done();
                 }
             }
 
@@ -350,7 +386,6 @@ namespace auth::server {
 
     void is_user_active(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_get(R"(/auth/isactive/:username(.*))", [pool_ptr, logger_ptr](auto req, auto) {
-            logger_ptr->trace([]{return "called /auth/isactive/:username";});
             std::string username = url::get_last_url_arg(req->header().path());
 
             if (auth::is_active(username, pool_ptr)) {
