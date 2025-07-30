@@ -1,8 +1,36 @@
 #include "./auth.h"
 
 namespace auth {
+    auth::UsersCash users_cash;
+
+    UsersCash::UsersCash() {
+        users = {};
+    }
+    UsersCash::~UsersCash() {
+        users.clear();
+    }
+
+    void UsersCash::add_user(std::string username) {
+        std::lock_guard<std::mutex> lock(mtx);
+        users.insert(username);
+    }
+
+    bool UsersCash::is_user(std::string username) {
+        std::lock_guard<std::mutex> lock(mtx);
+        return users.find(username) != users.end();
+    }
+
+    void UsersCash::remove_user(std::string username) {
+        std::lock_guard<std::mutex> lock(mtx);
+        users.erase(username);
+    }
+
     std::string get_username(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto decoded = hashing::string_from_hash(token);
+
+        if(users_cash.is_user(decoded)) {
+            return decoded;
+        }
 
         auto con = std::move(pool_ptr->getConnection());
 
@@ -13,8 +41,10 @@ namespace auth {
         pool_ptr->returnConnection(std::move(con));
 
         if (result.empty()) {
+            users_cash.remove_user(decoded);
             return "";
         }
+        users_cash.add_user(decoded);
         return decoded;
     }
 
@@ -35,11 +65,14 @@ namespace auth {
 
     bool is_admin(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto decoded = hashing::string_from_hash(token);
-
+        std::cout << "User is not in admin cash, checking in database..." << std::endl;
         return is_rights_by_username(decoded, pool_ptr, "admin");
     }
 
     bool is_user(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        if(users_cash.is_user(username)) {
+            return true;
+        }
         std::vector<std::string> params = {username};
 
         auto con = std::move(pool_ptr->getConnection());
@@ -49,8 +82,10 @@ namespace auth {
         pool_ptr->returnConnection(std::move(con));
 
         if (result.empty()) {
+            users_cash.remove_user(username);
             return false;
         }
+        users_cash.add_user(username);
         return true;
     }
 
@@ -97,6 +132,7 @@ namespace auth {
         if (result.empty()) {
             return false;
         }
+        users_cash.add_user(username);
         return true;
     }
 
@@ -146,6 +182,9 @@ namespace auth {
         con->execute_params("UPDATE \"user\" SET \"username\"=($1) WHERE \"username\"=($2);", params, true);
 
         hashing::change_username(username, new_username);
+
+        users_cash.remove_user(username);
+        users_cash.add_user(new_username);
 
         pool_ptr->returnConnection(std::move(con));
 

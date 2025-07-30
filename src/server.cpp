@@ -20,6 +20,7 @@
 #include "./basic/qr_worker.h"
 #include "./market/transactions.h"
 #include "./letovo-soc-net/social.h"
+#include <restinio/websocket/websocket.hpp>
 
 #include <filesystem>
 namespace fs = std::filesystem;

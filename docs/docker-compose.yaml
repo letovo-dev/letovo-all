@@ -62,3 +62,22 @@ services:
     volumes:
       - /mnt/server-configs:/app/configs
       - /mnt/server-media:/app/pages
+
+  mongo:
+    image: mongo:4.4
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+
+  lets-chat:
+    image: sdelements/lets-chat
+    restart: always
+    ports:
+      - "8083:8080"
+    environment:
+      - LCB_DATABASE_URI=mongodb://mongo:27017/lets_chat
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:

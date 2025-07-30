@@ -12,7 +12,24 @@
 #include <vector>
 #include "user_data.h"
 
+
+
 namespace auth {
+    class UsersCash {
+        public:
+            UsersCash();
+            ~UsersCash();
+
+            void add_user(std::string username);
+            bool is_user(std::string username);
+            void remove_user(std::string username);
+
+        private:
+            std::unordered_set<std::string> users;
+            std::mutex mtx;
+    };
+    extern auth::UsersCash users_cash;
+
     std::string get_username(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     bool is_authed(std::string token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
