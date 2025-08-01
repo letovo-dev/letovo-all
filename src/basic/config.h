@@ -30,6 +30,7 @@ struct PagesConfig {
     Path achivements_path;
     Path media_path;
     Path secret_example_path;
+    int media_cache_size = 20;
     bool create_file;
 };
 
@@ -105,6 +106,7 @@ private:
         pages_config.create_file = config_map["create_file"].GetBool();
         pages_config.secret_example_path.absolute = pages_config.media_path.absolute + config_map["secret_example_path"].GetString();
         pages_config.secret_example_path.relative = config_map["secret_example_path"].GetString();
+        pages_config.media_cache_size = config_map.HasMember("media_cache_size") ? config_map["media_cache_size"].GetInt() : 10;
 
         config_map.Parse(GetJson("./configs/MarketConfig.json").c_str());
         market_config.bid_resolver_sleep_time = config_map["bid_resolver_sleep_time"].GetInt();

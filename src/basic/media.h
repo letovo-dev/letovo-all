@@ -14,11 +14,14 @@
 #include <fstream>
 #include <filesystem>
 #include "config.h"
+#include "media_cash.h"
 
 namespace media {
     extern std::unordered_map<std::string, std::string> content_types;
     
     extern std::set<std::string> allowed_no_token;
+
+    extern media_cash::FileCache file_cache;
 
 
 #define content_type(file_name) content_types[file_name]

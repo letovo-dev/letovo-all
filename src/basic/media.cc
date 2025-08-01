@@ -1,6 +1,8 @@
 #include "media.h"
 
 namespace media {
+    media_cash::FileCache file_cache(Config::giveMe().pages_config.media_cache_size);
+
     std::unordered_map<std::string, std::string> content_types = {
         {".html", "text/html"},
         {".md", "text/html"},
@@ -73,7 +75,6 @@ namespace media {
 
     std::string check_if_file_exists(std::string file_name) {
         std::string full_path = Config::giveMe().pages_config.media_path.absolute + file_name;
-        std::cout << "Checking file: " << full_path << std::endl;
         std::ifstream file(full_path);
         if (file.good()) {
             return full_path;
@@ -126,29 +127,31 @@ namespace media::server {
             std::string relative_filename = url::get_string_after(req->header().path(), "/media/get/");
             std::string file_path = media::check_if_file_exists(relative_filename);
 
-            if (file_path.empty() || file_path == "get") {
+            if (file_path.empty() || file_path == "get" || file_path == "") {
                 status = FileStatus::NOT_FOUND;
-            } else if (relative_filename.find("..") != std::string::npos || relative_filename[0] == '/') {
-                status = FileStatus::HACKING;
-            } else if(media::is_secret(relative_filename, token, pool_ptr)) {
-                status = FileStatus::SECRET;
-            }
-            std::string file_type = media::get_file_type(relative_filename);
-            if (media::content_types.find(file_type) == media::content_types.end()) {
-                status = FileStatus::UNKNOWN_TYPE;
             } else {
-                content_type = content_type(file_type);
-                if (content_type.empty()) {
+                std::string file_type = media::get_file_type(relative_filename);
+                if(allowed_no_token.find(file_type) != allowed_no_token.end()) {
+                    status = FileStatus::SHARED;
+                }
+                if (status != FileStatus::SHARED && media::content_types.find(file_type) == media::content_types.end()) {
                     status = FileStatus::UNKNOWN_TYPE;
+                } else {
+                    content_type = content_type(file_type);
+                    if (content_type.empty()) {
+                        status = FileStatus::UNKNOWN_TYPE;
+                    }
+                }
+                if(relative_filename.find("..") != std::string::npos || relative_filename[0] == '/') {
+                    status = FileStatus::HACKING;
+                } else if(status != FileStatus::SHARED && media::is_secret(relative_filename, token, pool_ptr)) {
+                    status = FileStatus::SECRET;
+                }
+                if(status == FileStatus::SECRET && auth::is_admin(token, pool_ptr)) {
+                    status = FileStatus::AVALUABLE;
                 }
             }
-            if(allowed_no_token.find(file_type) != allowed_no_token.end()) {
-                status = FileStatus::SHARED;
-            }
-            if(auth::is_admin(token, pool_ptr)) {
-                status = FileStatus::AVALUABLE;
-            }
-            logger_ptr->info([status, file_path, relative_filename] { return fmt::format("relative_filename {}, file {}, status {}", relative_filename, file_path, static_cast<int>(status)); });
+            logger_ptr->info([status, file_path, relative_filename] { return fmt::format("relative_filename '{}', file '{}', status '{}'", relative_filename, file_path, static_cast<int>(status)); });
             switch(status) {
                 case FileStatus::AVALUABLE:
                 case FileStatus::SHARED:
@@ -179,10 +182,19 @@ namespace media::server {
                         .set_body(Comment::giveMe().no_access)
                         .done();
             }
-            return req->create_response()
-                .append_header(restinio::http_field::content_type, content_type)
-                .set_body(restinio::sendfile(file_path))
-                .done();
+            auto file_content = media::file_cache.get_file(file_path);
+            if (file_content == nullptr) {
+                return req->create_response()
+                    .append_header(restinio::http_field::content_type, content_type)
+                    .set_body(restinio::sendfile(file_path))
+                    .done();
+            } else {
+                logger_ptr->info([file_path] { return fmt::format("File '{}' found in cache", file_path); });
+                return req->create_response()
+                    .append_header(restinio::http_field::content_type, content_type)
+                    .set_body(std::string(file_content->begin(), file_content->end()))
+                    .done();
+            }
         });
     }
 } // namespace media::server

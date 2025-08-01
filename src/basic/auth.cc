@@ -257,11 +257,10 @@ namespace auth::server {
                 std::string loginHeader = new_body["login"].GetString();
                 std::string passwordHeader = new_body["password"].GetString();
 
-                auto user = user::full_user_info(loginHeader, pool_ptr);
-
                 if (!auth::auth(loginHeader, passwordHeader, pool_ptr)) {
                     return req->create_response(restinio::status_unauthorized()).append_header_date_field().connection_close().done();
                 } else {
+                    auto user = user::full_user_info(loginHeader, pool_ptr);
                     auto token = hashing::hash_from_string(loginHeader);
                     auto responce = req->create_response()
                         .set_body(cp::serialize(user))
