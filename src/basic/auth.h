@@ -4,7 +4,6 @@
 #include "pqxx_cp.h"
 #include <pqxx/pqxx>
 #include <unordered_set>
-// #include "spdlog/spdlog.h"
 #include "rapidjson/document.h"
 #include "asio/ip/detail/endpoint.hpp"
 #include "hash.h"
