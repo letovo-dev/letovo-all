@@ -9,6 +9,7 @@
     "basic/user_data.cc",
     "basic/checks.cc",
     "basic/media.cc",
+    "basic/media_cash.cc",
     "basic/qr_worker.cc",
     "market/transactions.cc",
     "market/actives.cc",
