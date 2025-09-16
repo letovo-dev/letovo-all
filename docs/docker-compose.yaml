@@ -1,83 +1,60 @@
 version: '3.8'
 
 services:
-  letovo-server:
-    image: letovo-server:latest
-    container_name: letovo-server
-    restart: unless-stopped
-    network_mode: "host"
-    volumes:
-      - /mnt/server-media:/app/pages
-      - /mnt/server-configs:/app/configs
+    letovo-server:
+        image: ghcr.io/letovo-dev/letovo-server:latest
+        container_name: letovo-server
+        restart: unless-stopped
+        network_mode: "host"
+        volumes:
+          - /mnt/server-media:/app/pages
+          - /mnt/server-configs:/app/configs
+        labels:
+          - "com.centurylinklabs.watchtower.enable=true"
 
-  letovo-front:
-    image: letovo-front:latest
-    container_name: letovo-front
-    restart: unless-stopped
-    depends_on:
-      - letovo-server
-    ports:
-      - "3000:3000"
-    env_file:
-      - /home/zahar/letovo/front-env
+    watchtower:
+        image: containrrr/watchtower
+        restart: unless-stopped
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        command: --interval 300 --cleanup --include-restarting --label-enable --registry-auth
 
-  letovo-flask-uploader:
-    image: flask-uploader:latest
-    container_name: flask-uploader
-    restart: unless-stopped
-    volumes:
-      - /mnt/server-media:/app/pages
-    ports:
-      - "8880:8880"
+    letovo-front:
+        image: letovo-front:latest
+        container_name: letovo-front
+        restart: unless-stopped
+        depends_on:
+          - letovo-server
+        ports:
+          - "3000:3000"
+        env_file:
+          - /home/zahar/letovo/front-env
 
-  cadvisor:
-    container_name: cadvisor
-    image: gcr.io/cadvisor/cadvisor:latest
-    ports:
-      - "9000:8080"
-    volumes: 
-      - "/:/rootfs"
-      - "/var/run:/var/run"
-      - "/sys:/sys"
-      - "/var/lib/docker/:/var/lib/docker"
-      - "/dev/disk/:/dev/disk"
-    privileged: true
-    devices: 
-      - "/dev/kmsg"
+    letovo-flask-uploader:
+        image: flask-uploader:latest
+        container_name: flask-uploader
+        restart: unless-stopped
+        volumes:
+          - /mnt/server-media:/app/pages
+        ports:
+          - "8880:8880"
 
-  hotfix-bot:
-    image: hotfix-bot:latest
-    container_name: hotfix-bot
-    restart: unless-stopped
-    network_mode: "host"
-    volumes:
-      - /mnt/server-configs:/app/configs
-      - /mnt/server-media:/app/pages
+    keycloak:
+        image: quay.io/keycloak/keycloak:26.0
+        command: ["start"]                    # без лишней экзотики
+        environment:
+            KC_DB: postgres
+            KC_DB_URL: jdbc:postgresql://172.17.0.1:5432/keycloak?sslmode=disable
+            KC_DB_USERNAME: keycloak
+            KC_DB_PASSWORD: keycloak
 
-  latency-bot:
-    image: latency_bot:latest
-    container_name: latency-bot
-    restart: unless-stopped
-    network_mode: "host"
-    volumes:
-      - /mnt/server-configs:/app/configs
-      - /mnt/server-media:/app/pages
+            KC_PROXY: edge
+            KC_HTTP_RELATIVE_PATH: /auth-center
+            KC_HOSTNAME_URL: https://letovocorp.ru/auth-center
+            KC_HOSTNAME_ADMIN_URL: https://letovocorp.ru/auth-center
+            KC_HOSTNAME_STRICT: "false"
 
-  mongo:
-    image: mongo:4.4
-    restart: always
-    volumes:
-      - mongo-data:/data/db
-
-  lets-chat:
-    image: sdelements/lets-chat
-    restart: always
-    ports:
-      - "8083:8080"
-    environment:
-      - LCB_DATABASE_URI=mongodb://mongo:27017/lets_chat
-    depends_on:
-      - mongo
-
-volumes:
-  mongo-data:
+            KEYCLOAK_ADMIN: admin
+            KEYCLOAK_ADMIN_PASSWORD: admin
+        ports:
+          - "8081:8080"

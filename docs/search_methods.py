@@ -1,13 +1,13 @@
-import os
 import re
 import json
 
-ROOT_PATH = './src/'
+ROOT_PATH = "./src/"
+
 
 def search_server_functions(file_path) -> set:
     active_functions = set()
-    with open(file_path, 'r') as file:
-        method_pattern = re.compile(r'\s{2}\w*::server::(.*)\(')
+    with open(file_path, "r") as file:
+        method_pattern = re.compile(r"\s{2}\w*::server::(.*)\(")
         for line in file:
             method_match = method_pattern.search(line)
             if method_match:
@@ -16,20 +16,20 @@ def search_server_functions(file_path) -> set:
 
 
 def search_in_file(file_path, active_functions) -> dict:
-    with open(file_path, 'r') as file:
-        last = ''
-        last_method = ''
+    with open(file_path, "r") as file:
+        last = ""
+        last_method = ""
         res = {}
         fields = {}
-        last_function = ''
-        function = ''
-        method_pattern = re.compile(r'->http_(.*?)\(.*?(\/.*?)\)?\"')
-        body_pattern = r'body\[\"(.*?)\"\]\.Get(.*?)\(\)'
-        header_pattern = re.compile(r'.*header\(\)\.get_field\(\"(.*?)\"')
-        funtion_pattern = re.compile(r'\s{2}void (.*?)\(.*router')
+        last_function = ""
+        function = ""
+        method_pattern = re.compile(r"->http_(.*?)\(.*?(\/.*?)\)?\"")
+        body_pattern = r"body\[\"(.*?)\"\]\.Get(.*?)\(\)"
+        header_pattern = re.compile(r".*header\(\)\.get_field\(\"(.*?)\"")
+        funtion_pattern = re.compile(r"\s{2}void (.*?)\(.*router")
         params_pattern = r".*?qp\.has\(\"(.*?)\""
         for line in file:
-            if r'/transactions/get/' in line:
+            if r"/transactions/get/" in line:
                 pass
             funtion_match = funtion_pattern.search(line)
             method_match = method_pattern.search(line)
@@ -41,21 +41,21 @@ def search_in_file(file_path, active_functions) -> dict:
                 function = funtion_match.group(1)
 
             if method_match:
-                if last != '' and last_function in active_functions and last_function != '':
+                if last != "" and last_function in active_functions and last_function != "":
                     if last in res:
-                        print(f'Duplicate method {last} in file {file_path}')
+                        print(f"Duplicate method {last} in file {file_path}")
                     res[last] = {}
-                    res[last]['function'] = last_function
-                    res[last]['method'] = last_method.upper()
+                    res[last]["function"] = last_function
+                    res[last]["method"] = last_method.upper()
                     if fields != {}:
-                        res[last]['body_fields'] = fields
+                        res[last]["body_fields"] = fields
                     if params != []:
-                        res[last]['params'] = params
+                        res[last]["params"] = params
                     if header_fields != []:
-                        res[last]['header_fields'] = header_fields
+                        res[last]["header_fields"] = header_fields
                 last = method_match.group(2)
                 last_method = method_match.group(1)
-                
+
                 fields = {}
                 params = []
                 header_fields = []
@@ -68,31 +68,31 @@ def search_in_file(file_path, active_functions) -> dict:
             elif header_match:
                 header_fields.append(header_match.group(1))
 
-    if last != '' and function in active_functions and function != '':
+    if last != "" and function in active_functions and function != "":
         res[last] = {}
-        res[last]['method'] = last_method
+        res[last]["method"] = last_method
         if fields != {}:
-            res[last]['body_fields'] = fields
+            res[last]["body_fields"] = fields
         if header_fields != []:
-            res[last]['header_fields'] = header_fields
+            res[last]["header_fields"] = header_fields
         if params != []:
-            res[last]['params'] = params
+            res[last]["params"] = params
     return res
 
 
 def config_files():
-    config = json.load(open('BuildConfig.json'))
-    files = [ROOT_PATH + x for x in config['build_files']]
+    config = json.load(open("BuildConfig.json"))
+    files = [ROOT_PATH + x for x in config["build_files"]]
     return files
 
 
 def search(directory):
     results = {}
 
-    active_functions = search_server_functions(ROOT_PATH + 'server.cpp')
+    active_functions = search_server_functions(ROOT_PATH + "server.cpp")
 
     for file in config_files():
-        if file[-3:] != '.cc':
+        if file[-3:] != ".cc":
             continue
         try:
             results.update(search_in_file(file, active_functions))
@@ -101,6 +101,6 @@ def search(directory):
     return results
 
 
-if __name__ == '__main__':
-    with open('./docs/methods.json', 'w') as f:
-        f.write(json.dumps(search('./src'), indent=4))
+if __name__ == "__main__":
+    with open("./docs/methods.json", "w") as f:
+        f.write(json.dumps(search("./src"), indent=4))

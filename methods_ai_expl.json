@@ -1,926 +1,926 @@
 {
-    "explanation:": {
-        "request": {
-            "function": "technical field, just for backend",
-            "method": "allowed REST API method",
-            "body_fields": "required fields in request body",
-            "header_fields": "required fields in request header"
-        },
-        "response": {
-            "status_code": "response status code",
-            "headers": "response headers",
-            "text": "response text",
-            "body": "response body, only first 2 results"
-        }
-    },
-    "/auth/login": {
-        "request": {
-            "function": "enable_auth",
-            "method": "POST",
-            "body_fields": {
-                "login": "String",
-                "password": "String"
-            }
-        },
-        "response": {},
-        "explanation": "This method enables authentication via a login POST request. It accepts two fields: 'login' as a string for username, and 'password' also as a string for password. The response is not detailed here but typically includes status information after processing the login attempt."
-    },
-    "/auth/reg": {
-        "request": {
-            "function": "enable_reg",
-            "method": "POST",
-            "body_fields": {
-                "login": "String",
-                "password": "String",
-                "temp_token": "String"
-            }
-        },
-        "response": {},
-        "explanation": "This method allows for registration by enabling users to submit a login, password, and temporary token via a POST request. It does not detail the specific implementation or process of these actions, just that they facilitate user registration functionality."
-    },
-    "/auth/amiauthed": {
-        "request": {
-            "function": "am_i_authed",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The `am_i_authed` method checks whether the user is authenticated using an access token (specifically a Bearer token) in their request headers. It essentially verifies if the user has provided valid credentials to proceed with the requested operation."
-    },
-    "/auth/amiadmin": {
-        "request": {
-            "function": "am_i_admin",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This code snippet represents a function call that checks if the current user has administrative privileges. The request includes an intent to execute the `am_i_admin` function using the GET method, with authentication provided via 'Bearer' tokens in the header fields. The response is yet to be defined or returned following the execution of this operation."
-    },
-    "/auth/isactive/:username(.*)": {
-        "request": {
-            "function": "is_user_active",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The method checks if a user with the specified username is active. It takes a GET request with the user's username as input and returns whether that user is currently active or not."
-    },
-    "/auth/isuser/:username(.*)": {
-        "request": {
-            "function": "is_user",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The provided method `is_user` checks if a specified user exists. When accessed via GET request with the username in the URL path, it validates the existence of that particular user."
-    },
-    "/auth/delete": {
-        "request": {
-            "function": "enable_delete",
-            "method": "DELETE",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method uses the DELETE request to enable or perform deletion functionality. It requires a 'Bearer' token in its headers for authentication. The response associated with this action is unspecified, meaning it doesn't guarantee a particular outcome but indicates that the deletion process is enabled or initiated based on the provided credentials and permissions."
-    },
-    "/auth/add_userrights": {
-        "request": {
-            "function": "add_userrights",
-            "method": "PUT",
-            "body_fields": {
-                "username": "String",
-                "rights": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The given information describes a REST API endpoint that allows you to grant specific rights (permissions) to a user by using the HTTP PUT method. You need to provide the username of the user and the rights you want to assign in the request body. The 'Bearer' token is required as part of the header for authentication purposes."
-    },
-    "/auth/change_username": {
-        "request": {
-            "function": "change_username",
-            "method": "PUT",
-            "body_fields": {
-                "new_username": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows a user to change their username by sending a PUT request with the new desired username in the body. The request should include an authorization token in the header."
-    },
-    "/auth/change_password": {
-        "request": {
-            "function": "change_password",
-            "method": "PUT",
-            "body_fields": {
-                "unlogin": "Bool",
-                "new_password": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The provided information describes a request to change a password using the HTTP PUT method. The function being called is 'change_password'. It requires two parameters:\n\n1. `unlogin`: A boolean value indicating whether login is required for this operation.\n2. `new_password`: A string representing the new password to be set.\n\nAdditionally, an authentication token (`Bearer`) must be included in the headers of the request for authorization purposes."
-    },
-    "/auth/register_true": {
-        "request": {
-            "function": "register_true",
-            "method": "PUT",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The given code snippet seems to define a route for registering a new user on an application using the PUT request method. The \"/auth/register_true\" endpoint requires a \"Bearer\" token in its header for authentication. It does not specify any response, implying that upon successful execution of the function 'register_true', it should return nothing or directly redirect without further output. This means when this route is accessed with a valid Bearer token and using PUT method, a new user registration process will be initiated, but no specific outcome from this operation is described beyond completion."
-    },
-    "/auth/isadmin/:username(.*)": {
-        "request": {
-            "method": "get"
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "status": "t"
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        },
-        "explanation": "This method checks if a specified user (identified by their username) is an admin. When accessed via a GET request, if the user is indeed an admin, it returns a status code of 200 along with a 't' status in the response body. Additionally, it sends standard HTTP headers like Server, Date, Content-Type, Content-Length, and Connection as part of the response."
-    },
-    "/user/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "user_info",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This code snippet represents a route in an API designed for user management. The path of this route includes a parameter named `username`, which expects an input following the pattern `[a-zA-Z0-9\\-]+`. This indicates that the username can consist of alphabets (both uppercase and lowercase), numbers, and hyphens.\n\nWhen a client makes a GET request to this endpoint using a URL that includes a valid username as defined by the parameter's regex pattern, the server-side function `user_info` will be triggered. \n\nThe function `user_info` is expected to perform an operation related to retrieving information about the specified user. Since there's no specific implementation details provided in the code snippet (`{'request': {'function': 'user_info', 'method': 'GET'}, 'response': {}}`), it implies that this function should fetch and return data associated with the given username.\n\nIn essence, this route allows for fetching user information from a system or database when you know the user's username."
-    },
-    "/user/full/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "full_user_info",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The provided code snippet represents an API endpoint configuration for retrieving full user information based on a username. This means that when a GET request is made to this endpoint using a specific username (which follows certain patterns including alphanumeric characters and hyphens), the server will execute a function named 'full_user_info'. The purpose of this function, as described in the documentation, is to provide comprehensive details about the user matching the given input."
-    },
-    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "user_roles",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This method retrieves the roles assigned to a specific user identified by their username. It accepts the username as input (in the format [a-zA-Z0-9\\-]+) and returns the roles associated with that user."
-    },
-    "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "user_unactive_roles",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The `user_unactive_roles` method retrieves information about any inactive roles associated with a specific user identified by their username."
-    },
-    "/user/add_role": {
-        "request": {
-            "function": "add_user_role",
-            "method": "POST",
-            "body_fields": {
-                "username": "String",
-                "role_id": "Int",
-                "role": "String",
-                "department": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows you to add a specific role to a user. It requires the username of the user, the ID of the role to be assigned, the name of the role, and optionally the department associated with the role. The request should be made via a POST method using JSON format for the body fields. Authentication is needed as indicated by 'Bearer' in the header fields."
-    },
-    "/user/delete_role": {
-        "request": {
-            "function": "delete_user_role",
-            "method": "DELETE"
-        },
-        "response": {},
-        "explanation": "The method \"delete_user_role\" with DELETE HTTP request removes a specific role assigned to a user."
-    },
-    "/user/create_role": {
-        "request": {
-            "function": "create_role",
-            "method": "POST",
-            "body_fields": {
-                "payment": "Int",
-                "role": "String",
-                "department": "Int",
-                "rang": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method creates a new role. It uses the POST request type, requires fields for payment, role name, department ID, and rank level, and includes authentication with a 'Bearer' token in the header."
-    },
-    "/user/department/roles/:department([0-9]+)": {
-        "request": {
-            "function": "department_roles",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This method retrieves the roles associated with a specific department identified by an integer ID."
-    },
-    "/user/department/name/:department([0-9]+)": {
-        "request": {
-            "function": "department_name",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This method retrieves the name of a specific department based on its ID number. It accepts a URL request containing an integer (department ID), looks up that ID to find the corresponding department, and returns the department's name as the response."
-    },
-    "/user/set_department": {
-        "request": {
-            "function": "set_users_department",
-            "method": "PUT",
-            "body_fields": {
-                "department": "String",
-                "username": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows you to change the department of a user by providing their username and the new department name. It uses the PUT HTTP method for updating data. The 'Bearer' keyword in headers is likely related to authentication tokens needed to execute this operation."
-    },
-    "/user/department/roles": {
-        "request": {
-            "function": "all_departments",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The `all_departments` function retrieves information about all departments."
-    },
-    "/user/department/start/:department(.*)": {
-        "request": {
-            "function": "starter_role",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This code snippet describes a route in an API that responds to GET requests for `/user/department/start/:department`. The function being called on this endpoint is `starter_role`.\n\nIn plain terms:\n- It's an endpoint used by the server.\n- When accessed via GET method, it triggers the `starter_role` function. \n- This function presumably assigns or modifies a role associated with the department specified in the URL path.\n\nThe specifics of what `starter_role` does internally is not detailed here - just that it's being called when this particular route gets a GET request."
-    },
-    "/user/all_avatars": {
-        "request": {
-            "function": "all_avatars",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The \"/user/all_avatars\" method retrieves all avatars associated with a user. It's executed using a GET request and doesn't require any specific parameters for its operation. The response would typically contain the list of avatars linked to that user account."
-    },
-    "/user/set_avatar": {
-        "request": {
-            "method": "put",
-            "body_fields": {
-                "avatar": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows you to update your profile avatar by sending a PUT request with an 'avatar' field containing the new avatar data. The request must include a 'Bearer' token in the headers for authentication. No response details are specified, indicating that there might not be a direct confirmation of success or failure after executing this operation."
-    },
-    "/media/get/:filename(.*)": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This snippet defines a route in a web application that handles GET requests. When this route receives a request using the `get` method and including an 'Bearer' header (which typically contains authentication tokens), it processes the request but does not return any specific response (`response` field is empty). The pattern `/media/get/:filename(.*)` specifies what URLs match this handler, with `:filename(.*)` indicating that anything after 'get/' could be a filename."
-    },
-    "/achivements/qr/:achivement_id([0-9]+)": {
-        "request": {
-            "function": "achivement_qr",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method retrieves QR code information for a specific achievement by using an API with a GET request. It requires a Bearer token in the header for authentication and takes an 'achivement_id' as input to identify which achievement's QR code data should be fetched. The response from this operation is not detailed here, but it presumably returns the QR code details related to the provided 'achivement_id'."
-    },
-    "/post/qr/:post_id([0-9]+)": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {
-            "status_code": 200,
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        },
-        "explanation": "The given documentation represents a configuration for handling HTTP GET requests on specific endpoints within an application. Here's a simplified explanation:\n\n1. **Endpoint**: `/post/qr/:post_id`\n   - This endpoint is used to retrieve QR code-related information for posts.\n   - The `:post_id` part indicates that this path variable (`post_id`) will be replaced by a numeric value from the URL when making a request.\n\n2. **Request Method**:\n   - `GET`: The client (e.g., a web browser or an app) sends a GET request to fetch data, typically for displaying content.\n\n3. **Authorization Header**:\n   - `Bearer`: This implies that the client needs to send an authentication token prefixed with \"Bearer\" in the HTTP header. It's commonly used for API requests where users are authenticated before accessing resources.\n\n4. **Response Configuration**:\n   - **Status Code**: `200` indicates a successful request, meaning the server has processed the GET request and sent back relevant data without errors.\n   - **Headers**:\n     - `Server`: Describes which web server software was used to serve this HTTP response (e.g., Apache, NGINX).\n     - `Date`: The date and time when the response was generated by the server.\n     - `Content-Type`: Specifies the type of content being sent in the body of the response (e.g., text/plain, application/json).\n     - `Content-Length`: The size of the response's body.\n     - `Connection`: Information about whether the connection should stay open for further communications or be closed.\n\nIn essence, this configuration sets up an endpoint to handle GET requests aiming to retrieve QR code details associated with posts. Users must authenticate by providing a \"Bearer\" token in their request headers to access this service. The server confirms the request's success with a `200` status code and includes various header fields for information about how the response was generated, its content type, size, etc."
-    },
-    "/transactions/prepare": {
-        "request": {
-            "function": "prepare_transaction",
-            "method": "POST",
-            "body_fields": {
-                "receiver": "String",
-                "amount": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method sends a `POST` request to prepare a transaction with specific fields including receiver's address as a string and amount as an integer. It requires a 'Bearer' token in the header for authentication. The response details are unspecified."
-    },
-    "/transactions/send": {
-        "request": {
-            "function": "transfer",
-            "method": "POST",
-            "body_fields": {
-                "tr_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows you to send transactions by using a POST request with specific fields. The function `transfer` initiates the transaction process. You need to provide 'tr_id' as a string when making this request and include an authentication token (Bearer type) in your headers. The response from the method is not detailed, implying it may return information about the transaction status or other relevant data post-execution of the transfer operation."
-    },
-    "/transactions/balance": {
-        "request": {
-            "function": "get_balance",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The provided information describes a REST API endpoint defined for handling GET requests. This endpoint specifically targets transactions and seeks to retrieve a balance using an authentication token (Bearer). Essentially, it enables users to fetch their current balance by making a GET request to the '/transactions/balance' path while including their authorization token in the headers of the HTTP request."
-    },
-    "/transactions/my": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "transactionid": "19",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 12:55:16.552781"
-                    },
-                    {
-                        "transactionid": "20",
-                        "amount": "100",
-                        "sender": "scv-7",
-                        "receiver": "scv-8",
-                        "transactiontime": "2025-02-23 13:09:05.239221"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        },
-        "explanation": "This code describes a GET request being made to '/transactions/my'. The request includes an authorization token ('Bearer') in its headers. Upon successful processing, which yields HTTP status code 200 (indicating success), the response body contains transaction data:\n\n- Two transactions are listed.\n- Each transaction has:\n  - Transaction ID\n  - Amount of money involved\n  - Sender's identifier ('scv-7')\n  - Receiver's identifier ('scv-8')\n  - Timestamp of the transaction\n\nThe headers in the response include details about the server, date of request processing, content type, length of data sent, and connection status."
-    },
-    "/social/authors": {
-        "request": {
-            "function": "get_authors_list",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The method \"get_authors_list\" when called via a GET request to '/social/authors' endpoint, retrieves a list of authors."
-    },
-    "/social/news:search(.*)": {
-        "request": {
-            "function": "get_news",
-            "method": "GET",
-            "params": [
-                "start",
-                "size"
-            ],
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method is designed to search for news using a GET request. It requires two parameters: 'start' indicating where to begin in the data list and 'size' determining how many results to retrieve. Additionally, it utilizes an authorization token ('Bearer') within its headers for authentication purposes. The core function of this method is thus to fetch news content based on specified start point and size, while ensuring access via a secure token."
-    },
-    "/social/comments:search(.*)": {
-        "request": {
-            "function": "get_comments",
-            "method": "GET",
-            "params": [
-                "post_id",
-                "start",
-                "size"
-            ],
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method searches for comments related to a specific post using the provided post ID. It retrieves comment data starting from a certain point (based on 'start' parameter) and returning a specified number of comments ('size'). The search includes an authorization token ('Bearer') in the header for authentication."
-    },
-    "/social/media/pics/:post_id(.*)": {
-        "request": {
-            "function": "get_post_media",
-            "method": "GET",
-            "header_fields": [
-                "pics"
-            ]
-        },
-        "response": {},
-        "explanation": "The method is designed to retrieve media associated with a specific post by using its ID. When called, it expects the post ID as input through the URL path parameter named 'post_id'. It uses a GET request method for fetching data and relies on HTTP headers labeled 'pics' for potentially specifying or identifying additional details related to the requested media content. Upon receiving the request with the provided information, the method responds accordingly by returning the requested post's media content."
-    },
-    "/social/new/:post_id(.*)": {
-        "request": {
-            "function": "get_post",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This code snippet appears to define a route in an API. Specifically:\n\n1. The route `/social/new/:post_id(.*)` refers to a specific endpoint that handles requests for new posts by specifying `:post_id`. This placeholder (`:post_id`) allows dynamic parts of the URL (like a post ID) to be sent as parameters.\n\n2. The `request` object specifies what is happening with this route:\n   - The method used in this request is `GET`, meaning we're trying to retrieve or fetch data.\n   - It requires a 'Bearer' header field, which typically contains an authentication token for the user requesting access.\n\n3. The `response` section tells us that no specific response logic is defined for this route. This likely means it returns whatever data gets fetched via the GET request with the specified post ID and bearer token.\n\nIn essence, this API endpoint allows you to fetch details of a specific new post by providing its unique identifier (`post_id`). The 'Bearer' header typically contains authorization credentials needed for accessing this resource."
-    },
-    "/social/posts": {
-        "request": {
-            "function": "get_all_posts",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The method described here is a GET request used to retrieve all posts from a social platform. It includes a header field named 'Bearer' which is typically used for authentication purposes. Essentially, this method allows one to access and obtain the list of all existing posts by sending an HTTP GET request, identifying yourself with the provided token in the Bearer header."
-    },
-    "/social/titles": {
-        "request": {
-            "function": "get_all_titles",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This code defines a method for retrieving all titles from a certain section ('/social/titles') using a GET request. The request includes an authorization header labeled 'Bearer'. No specific implementation details are provided; it simply outlines the action to be taken."
-    },
-    "/social/saved": {
-        "request": {
-            "function": "get_saved_posts",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The method is retrieving saved posts using a GET request with a 'Bearer' token for authentication."
-    },
-    "/social/save": {
-        "request": {
-            "function": "delete_saved_post",
-            "method": "DELETE",
-            "body_fields": {
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method is designed to delete a saved post by providing its ID. It uses the DELETE HTTP method and requires an authorization token (Bearer) in the headers for authentication. The operation expects only one field 'post_id' in the request body to identify which specific saved post should be deleted."
-    },
-    "/social/search:search(.*)": {
-        "request": {
-            "function": "search_by_title",
-            "method": "GET",
-            "params": [
-                "title"
-            ],
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This code snippet represents a function call within an API. The function being called is `search_by_title`, which presumably performs a search operation based on a provided 'title' parameter. It uses HTTP GET method and requires a 'Bearer' token in the header for authentication. However, there's no specific response defined after the search operation, suggesting it might either return nothing or have a default behavior not detailed here."
-    },
-    "/social/like": {
-        "request": {
-            "function": "delete_like",
-            "method": "DELETE",
-            "body_fields": {
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The provided code snippet describes a RESTful API endpoint configuration. Specifically, it's about an HTTP DELETE request designed to remove a \"like\" on a post in a social media application.\n\nHere's a simple and short explanation:\n\n- **Method**: `DELETE`\n- **Path**: `/social/like`  \n  - This path identifies the specific operation: managing likes for posts.\n  \nThe endpoint expects:\n1. A **function** parameter named `'delete_like'`, indicating that the task is to delete or remove a like.\n2. **request** body needs to provide:\n   - `post_id`: The identifier of the post on which the like should be removed.\n\nAdditionally, the header must contain a 'Bearer' token for authentication purposes. This ensures only authorized users can perform this operation by providing their authorization credentials in the request headers.\n\nIn essence, when someone sends a DELETE request to `/social/like` with appropriate headers and including the `post_id`, the system will remove that user's like from the specified post."
-    },
-    "/social/dislike": {
-        "request": {
-            "function": "delete_dislike",
-            "method": "DELETE",
-            "body_fields": {
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The provided code snippet represents an API method configuration. This method allows a client to delete a dislike for a specific post by sending a DELETE request to the server with the following details:\n\n1. **Function**: `delete_dislike` - The function being executed, which is intended to remove a dislike associated with a given post.\n2. **HTTP Method**: `DELETE` - This indicates that the client wants to perform an operation like deletion on the server-side resource.\n3. **Body Fields**:\n   - `post_id`: A string field indicating the unique identifier of the post being disliked, which needs to be removed from dislikes list.\n4. **Header Fields**: `[Bearer]` - The authentication token required for making this API call, usually in the format \"Bearer [token]\", where \"[token]\" is a specific authentication token.\n\nIn essence, this method enables removing a dislike for an item (post) when a user changes their mind about disliking it or when they want to undo their previous action."
-    },
-    "/social/comments": {
-        "request": {
-            "function": "add_comment",
-            "method": "POST",
-            "body_fields": {
-                "comment": "String",
-                "post_id": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows adding a comment to a specific post. It requires a POST request with two fields: `comment` (text of the comment) and `post_id` (identification of the post). The request must include an authentication token in the header labeled 'Bearer'. After submission, no response is returned."
-    },
-    "/social/categories": {
-        "request": {
-            "function": "get_post_categories",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The method `get_post_categories` retrieves categories for posts when called via a GET request. It fetches categorization details pertinent to blog entries or similar content."
-    },
-    "/social/bycat/:category([0-9\\-]+)": {
-        "request": {
-            "method": "get"
-        },
-        "response": {},
-        "explanation": "This code snippet defines a route in a web server that matches URLs containing \"/social/bycat/\" followed by any series of digits (including negative numbers). When this specific route is requested via a GET method (typically used for requesting data from the server), it triggers the 'response' action, which implies the server will send back some kind of response without specifying what exactly that response contains. In essence, it's an endpoint for categorizing social content based on the provided category identifier."
-    },
-    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "user_achivemets",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This method retrieves user achievements using the provided username."
-    },
-    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "full_user_achivemets",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This method retrieves a detailed list of achievements for a specific user identified by their username. It accepts GET requests and uses part of the URL (the part after 'full/user/') to identify which user's achievements to fetch. The response will contain all the achievements associated with that particular user."
-    },
-    "/achivements/add": {
-        "request": {
-            "function": "add_achivement",
-            "method": "POST",
-            "body_fields": {
-                "username": "String",
-                "achivement_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method adds a new achievement to the system. It requires the username of the user who earned the achievement and an integer representing the ID of the achievement. The request must be made using the POST method with a 'Bearer' token in the headers for authentication."
-    },
-    "/achivements/delete": {
-        "request": {
-            "function": "delete_achivement",
-            "method": "DELETE",
-            "body_fields": {
-                "username": "String",
-                "achivement_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method is designed to delete an achievement by specifying a username and an achievement ID. It uses the DELETE HTTP method for this operation and requires an access token (Bearer) in the header for authentication."
-    },
-    "/achivements/tree/:tree_id([0-9]+)": {
-        "request": {
-            "function": "achivements_tree",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This method retrieves information about a specific tree under achievements. It accepts an integer parameter representing the unique identifier of the tree and returns details related to that particular achievement tree in response."
-    },
-    "/achivements/info/:achivement_id([0-9]+)": {
-        "request": {
-            "function": "achivement_info",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The method \"achivement_info\" retrieves information about a specific achievement identified by its ID. When called with a GET request and providing an achievement ID as a parameter, it returns details related to that particular achievement."
-    },
-    "/achivements/create": {
-        "request": {
-            "function": "create_achivement",
-            "method": "POST",
-            "body_fields": {
-                "name": "String",
-                "tree_id": "Int",
-                "level": "Int",
-                "pic": "String",
-                "description": "String",
-                "stages": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method is used to create a new achievement. The user needs to provide details such as name, tree ID, level, picture, description, and stages when using this function. The 'Bearer' authentication token must also be provided in the header for authorization purposes."
-    },
-    "/achivements/pictures": {
-        "request": {
-            "function": "achivement_pictures",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The `achivement_pictures` GET method retrieves picture data related to achievements."
-    },
-    "/achivements/no_dep": {
-        "request": {
-            "function": "no_department_achivements",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The method `no_department_achivements` receives a GET request with an optional 'Bearer' header field. It does not perform any complex operations; instead, it simply returns a response without processing any data related to department achievements. Essentially, this function might be used in scenarios where the system needs to indicate that there are no department achievements available or applicable for display."
-    },
-    "/achivements/by_user": {
-        "request": {
-            "function": "department_achivements_by_user",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The provided code snippet describes a method that retrieves achievements associated with a specific user. This operation uses a GET request method and requires an authorization header (specifically, a 'Bearer' token) for authentication. The primary function of this method is to fetch the achievements data linked to a given user identifier."
-    },
-    "/achivements/qr_code/:achivement_id([0-9]+)": {
-        "request": {
-            "method": "get"
-        },
-        "response": {
-            "status_code": 200,
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        },
-        "explanation": "This method retrieves information related to a specific achievement identified by its ID using QR code. When requested with the appropriate ID, it returns a 200 status code response containing details about that particular achievement. The response includes standard headers like Server, Date, Content-Type, Content-Length, and Connection for communication metadata."
-    },
-    "/post/:id(\\d+)": {
-        "request": {
-            "function": "get_page_content",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "The method `get_page_content` retrieves the content of a webpage specified by its unique ID. The `:id(\\\\d+)` part means that this operation occurs for any numerical ID provided in the URL path. When invoked via a GET request to a web route like `/post/:id`, it fetches and returns the content associated with the given post ID."
-    },
-    "/post/author/:username([a-zA-Z0-9\\-]+)": {
-        "request": {
-            "function": "get_page_author",
-            "method": "GET"
-        },
-        "response": {},
-        "explanation": "This method retrieves page author details based on a provided username. It accepts GET requests with a specific URL pattern that includes a dynamic part for the username (in format [a-zA-Z0-9\\-]+). The response returns the information about the identified author."
-    },
-    "/post/add_page": {
-        "request": {
-            "function": "add_page",
-            "method": "POST",
-            "body_fields": {
-                "post_path": "String",
-                "category": "String",
-                "title": "String",
-                "is_secret": "Bool",
-                "author": "String",
-                "text": "String",
-                "likes": "Int",
-                "dislikes": "Int",
-                "saved": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The `add_page` method with a POST request allows you to add information about a new webpage. This includes specifying its path, category, title, whether it's secret or public (indicated by 'is_secret' being True or False), the author, the text content, and counts for likes, dislikes, and saves. You'll also need to provide an access token in the header as part of this process."
-    },
-    "/post/update_likes": {
-        "request": {
-            "function": "update_likes",
-            "method": "PUT",
-            "body_fields": {
-                "post_id": "Int",
-                "likes": "Int"
-            }
-        },
-        "response": {},
-        "explanation": "The \"update_likes\" method, when accessed via a PUT request, modifies the number of likes for a specific post by updating its value in the system. It requires the post's ID and the new like count as inputs."
-    },
-    "/post/favourite/": {
-        "request": {
-            "function": "get_favourite_posts",
-            "method": "GET",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method retrieves favorite posts. It uses a GET request with a 'Bearer' authentication header for authorization. The response details are currently unspecified."
-    },
-    "/post/favourite": {
-        "request": {
-            "function": "post_add_favourite_post",
-            "method": "POST",
-            "body_fields": {
-                "post_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The method `post_add_favourite_post` adds a favorite post action when called via a POST request. It requires an integer `post_id` as data to specify which post to add as a favorite and uses a 'Bearer' token in the header for authentication."
-    },
-    "/post/favourite/:id(\\d+)": {
-        "request": {
-            "function": "delete_favourite_post",
-            "method": "DELETE",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The DELETE method with \"Bearer\" token header is being used to delete a favorite post identified by its unique ID."
-    },
-    "/post/rename_category": {
-        "request": {
-            "function": "rename_category",
-            "method": "PUT",
-            "body_fields": {
-                "old_name": "String",
-                "new_name": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The method \"rename_category\" being performed using a PUT request. It takes two string parameters: 'old_name' for the name of an existing category that needs to be renamed, and 'new_name' for the desired new name of the category. The operation essentially changes the name of the specified category in the system from its original 'old_name' to the newly proposed 'new_name'."
-    },
-    "/post/delete": {
-        "request": {
-            "function": "delete_post",
-            "method": "DELETE",
-            "body_fields": {
-                "post_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows you to delete a specific post by providing its ID using an HTTP DELETE request. You need to authenticate with a Bearer token in the header. The 'post_id' field indicates which post should be deleted."
-    },
-    "/post/update": {
-        "request": {
-            "function": "update_post",
-            "method": "PUT",
-            "body_fields": {
-                "post_id": "String",
-                "text": "String",
-                "is_secret": "String",
-                "likes": "String",
-                "dislikes": "String",
-                "saved_count": "String",
-                "title": "String",
-                "author": "String",
-                "category": "String"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This code snippet describes an API endpoint setup for updating a post. When this endpoint receives a request with specific HTTP methods (`PUT`) and headers (`Bearer`), along with certain fields in its body (such as `post_id`, `text`, etc.), it invokes the function 'update_post'. Essentially, it's designed to modify existing posts based on provided data."
-    },
-    "/post/add_media": {
-        "request": {
-            "function": "add_media",
-            "method": "POST",
-            "body_fields": {
-                "post_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "The `add_media` method uses a POST request to add media content to a specific post. It requires a \"post_id\" as an integer parameter and authorization through a 'Bearer' token in the headers."
-    },
-    "/post/delete_media": {
-        "request": {
-            "function": "delete_media",
-            "method": "DELETE",
-            "body_fields": {
-                "post_id": "Int"
-            },
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {},
-        "explanation": "This method allows you to delete media associated with a specific post by providing its ID. It requires authentication via a Bearer token in the headers. The 'post_id' field identifies which post's media should be deleted."
-    },
-    "/authors_list": {
-        "request": {
-            "method": "get",
-            "header_fields": [
-                "Bearer"
-            ]
-        },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "username": "scv-7",
-                        "avatar_pic": "images/avatars/example_1.png"
-                    },
-                    {
-                        "username": "scv2",
-                        "avatar_pic": "/images/avatars/example_5.png"
-                    }
-                ]
-            },
-            "headers": [
-                "Server",
-                "Date",
-                "Content-Type",
-                "Content-Length",
-                "Connection"
-            ]
-        },
-        "explanation": "This code describes a GET request to retrieve a list of authors. The request uses a \"Bearer\" token for authentication. Upon successful execution (with a 200 status code), the response includes details about each author in JSON format, consisting of their username and avatar picture URL. Basic information like server type, date, content type, size, and connection are also provided in headers."
+  "/achivements/add": {
+    "explanation": "This method adds a new achievement to the system. It requires the username of the user who earned the achievement and an integer representing the ID of the achievement. The request must be made using the POST method with a 'Bearer' token in the headers for authentication.",
+    "request": {
+      "body_fields": {
+        "achivement_id": "Int",
+        "username": "String"
+      },
+      "function": "add_achivement",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/achivements/by_user": {
+    "explanation": "The provided code snippet describes a method that retrieves achievements associated with a specific user. This operation uses a GET request method and requires an authorization header (specifically, a 'Bearer' token) for authentication. The primary function of this method is to fetch the achievements data linked to a given user identifier.",
+    "request": {
+      "function": "department_achivements_by_user",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/achivements/create": {
+    "explanation": "This method is used to create a new achievement. The user needs to provide details such as name, tree ID, level, picture, description, and stages when using this function. The 'Bearer' authentication token must also be provided in the header for authorization purposes.",
+    "request": {
+      "body_fields": {
+        "description": "String",
+        "level": "Int",
+        "name": "String",
+        "pic": "String",
+        "stages": "Int",
+        "tree_id": "Int"
+      },
+      "function": "create_achivement",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/achivements/delete": {
+    "explanation": "This method is designed to delete an achievement by specifying a username and an achievement ID. It uses the DELETE HTTP method for this operation and requires an access token (Bearer) in the header for authentication.",
+    "request": {
+      "body_fields": {
+        "achivement_id": "Int",
+        "username": "String"
+      },
+      "function": "delete_achivement",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/achivements/info/:achivement_id([0-9]+)": {
+    "explanation": "The method \"achivement_info\" retrieves information about a specific achievement identified by its ID. When called with a GET request and providing an achievement ID as a parameter, it returns details related to that particular achievement.",
+    "request": {
+      "function": "achivement_info",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/achivements/no_dep": {
+    "explanation": "The method `no_department_achivements` receives a GET request with an optional 'Bearer' header field. It does not perform any complex operations; instead, it simply returns a response without processing any data related to department achievements. Essentially, this function might be used in scenarios where the system needs to indicate that there are no department achievements available or applicable for display.",
+    "request": {
+      "function": "no_department_achivements",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/achivements/pictures": {
+    "explanation": "The `achivement_pictures` GET method retrieves picture data related to achievements.",
+    "request": {
+      "function": "achivement_pictures",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/achivements/qr/:achivement_id([0-9]+)": {
+    "explanation": "This method retrieves QR code information for a specific achievement by using an API with a GET request. It requires a Bearer token in the header for authentication and takes an 'achivement_id' as input to identify which achievement's QR code data should be fetched. The response from this operation is not detailed here, but it presumably returns the QR code details related to the provided 'achivement_id'.",
+    "request": {
+      "function": "achivement_qr",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/achivements/qr_code/:achivement_id([0-9]+)": {
+    "explanation": "This method retrieves information related to a specific achievement identified by its ID using QR code. When requested with the appropriate ID, it returns a 200 status code response containing details about that particular achievement. The response includes standard headers like Server, Date, Content-Type, Content-Length, and Connection for communication metadata.",
+    "request": {
+      "method": "get"
+    },
+    "response": {
+      "headers": [
+        "Server",
+        "Date",
+        "Content-Type",
+        "Content-Length",
+        "Connection"
+      ],
+      "status_code": 200
     }
+  },
+  "/achivements/tree/:tree_id([0-9]+)": {
+    "explanation": "This method retrieves information about a specific tree under achievements. It accepts an integer parameter representing the unique identifier of the tree and returns details related to that particular achievement tree in response.",
+    "request": {
+      "function": "achivements_tree",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+    "explanation": "This method retrieves user achievements using the provided username.",
+    "request": {
+      "function": "user_achivemets",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
+    "explanation": "This method retrieves a detailed list of achievements for a specific user identified by their username. It accepts GET requests and uses part of the URL (the part after 'full/user/') to identify which user's achievements to fetch. The response will contain all the achievements associated with that particular user.",
+    "request": {
+      "function": "full_user_achivemets",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/auth/add_userrights": {
+    "explanation": "The given information describes a REST API endpoint that allows you to grant specific rights (permissions) to a user by using the HTTP PUT method. You need to provide the username of the user and the rights you want to assign in the request body. The 'Bearer' token is required as part of the header for authentication purposes.",
+    "request": {
+      "body_fields": {
+        "rights": "String",
+        "username": "String"
+      },
+      "function": "add_userrights",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/auth/amiadmin": {
+    "explanation": "This code snippet represents a function call that checks if the current user has administrative privileges. The request includes an intent to execute the `am_i_admin` function using the GET method, with authentication provided via 'Bearer' tokens in the header fields. The response is yet to be defined or returned following the execution of this operation.",
+    "request": {
+      "function": "am_i_admin",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/auth/amiauthed": {
+    "explanation": "The `am_i_authed` method checks whether the user is authenticated using an access token (specifically a Bearer token) in their request headers. It essentially verifies if the user has provided valid credentials to proceed with the requested operation.",
+    "request": {
+      "function": "am_i_authed",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/auth/change_password": {
+    "explanation": "The provided information describes a request to change a password using the HTTP PUT method. The function being called is 'change_password'. It requires two parameters:\n\n1. `unlogin`: A boolean value indicating whether login is required for this operation.\n2. `new_password`: A string representing the new password to be set.\n\nAdditionally, an authentication token (`Bearer`) must be included in the headers of the request for authorization purposes.",
+    "request": {
+      "body_fields": {
+        "new_password": "String",
+        "unlogin": "Bool"
+      },
+      "function": "change_password",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/auth/change_username": {
+    "explanation": "This method allows a user to change their username by sending a PUT request with the new desired username in the body. The request should include an authorization token in the header.",
+    "request": {
+      "body_fields": {
+        "new_username": "String"
+      },
+      "function": "change_username",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/auth/delete": {
+    "explanation": "This method uses the DELETE request to enable or perform deletion functionality. It requires a 'Bearer' token in its headers for authentication. The response associated with this action is unspecified, meaning it doesn't guarantee a particular outcome but indicates that the deletion process is enabled or initiated based on the provided credentials and permissions.",
+    "request": {
+      "function": "enable_delete",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/auth/isactive/:username(.*)": {
+    "explanation": "The method checks if a user with the specified username is active. It takes a GET request with the user's username as input and returns whether that user is currently active or not.",
+    "request": {
+      "function": "is_user_active",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/auth/isadmin/:username(.*)": {
+    "explanation": "This method checks if a specified user (identified by their username) is an admin. When accessed via a GET request, if the user is indeed an admin, it returns a status code of 200 along with a 't' status in the response body. Additionally, it sends standard HTTP headers like Server, Date, Content-Type, Content-Length, and Connection as part of the response.",
+    "request": {
+      "method": "get"
+    },
+    "response": {
+      "body": {
+        "status": "t"
+      },
+      "headers": [
+        "Server",
+        "Date",
+        "Content-Type",
+        "Content-Length",
+        "Connection"
+      ],
+      "status_code": 200
+    }
+  },
+  "/auth/isuser/:username(.*)": {
+    "explanation": "The provided method `is_user` checks if a specified user exists. When accessed via GET request with the username in the URL path, it validates the existence of that particular user.",
+    "request": {
+      "function": "is_user",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/auth/login": {
+    "explanation": "This method enables authentication via a login POST request. It accepts two fields: 'login' as a string for username, and 'password' also as a string for password. The response is not detailed here but typically includes status information after processing the login attempt.",
+    "request": {
+      "body_fields": {
+        "login": "String",
+        "password": "String"
+      },
+      "function": "enable_auth",
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/auth/reg": {
+    "explanation": "This method allows for registration by enabling users to submit a login, password, and temporary token via a POST request. It does not detail the specific implementation or process of these actions, just that they facilitate user registration functionality.",
+    "request": {
+      "body_fields": {
+        "login": "String",
+        "password": "String",
+        "temp_token": "String"
+      },
+      "function": "enable_reg",
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/auth/register_true": {
+    "explanation": "The given code snippet seems to define a route for registering a new user on an application using the PUT request method. The \"/auth/register_true\" endpoint requires a \"Bearer\" token in its header for authentication. It does not specify any response, implying that upon successful execution of the function 'register_true', it should return nothing or directly redirect without further output. This means when this route is accessed with a valid Bearer token and using PUT method, a new user registration process will be initiated, but no specific outcome from this operation is described beyond completion.",
+    "request": {
+      "function": "register_true",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/authors_list": {
+    "explanation": "This code describes a GET request to retrieve a list of authors. The request uses a \"Bearer\" token for authentication. Upon successful execution (with a 200 status code), the response includes details about each author in JSON format, consisting of their username and avatar picture URL. Basic information like server type, date, content type, size, and connection are also provided in headers.",
+    "request": {
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "get"
+    },
+    "response": {
+      "body": {
+        "result": [
+          {
+            "avatar_pic": "images/avatars/example_1.png",
+            "username": "scv-7"
+          },
+          {
+            "avatar_pic": "/images/avatars/example_5.png",
+            "username": "scv2"
+          }
+        ]
+      },
+      "headers": [
+        "Server",
+        "Date",
+        "Content-Type",
+        "Content-Length",
+        "Connection"
+      ],
+      "status_code": 200
+    }
+  },
+  "/media/get/:filename(.*)": {
+    "explanation": "This snippet defines a route in a web application that handles GET requests. When this route receives a request using the `get` method and including an 'Bearer' header (which typically contains authentication tokens), it processes the request but does not return any specific response (`response` field is empty). The pattern `/media/get/:filename(.*)` specifies what URLs match this handler, with `:filename(.*)` indicating that anything after 'get/' could be a filename.",
+    "request": {
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "get"
+    },
+    "response": {}
+  },
+  "/post/:id(\\d+)": {
+    "explanation": "The method `get_page_content` retrieves the content of a webpage specified by its unique ID. The `:id(\\\\d+)` part means that this operation occurs for any numerical ID provided in the URL path. When invoked via a GET request to a web route like `/post/:id`, it fetches and returns the content associated with the given post ID.",
+    "request": {
+      "function": "get_page_content",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/post/add_media": {
+    "explanation": "The `add_media` method uses a POST request to add media content to a specific post. It requires a \"post_id\" as an integer parameter and authorization through a 'Bearer' token in the headers.",
+    "request": {
+      "body_fields": {
+        "post_id": "Int"
+      },
+      "function": "add_media",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/post/add_page": {
+    "explanation": "The `add_page` method with a POST request allows you to add information about a new webpage. This includes specifying its path, category, title, whether it's secret or public (indicated by 'is_secret' being True or False), the author, the text content, and counts for likes, dislikes, and saves. You'll also need to provide an access token in the header as part of this process.",
+    "request": {
+      "body_fields": {
+        "author": "String",
+        "category": "String",
+        "dislikes": "Int",
+        "is_secret": "Bool",
+        "likes": "Int",
+        "post_path": "String",
+        "saved": "Int",
+        "text": "String",
+        "title": "String"
+      },
+      "function": "add_page",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/post/author/:username([a-zA-Z0-9\\-]+)": {
+    "explanation": "This method retrieves page author details based on a provided username. It accepts GET requests with a specific URL pattern that includes a dynamic part for the username (in format [a-zA-Z0-9\\-]+). The response returns the information about the identified author.",
+    "request": {
+      "function": "get_page_author",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/post/delete": {
+    "explanation": "This method allows you to delete a specific post by providing its ID using an HTTP DELETE request. You need to authenticate with a Bearer token in the header. The 'post_id' field indicates which post should be deleted.",
+    "request": {
+      "body_fields": {
+        "post_id": "Int"
+      },
+      "function": "delete_post",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/post/delete_media": {
+    "explanation": "This method allows you to delete media associated with a specific post by providing its ID. It requires authentication via a Bearer token in the headers. The 'post_id' field identifies which post's media should be deleted.",
+    "request": {
+      "body_fields": {
+        "post_id": "Int"
+      },
+      "function": "delete_media",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/post/favourite": {
+    "explanation": "The method `post_add_favourite_post` adds a favorite post action when called via a POST request. It requires an integer `post_id` as data to specify which post to add as a favorite and uses a 'Bearer' token in the header for authentication.",
+    "request": {
+      "body_fields": {
+        "post_id": "Int"
+      },
+      "function": "post_add_favourite_post",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/post/favourite/": {
+    "explanation": "This method retrieves favorite posts. It uses a GET request with a 'Bearer' authentication header for authorization. The response details are currently unspecified.",
+    "request": {
+      "function": "get_favourite_posts",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/post/favourite/:id(\\d+)": {
+    "explanation": "The DELETE method with \"Bearer\" token header is being used to delete a favorite post identified by its unique ID.",
+    "request": {
+      "function": "delete_favourite_post",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/post/qr/:post_id([0-9]+)": {
+    "explanation": "The given documentation represents a configuration for handling HTTP GET requests on specific endpoints within an application. Here's a simplified explanation:\n\n1. **Endpoint**: `/post/qr/:post_id`\n   - This endpoint is used to retrieve QR code-related information for posts.\n   - The `:post_id` part indicates that this path variable (`post_id`) will be replaced by a numeric value from the URL when making a request.\n\n2. **Request Method**:\n   - `GET`: The client (e.g., a web browser or an app) sends a GET request to fetch data, typically for displaying content.\n\n3. **Authorization Header**:\n   - `Bearer`: This implies that the client needs to send an authentication token prefixed with \"Bearer\" in the HTTP header. It's commonly used for API requests where users are authenticated before accessing resources.\n\n4. **Response Configuration**:\n   - **Status Code**: `200` indicates a successful request, meaning the server has processed the GET request and sent back relevant data without errors.\n   - **Headers**:\n     - `Server`: Describes which web server software was used to serve this HTTP response (e.g., Apache, NGINX).\n     - `Date`: The date and time when the response was generated by the server.\n     - `Content-Type`: Specifies the type of content being sent in the body of the response (e.g., text/plain, application/json).\n     - `Content-Length`: The size of the response's body.\n     - `Connection`: Information about whether the connection should stay open for further communications or be closed.\n\nIn essence, this configuration sets up an endpoint to handle GET requests aiming to retrieve QR code details associated with posts. Users must authenticate by providing a \"Bearer\" token in their request headers to access this service. The server confirms the request's success with a `200` status code and includes various header fields for information about how the response was generated, its content type, size, etc.",
+    "request": {
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "get"
+    },
+    "response": {
+      "headers": [
+        "Server",
+        "Date",
+        "Content-Type",
+        "Content-Length",
+        "Connection"
+      ],
+      "status_code": 200
+    }
+  },
+  "/post/rename_category": {
+    "explanation": "The method \"rename_category\" being performed using a PUT request. It takes two string parameters: 'old_name' for the name of an existing category that needs to be renamed, and 'new_name' for the desired new name of the category. The operation essentially changes the name of the specified category in the system from its original 'old_name' to the newly proposed 'new_name'.",
+    "request": {
+      "body_fields": {
+        "new_name": "String",
+        "old_name": "String"
+      },
+      "function": "rename_category",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/post/update": {
+    "explanation": "This code snippet describes an API endpoint setup for updating a post. When this endpoint receives a request with specific HTTP methods (`PUT`) and headers (`Bearer`), along with certain fields in its body (such as `post_id`, `text`, etc.), it invokes the function 'update_post'. Essentially, it's designed to modify existing posts based on provided data.",
+    "request": {
+      "body_fields": {
+        "author": "String",
+        "category": "String",
+        "dislikes": "String",
+        "is_secret": "String",
+        "likes": "String",
+        "post_id": "String",
+        "saved_count": "String",
+        "text": "String",
+        "title": "String"
+      },
+      "function": "update_post",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/post/update_likes": {
+    "explanation": "The \"update_likes\" method, when accessed via a PUT request, modifies the number of likes for a specific post by updating its value in the system. It requires the post's ID and the new like count as inputs.",
+    "request": {
+      "body_fields": {
+        "likes": "Int",
+        "post_id": "Int"
+      },
+      "function": "update_likes",
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/social/authors": {
+    "explanation": "The method \"get_authors_list\" when called via a GET request to '/social/authors' endpoint, retrieves a list of authors.",
+    "request": {
+      "function": "get_authors_list",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/social/bycat/:category([0-9\\-]+)": {
+    "explanation": "This code snippet defines a route in a web server that matches URLs containing \"/social/bycat/\" followed by any series of digits (including negative numbers). When this specific route is requested via a GET method (typically used for requesting data from the server), it triggers the 'response' action, which implies the server will send back some kind of response without specifying what exactly that response contains. In essence, it's an endpoint for categorizing social content based on the provided category identifier.",
+    "request": {
+      "method": "get"
+    },
+    "response": {}
+  },
+  "/social/categories": {
+    "explanation": "The method `get_post_categories` retrieves categories for posts when called via a GET request. It fetches categorization details pertinent to blog entries or similar content.",
+    "request": {
+      "function": "get_post_categories",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/social/comments": {
+    "explanation": "This method allows adding a comment to a specific post. It requires a POST request with two fields: `comment` (text of the comment) and `post_id` (identification of the post). The request must include an authentication token in the header labeled 'Bearer'. After submission, no response is returned.",
+    "request": {
+      "body_fields": {
+        "comment": "String",
+        "post_id": "String"
+      },
+      "function": "add_comment",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/social/comments:search(.*)": {
+    "explanation": "This method searches for comments related to a specific post using the provided post ID. It retrieves comment data starting from a certain point (based on 'start' parameter) and returning a specified number of comments ('size'). The search includes an authorization token ('Bearer') in the header for authentication.",
+    "request": {
+      "function": "get_comments",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET",
+      "params": [
+        "post_id",
+        "start",
+        "size"
+      ]
+    },
+    "response": {}
+  },
+  "/social/dislike": {
+    "explanation": "The provided code snippet represents an API method configuration. This method allows a client to delete a dislike for a specific post by sending a DELETE request to the server with the following details:\n\n1. **Function**: `delete_dislike` - The function being executed, which is intended to remove a dislike associated with a given post.\n2. **HTTP Method**: `DELETE` - This indicates that the client wants to perform an operation like deletion on the server-side resource.\n3. **Body Fields**:\n   - `post_id`: A string field indicating the unique identifier of the post being disliked, which needs to be removed from dislikes list.\n4. **Header Fields**: `[Bearer]` - The authentication token required for making this API call, usually in the format \"Bearer [token]\", where \"[token]\" is a specific authentication token.\n\nIn essence, this method enables removing a dislike for an item (post) when a user changes their mind about disliking it or when they want to undo their previous action.",
+    "request": {
+      "body_fields": {
+        "post_id": "String"
+      },
+      "function": "delete_dislike",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/social/like": {
+    "explanation": "The provided code snippet describes a RESTful API endpoint configuration. Specifically, it's about an HTTP DELETE request designed to remove a \"like\" on a post in a social media application.\n\nHere's a simple and short explanation:\n\n- **Method**: `DELETE`\n- **Path**: `/social/like`  \n  - This path identifies the specific operation: managing likes for posts.\n  \nThe endpoint expects:\n1. A **function** parameter named `'delete_like'`, indicating that the task is to delete or remove a like.\n2. **request** body needs to provide:\n   - `post_id`: The identifier of the post on which the like should be removed.\n\nAdditionally, the header must contain a 'Bearer' token for authentication purposes. This ensures only authorized users can perform this operation by providing their authorization credentials in the request headers.\n\nIn essence, when someone sends a DELETE request to `/social/like` with appropriate headers and including the `post_id`, the system will remove that user's like from the specified post.",
+    "request": {
+      "body_fields": {
+        "post_id": "String"
+      },
+      "function": "delete_like",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/social/media/pics/:post_id(.*)": {
+    "explanation": "The method is designed to retrieve media associated with a specific post by using its ID. When called, it expects the post ID as input through the URL path parameter named 'post_id'. It uses a GET request method for fetching data and relies on HTTP headers labeled 'pics' for potentially specifying or identifying additional details related to the requested media content. Upon receiving the request with the provided information, the method responds accordingly by returning the requested post's media content.",
+    "request": {
+      "function": "get_post_media",
+      "header_fields": [
+        "pics"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/social/new/:post_id(.*)": {
+    "explanation": "This code snippet appears to define a route in an API. Specifically:\n\n1. The route `/social/new/:post_id(.*)` refers to a specific endpoint that handles requests for new posts by specifying `:post_id`. This placeholder (`:post_id`) allows dynamic parts of the URL (like a post ID) to be sent as parameters.\n\n2. The `request` object specifies what is happening with this route:\n   - The method used in this request is `GET`, meaning we're trying to retrieve or fetch data.\n   - It requires a 'Bearer' header field, which typically contains an authentication token for the user requesting access.\n\n3. The `response` section tells us that no specific response logic is defined for this route. This likely means it returns whatever data gets fetched via the GET request with the specified post ID and bearer token.\n\nIn essence, this API endpoint allows you to fetch details of a specific new post by providing its unique identifier (`post_id`). The 'Bearer' header typically contains authorization credentials needed for accessing this resource.",
+    "request": {
+      "function": "get_post",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/social/news:search(.*)": {
+    "explanation": "This method is designed to search for news using a GET request. It requires two parameters: 'start' indicating where to begin in the data list and 'size' determining how many results to retrieve. Additionally, it utilizes an authorization token ('Bearer') within its headers for authentication purposes. The core function of this method is thus to fetch news content based on specified start point and size, while ensuring access via a secure token.",
+    "request": {
+      "function": "get_news",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET",
+      "params": [
+        "start",
+        "size"
+      ]
+    },
+    "response": {}
+  },
+  "/social/posts": {
+    "explanation": "The method described here is a GET request used to retrieve all posts from a social platform. It includes a header field named 'Bearer' which is typically used for authentication purposes. Essentially, this method allows one to access and obtain the list of all existing posts by sending an HTTP GET request, identifying yourself with the provided token in the Bearer header.",
+    "request": {
+      "function": "get_all_posts",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/social/save": {
+    "explanation": "This method is designed to delete a saved post by providing its ID. It uses the DELETE HTTP method and requires an authorization token (Bearer) in the headers for authentication. The operation expects only one field 'post_id' in the request body to identify which specific saved post should be deleted.",
+    "request": {
+      "body_fields": {
+        "post_id": "String"
+      },
+      "function": "delete_saved_post",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/social/saved": {
+    "explanation": "The method is retrieving saved posts using a GET request with a 'Bearer' token for authentication.",
+    "request": {
+      "function": "get_saved_posts",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/social/search:search(.*)": {
+    "explanation": "This code snippet represents a function call within an API. The function being called is `search_by_title`, which presumably performs a search operation based on a provided 'title' parameter. It uses HTTP GET method and requires a 'Bearer' token in the header for authentication. However, there's no specific response defined after the search operation, suggesting it might either return nothing or have a default behavior not detailed here.",
+    "request": {
+      "function": "search_by_title",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET",
+      "params": [
+        "title"
+      ]
+    },
+    "response": {}
+  },
+  "/social/titles": {
+    "explanation": "This code defines a method for retrieving all titles from a certain section ('/social/titles') using a GET request. The request includes an authorization header labeled 'Bearer'. No specific implementation details are provided; it simply outlines the action to be taken.",
+    "request": {
+      "function": "get_all_titles",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/transactions/balance": {
+    "explanation": "The provided information describes a REST API endpoint defined for handling GET requests. This endpoint specifically targets transactions and seeks to retrieve a balance using an authentication token (Bearer). Essentially, it enables users to fetch their current balance by making a GET request to the '/transactions/balance' path while including their authorization token in the headers of the HTTP request.",
+    "request": {
+      "function": "get_balance",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/transactions/my": {
+    "explanation": "This code describes a GET request being made to '/transactions/my'. The request includes an authorization token ('Bearer') in its headers. Upon successful processing, which yields HTTP status code 200 (indicating success), the response body contains transaction data:\n\n- Two transactions are listed.\n- Each transaction has:\n  - Transaction ID\n  - Amount of money involved\n  - Sender's identifier ('scv-7')\n  - Receiver's identifier ('scv-8')\n  - Timestamp of the transaction\n\nThe headers in the response include details about the server, date of request processing, content type, length of data sent, and connection status.",
+    "request": {
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "get"
+    },
+    "response": {
+      "body": {
+        "result": [
+          {
+            "amount": "100",
+            "receiver": "scv-8",
+            "sender": "scv-7",
+            "transactionid": "19",
+            "transactiontime": "2025-02-23 12:55:16.552781"
+          },
+          {
+            "amount": "100",
+            "receiver": "scv-8",
+            "sender": "scv-7",
+            "transactionid": "20",
+            "transactiontime": "2025-02-23 13:09:05.239221"
+          }
+        ]
+      },
+      "headers": [
+        "Server",
+        "Date",
+        "Content-Type",
+        "Content-Length",
+        "Connection"
+      ],
+      "status_code": 200
+    }
+  },
+  "/transactions/prepare": {
+    "explanation": "This method sends a `POST` request to prepare a transaction with specific fields including receiver's address as a string and amount as an integer. It requires a 'Bearer' token in the header for authentication. The response details are unspecified.",
+    "request": {
+      "body_fields": {
+        "amount": "Int",
+        "receiver": "String"
+      },
+      "function": "prepare_transaction",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/transactions/send": {
+    "explanation": "This method allows you to send transactions by using a POST request with specific fields. The function `transfer` initiates the transaction process. You need to provide 'tr_id' as a string when making this request and include an authentication token (Bearer type) in your headers. The response from the method is not detailed, implying it may return information about the transaction status or other relevant data post-execution of the transfer operation.",
+    "request": {
+      "body_fields": {
+        "tr_id": "String"
+      },
+      "function": "transfer",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/user/:username([a-zA-Z0-9\\-]+)": {
+    "explanation": "This code snippet represents a route in an API designed for user management. The path of this route includes a parameter named `username`, which expects an input following the pattern `[a-zA-Z0-9\\-]+`. This indicates that the username can consist of alphabets (both uppercase and lowercase), numbers, and hyphens.\n\nWhen a client makes a GET request to this endpoint using a URL that includes a valid username as defined by the parameter's regex pattern, the server-side function `user_info` will be triggered. \n\nThe function `user_info` is expected to perform an operation related to retrieving information about the specified user. Since there's no specific implementation details provided in the code snippet (`{'request': {'function': 'user_info', 'method': 'GET'}, 'response': {}}`), it implies that this function should fetch and return data associated with the given username.\n\nIn essence, this route allows for fetching user information from a system or database when you know the user's username.",
+    "request": {
+      "function": "user_info",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/add_role": {
+    "explanation": "This method allows you to add a specific role to a user. It requires the username of the user, the ID of the role to be assigned, the name of the role, and optionally the department associated with the role. The request should be made via a POST method using JSON format for the body fields. Authentication is needed as indicated by 'Bearer' in the header fields.",
+    "request": {
+      "body_fields": {
+        "department": "Int",
+        "role": "String",
+        "role_id": "Int",
+        "username": "String"
+      },
+      "function": "add_user_role",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/user/all_avatars": {
+    "explanation": "The \"/user/all_avatars\" method retrieves all avatars associated with a user. It's executed using a GET request and doesn't require any specific parameters for its operation. The response would typically contain the list of avatars linked to that user account.",
+    "request": {
+      "function": "all_avatars",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/create_role": {
+    "explanation": "This method creates a new role. It uses the POST request type, requires fields for payment, role name, department ID, and rank level, and includes authentication with a 'Bearer' token in the header.",
+    "request": {
+      "body_fields": {
+        "department": "Int",
+        "payment": "Int",
+        "rang": "Int",
+        "role": "String"
+      },
+      "function": "create_role",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "POST"
+    },
+    "response": {}
+  },
+  "/user/delete_role": {
+    "explanation": "The method \"delete_user_role\" with DELETE HTTP request removes a specific role assigned to a user.",
+    "request": {
+      "function": "delete_user_role",
+      "method": "DELETE"
+    },
+    "response": {}
+  },
+  "/user/department/name/:department([0-9]+)": {
+    "explanation": "This method retrieves the name of a specific department based on its ID number. It accepts a URL request containing an integer (department ID), looks up that ID to find the corresponding department, and returns the department's name as the response.",
+    "request": {
+      "function": "department_name",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/department/roles": {
+    "explanation": "The `all_departments` function retrieves information about all departments.",
+    "request": {
+      "function": "all_departments",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/department/roles/:department([0-9]+)": {
+    "explanation": "This method retrieves the roles associated with a specific department identified by an integer ID.",
+    "request": {
+      "function": "department_roles",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/department/start/:department(.*)": {
+    "explanation": "This code snippet describes a route in an API that responds to GET requests for `/user/department/start/:department`. The function being called on this endpoint is `starter_role`.\n\nIn plain terms:\n- It's an endpoint used by the server.\n- When accessed via GET method, it triggers the `starter_role` function. \n- This function presumably assigns or modifies a role associated with the department specified in the URL path.\n\nThe specifics of what `starter_role` does internally is not detailed here - just that it's being called when this particular route gets a GET request.",
+    "request": {
+      "function": "starter_role",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/full/:username([a-zA-Z0-9\\-]+)": {
+    "explanation": "The provided code snippet represents an API endpoint configuration for retrieving full user information based on a username. This means that when a GET request is made to this endpoint using a specific username (which follows certain patterns including alphanumeric characters and hyphens), the server will execute a function named 'full_user_info'. The purpose of this function, as described in the documentation, is to provide comprehensive details about the user matching the given input.",
+    "request": {
+      "function": "full_user_info",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/roles/:username([a-zA-Z0-9\\-]+)": {
+    "explanation": "This method retrieves the roles assigned to a specific user identified by their username. It accepts the username as input (in the format [a-zA-Z0-9\\-]+) and returns the roles associated with that user.",
+    "request": {
+      "function": "user_roles",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "/user/set_avatar": {
+    "explanation": "This method allows you to update your profile avatar by sending a PUT request with an 'avatar' field containing the new avatar data. The request must include a 'Bearer' token in the headers for authentication. No response details are specified, indicating that there might not be a direct confirmation of success or failure after executing this operation.",
+    "request": {
+      "body_fields": {
+        "avatar": "String"
+      },
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "put"
+    },
+    "response": {}
+  },
+  "/user/set_department": {
+    "explanation": "This method allows you to change the department of a user by providing their username and the new department name. It uses the PUT HTTP method for updating data. The 'Bearer' keyword in headers is likely related to authentication tokens needed to execute this operation.",
+    "request": {
+      "body_fields": {
+        "department": "String",
+        "username": "String"
+      },
+      "function": "set_users_department",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "PUT"
+    },
+    "response": {}
+  },
+  "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
+    "explanation": "The `user_unactive_roles` method retrieves information about any inactive roles associated with a specific user identified by their username.",
+    "request": {
+      "function": "user_unactive_roles",
+      "method": "GET"
+    },
+    "response": {}
+  },
+  "explanation:": {
+    "request": {
+      "body_fields": "required fields in request body",
+      "function": "technical field, just for backend",
+      "header_fields": "required fields in request header",
+      "method": "allowed REST API method"
+    },
+    "response": {
+      "body": "response body, only first 2 results",
+      "headers": "response headers",
+      "status_code": "response status code",
+      "text": "response text"
+    }
+  }
 }

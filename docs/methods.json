@@ -1,546 +1,546 @@
 {
-    "/auth/login": {
-        "function": "enable_auth",
-        "method": "POST",
-        "body_fields": {
-            "login": "String",
-            "password": "String"
-        }
-    },
-    "/auth/reg": {
-        "function": "enable_reg",
-        "method": "POST",
-        "body_fields": {
-            "login": "String",
-            "password": "String",
-            "temp_token": "String"
-        }
-    },
-    "/auth/amiauthed": {
-        "function": "am_i_authed",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/auth/amiadmin": {
-        "function": "am_i_admin",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/auth/isactive/:username(.*)": {
-        "function": "is_user_active",
-        "method": "GET"
-    },
-    "/auth/isuser/:username(.*)": {
-        "function": "is_user",
-        "method": "GET"
-    },
-    "/auth/delete": {
-        "function": "enable_delete",
-        "method": "DELETE",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/auth/add_userrights": {
-        "function": "add_userrights",
-        "method": "PUT",
-        "body_fields": {
-            "username": "String",
-            "rights": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/auth/change_username": {
-        "function": "change_username",
-        "method": "PUT",
-        "body_fields": {
-            "new_username": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/auth/change_password": {
-        "function": "change_password",
-        "method": "PUT",
-        "body_fields": {
-            "unlogin": "Bool",
-            "new_password": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/auth/register_true": {
-        "function": "register_true",
-        "method": "PUT",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/auth/isadmin/:username(.*)": {
-        "method": "get"
-    },
-    "/user/:username([a-zA-Z0-9\\-]+)": {
-        "function": "user_info",
-        "method": "GET"
-    },
-    "/user/full/:username([a-zA-Z0-9\\-]+)": {
-        "function": "full_user_info",
-        "method": "GET"
-    },
-    "/user/roles/:username([a-zA-Z0-9\\-]+)": {
-        "function": "user_roles",
-        "method": "GET"
-    },
-    "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
-        "function": "user_unactive_roles",
-        "method": "GET"
-    },
-    "/user/add_role": {
-        "function": "add_user_role",
-        "method": "POST",
-        "body_fields": {
-            "username": "String",
-            "role_id": "Int",
-            "role": "String",
-            "department": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/user/delete_role": {
-        "function": "delete_user_role",
-        "method": "DELETE"
-    },
-    "/user/create_role": {
-        "function": "create_role",
-        "method": "POST",
-        "body_fields": {
-            "payment": "Int",
-            "role": "String",
-            "department": "Int",
-            "rang": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/user/department/roles/:department([0-9]+)": {
-        "function": "department_roles",
-        "method": "GET"
-    },
-    "/user/department/name/:department([0-9]+)": {
-        "function": "department_name",
-        "method": "GET"
-    },
-    "/user/set_department": {
-        "function": "set_users_department",
-        "method": "PUT",
-        "body_fields": {
-            "department": "String",
-            "username": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/user/department/roles": {
-        "function": "all_departments",
-        "method": "GET"
-    },
-    "/user/department/start/:department(.*)": {
-        "function": "starter_role",
-        "method": "GET"
-    },
-    "/user/all_avatars": {
-        "function": "all_avatars",
-        "method": "GET"
-    },
-    "/user/set_avatar": {
-        "method": "put",
-        "body_fields": {
-            "avatar": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/media/get/:filename(.*)": {
-        "method": "get",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/achivements/qr/:achivement_id([0-9]+)": {
-        "function": "achivement_qr",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/qr/:post_id([0-9]+)": {
-        "method": "get",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/transactions/prepare": {
-        "function": "prepare_transaction",
-        "method": "POST",
-        "body_fields": {
-            "receiver": "String",
-            "amount": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/transactions/send": {
-        "function": "transfer",
-        "method": "POST",
-        "body_fields": {
-            "tr_id": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/transactions/balance": {
-        "function": "get_balance",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/transactions/my": {
-        "method": "get",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/authors": {
-        "function": "get_authors_list",
-        "method": "GET"
-    },
-    "/social/news:search(.*)": {
-        "function": "get_news",
-        "method": "GET",
-        "params": [
-            "start",
-            "size"
-        ],
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/comments:search(.*)": {
-        "function": "get_comments",
-        "method": "GET",
-        "params": [
-            "post_id",
-            "start",
-            "size"
-        ],
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/media/pics/:post_id(.*)": {
-        "function": "get_post_media",
-        "method": "GET",
-        "header_fields": [
-            "pics"
-        ]
-    },
-    "/social/new/:post_id(.*)": {
-        "function": "get_post",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/posts": {
-        "function": "get_all_posts",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/titles": {
-        "function": "get_all_titles",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/saved": {
-        "function": "get_saved_posts",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/save": {
-        "function": "delete_saved_post",
-        "method": "DELETE",
-        "body_fields": {
-            "post_id": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/search:search(.*)": {
-        "function": "search_by_title",
-        "method": "GET",
-        "params": [
-            "title"
-        ],
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/like": {
-        "function": "delete_like",
-        "method": "DELETE",
-        "body_fields": {
-            "post_id": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/dislike": {
-        "function": "delete_dislike",
-        "method": "DELETE",
-        "body_fields": {
-            "post_id": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/comments": {
-        "function": "add_comment",
-        "method": "POST",
-        "body_fields": {
-            "comment": "String",
-            "post_id": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/social/categories": {
-        "function": "get_post_categories",
-        "method": "GET"
-    },
-    "/social/bycat/:category([0-9\\-]+)": {
-        "method": "get"
-    },
-    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
-        "function": "user_achivemets",
-        "method": "GET"
-    },
-    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
-        "function": "full_user_achivemets",
-        "method": "GET"
-    },
-    "/achivements/add": {
-        "function": "add_achivement",
-        "method": "POST",
-        "body_fields": {
-            "username": "String",
-            "achivement_id": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/achivements/delete": {
-        "function": "delete_achivement",
-        "method": "DELETE",
-        "body_fields": {
-            "username": "String",
-            "achivement_id": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/achivements/tree/:tree_id([0-9]+)": {
-        "function": "achivements_tree",
-        "method": "GET"
-    },
-    "/achivements/info/:achivement_id([0-9]+)": {
-        "function": "achivement_info",
-        "method": "GET"
-    },
-    "/achivements/create": {
-        "function": "create_achivement",
-        "method": "POST",
-        "body_fields": {
-            "name": "String",
-            "tree_id": "Int",
-            "level": "Int",
-            "pic": "String",
-            "description": "String",
-            "stages": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/achivements/pictures": {
-        "function": "achivement_pictures",
-        "method": "GET"
-    },
-    "/achivements/no_dep": {
-        "function": "no_department_achivements",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/achivements/by_user": {
-        "function": "department_achivements_by_user",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/achivements/qr_code/:achivement_id([0-9]+)": {
-        "method": "get"
-    },
-    "/post/:id(\\d+)": {
-        "function": "get_page_content",
-        "method": "GET"
-    },
-    "/post/author/:username([a-zA-Z0-9\\-]+)": {
-        "function": "get_page_author",
-        "method": "GET"
-    },
-    "/post/add_page": {
-        "function": "add_page",
-        "method": "POST",
-        "body_fields": {
-            "post_path": "String",
-            "category": "String",
-            "title": "String",
-            "is_secret": "Bool",
-            "author": "String",
-            "text": "String",
-            "likes": "Int",
-            "dislikes": "Int",
-            "saved": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/update_likes": {
-        "function": "update_likes",
-        "method": "PUT",
-        "body_fields": {
-            "post_id": "Int",
-            "likes": "Int"
-        }
-    },
-    "/post/favourite/": {
-        "function": "get_favourite_posts",
-        "method": "GET",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/favourite": {
-        "function": "post_add_favourite_post",
-        "method": "POST",
-        "body_fields": {
-            "post_id": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/favourite/:id(\\d+)": {
-        "function": "delete_favourite_post",
-        "method": "DELETE",
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/rename_category": {
-        "function": "rename_category",
-        "method": "PUT",
-        "body_fields": {
-            "old_name": "String",
-            "new_name": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/delete": {
-        "function": "delete_post",
-        "method": "DELETE",
-        "body_fields": {
-            "post_id": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/update": {
-        "function": "update_post",
-        "method": "PUT",
-        "body_fields": {
-            "post_id": "String",
-            "text": "String",
-            "is_secret": "String",
-            "likes": "String",
-            "dislikes": "String",
-            "saved_count": "String",
-            "title": "String",
-            "author": "String",
-            "category": "String"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/add_media": {
-        "function": "add_media",
-        "method": "POST",
-        "body_fields": {
-            "post_id": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/post/delete_media": {
-        "function": "delete_media",
-        "method": "DELETE",
-        "body_fields": {
-            "post_id": "Int"
-        },
-        "header_fields": [
-            "Bearer"
-        ]
-    },
-    "/authors_list": {
-        "method": "get",
-        "header_fields": [
-            "Bearer"
-        ]
-    }
+  "/achivements/add": {
+    "body_fields": {
+      "achivement_id": "Int",
+      "username": "String"
+    },
+    "function": "add_achivement",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/achivements/by_user": {
+    "function": "department_achivements_by_user",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/achivements/create": {
+    "body_fields": {
+      "description": "String",
+      "level": "Int",
+      "name": "String",
+      "pic": "String",
+      "stages": "Int",
+      "tree_id": "Int"
+    },
+    "function": "create_achivement",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/achivements/delete": {
+    "body_fields": {
+      "achivement_id": "Int",
+      "username": "String"
+    },
+    "function": "delete_achivement",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/achivements/info/:achivement_id([0-9]+)": {
+    "function": "achivement_info",
+    "method": "GET"
+  },
+  "/achivements/no_dep": {
+    "function": "no_department_achivements",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/achivements/pictures": {
+    "function": "achivement_pictures",
+    "method": "GET"
+  },
+  "/achivements/qr/:achivement_id([0-9]+)": {
+    "function": "achivement_qr",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/achivements/qr_code/:achivement_id([0-9]+)": {
+    "method": "get"
+  },
+  "/achivements/tree/:tree_id([0-9]+)": {
+    "function": "achivements_tree",
+    "method": "GET"
+  },
+  "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+    "function": "user_achivemets",
+    "method": "GET"
+  },
+  "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
+    "function": "full_user_achivemets",
+    "method": "GET"
+  },
+  "/auth/add_userrights": {
+    "body_fields": {
+      "rights": "String",
+      "username": "String"
+    },
+    "function": "add_userrights",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "PUT"
+  },
+  "/auth/amiadmin": {
+    "function": "am_i_admin",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/auth/amiauthed": {
+    "function": "am_i_authed",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/auth/change_password": {
+    "body_fields": {
+      "new_password": "String",
+      "unlogin": "Bool"
+    },
+    "function": "change_password",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "PUT"
+  },
+  "/auth/change_username": {
+    "body_fields": {
+      "new_username": "String"
+    },
+    "function": "change_username",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "PUT"
+  },
+  "/auth/delete": {
+    "function": "enable_delete",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/auth/isactive/:username(.*)": {
+    "function": "is_user_active",
+    "method": "GET"
+  },
+  "/auth/isadmin/:username(.*)": {
+    "method": "get"
+  },
+  "/auth/isuser/:username(.*)": {
+    "function": "is_user",
+    "method": "GET"
+  },
+  "/auth/login": {
+    "body_fields": {
+      "login": "String",
+      "password": "String"
+    },
+    "function": "enable_auth",
+    "method": "POST"
+  },
+  "/auth/reg": {
+    "body_fields": {
+      "login": "String",
+      "password": "String",
+      "temp_token": "String"
+    },
+    "function": "enable_reg",
+    "method": "POST"
+  },
+  "/auth/register_true": {
+    "function": "register_true",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "PUT"
+  },
+  "/authors_list": {
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "get"
+  },
+  "/media/get/:filename(.*)": {
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "get"
+  },
+  "/post/:id(\\d+)": {
+    "function": "get_page_content",
+    "method": "GET"
+  },
+  "/post/add_media": {
+    "body_fields": {
+      "post_id": "Int"
+    },
+    "function": "add_media",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/post/add_page": {
+    "body_fields": {
+      "author": "String",
+      "category": "String",
+      "dislikes": "Int",
+      "is_secret": "Bool",
+      "likes": "Int",
+      "post_path": "String",
+      "saved": "Int",
+      "text": "String",
+      "title": "String"
+    },
+    "function": "add_page",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/post/author/:username([a-zA-Z0-9\\-]+)": {
+    "function": "get_page_author",
+    "method": "GET"
+  },
+  "/post/delete": {
+    "body_fields": {
+      "post_id": "Int"
+    },
+    "function": "delete_post",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/post/delete_media": {
+    "body_fields": {
+      "post_id": "Int"
+    },
+    "function": "delete_media",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/post/favourite": {
+    "body_fields": {
+      "post_id": "Int"
+    },
+    "function": "post_add_favourite_post",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/post/favourite/": {
+    "function": "get_favourite_posts",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/post/favourite/:id(\\d+)": {
+    "function": "delete_favourite_post",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/post/qr/:post_id([0-9]+)": {
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "get"
+  },
+  "/post/rename_category": {
+    "body_fields": {
+      "new_name": "String",
+      "old_name": "String"
+    },
+    "function": "rename_category",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "PUT"
+  },
+  "/post/update": {
+    "body_fields": {
+      "author": "String",
+      "category": "String",
+      "dislikes": "String",
+      "is_secret": "String",
+      "likes": "String",
+      "post_id": "String",
+      "saved_count": "String",
+      "text": "String",
+      "title": "String"
+    },
+    "function": "update_post",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "PUT"
+  },
+  "/post/update_likes": {
+    "body_fields": {
+      "likes": "Int",
+      "post_id": "Int"
+    },
+    "function": "update_likes",
+    "method": "PUT"
+  },
+  "/social/authors": {
+    "function": "get_authors_list",
+    "method": "GET"
+  },
+  "/social/bycat/:category([0-9\\-]+)": {
+    "method": "get"
+  },
+  "/social/categories": {
+    "function": "get_post_categories",
+    "method": "GET"
+  },
+  "/social/comments": {
+    "body_fields": {
+      "comment": "String",
+      "post_id": "String"
+    },
+    "function": "add_comment",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/social/comments:search(.*)": {
+    "function": "get_comments",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET",
+    "params": [
+      "post_id",
+      "start",
+      "size"
+    ]
+  },
+  "/social/dislike": {
+    "body_fields": {
+      "post_id": "String"
+    },
+    "function": "delete_dislike",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/social/like": {
+    "body_fields": {
+      "post_id": "String"
+    },
+    "function": "delete_like",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/social/media/pics/:post_id(.*)": {
+    "function": "get_post_media",
+    "header_fields": [
+      "pics"
+    ],
+    "method": "GET"
+  },
+  "/social/new/:post_id(.*)": {
+    "function": "get_post",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/social/news:search(.*)": {
+    "function": "get_news",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET",
+    "params": [
+      "start",
+      "size"
+    ]
+  },
+  "/social/posts": {
+    "function": "get_all_posts",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/social/save": {
+    "body_fields": {
+      "post_id": "String"
+    },
+    "function": "delete_saved_post",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "DELETE"
+  },
+  "/social/saved": {
+    "function": "get_saved_posts",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/social/search:search(.*)": {
+    "function": "search_by_title",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET",
+    "params": [
+      "title"
+    ]
+  },
+  "/social/titles": {
+    "function": "get_all_titles",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/transactions/balance": {
+    "function": "get_balance",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "GET"
+  },
+  "/transactions/my": {
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "get"
+  },
+  "/transactions/prepare": {
+    "body_fields": {
+      "amount": "Int",
+      "receiver": "String"
+    },
+    "function": "prepare_transaction",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/transactions/send": {
+    "body_fields": {
+      "tr_id": "String"
+    },
+    "function": "transfer",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/user/:username([a-zA-Z0-9\\-]+)": {
+    "function": "user_info",
+    "method": "GET"
+  },
+  "/user/add_role": {
+    "body_fields": {
+      "department": "Int",
+      "role": "String",
+      "role_id": "Int",
+      "username": "String"
+    },
+    "function": "add_user_role",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/user/all_avatars": {
+    "function": "all_avatars",
+    "method": "GET"
+  },
+  "/user/create_role": {
+    "body_fields": {
+      "department": "Int",
+      "payment": "Int",
+      "rang": "Int",
+      "role": "String"
+    },
+    "function": "create_role",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "POST"
+  },
+  "/user/delete_role": {
+    "function": "delete_user_role",
+    "method": "DELETE"
+  },
+  "/user/department/name/:department([0-9]+)": {
+    "function": "department_name",
+    "method": "GET"
+  },
+  "/user/department/roles": {
+    "function": "all_departments",
+    "method": "GET"
+  },
+  "/user/department/roles/:department([0-9]+)": {
+    "function": "department_roles",
+    "method": "GET"
+  },
+  "/user/department/start/:department(.*)": {
+    "function": "starter_role",
+    "method": "GET"
+  },
+  "/user/full/:username([a-zA-Z0-9\\-]+)": {
+    "function": "full_user_info",
+    "method": "GET"
+  },
+  "/user/roles/:username([a-zA-Z0-9\\-]+)": {
+    "function": "user_roles",
+    "method": "GET"
+  },
+  "/user/set_avatar": {
+    "body_fields": {
+      "avatar": "String"
+    },
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "put"
+  },
+  "/user/set_department": {
+    "body_fields": {
+      "department": "String",
+      "username": "String"
+    },
+    "function": "set_users_department",
+    "header_fields": [
+      "Bearer"
+    ],
+    "method": "PUT"
+  },
+  "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
+    "function": "user_unactive_roles",
+    "method": "GET"
+  }
 }

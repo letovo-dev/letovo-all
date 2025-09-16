@@ -13,7 +13,7 @@ docker_image=false
 # Read and parse BuildConfig.json
 config_file="./BuildConfig.json"
 
-python3 action-maker.py
+python3 src/python-helpers/action-maker.py
 
 if [ -f "$config_file" ]; then
     test_file=$(jq -r '.test_file' "$config_file")

@@ -33,17 +33,15 @@ here is the method data you need to use to generate the test function:
 with open("./docs/methods_v2.json", "r") as file:
     data = json.load(file)
     for url in data:
-        if url[0] != '/':
+        if url[0] != "/":
             continue
-        if data[url]['request']['method'] != 'get':
+        if data[url]["request"]["method"] != "get":
             continue
         method_data = {}
         method_data[url] = data[url]
 
         message = test_prompt + str(method_data)
-        response: ChatResponse = chat(model="qwen2", messages=[
-            {"role": "user", "content": message}
-        ])
+        response: ChatResponse = chat(model="qwen2", messages=[{"role": "user", "content": message}])
         test_function = response.message.content.strip()
         print(test_function)
         print("========================================")

@@ -6,14 +6,14 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-USERNAME = 'scv-7'
-PASSWORD = '7'
-TOKEN = '5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9'
-URL = 'http://127.0.0.1/api/'
+USERNAME = "scv-7"
+PASSWORD = "7"
+TOKEN = "5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9"
+URL = "http://127.0.0.1/api/"
 ID = 1
-REGEX_LINE = re.compile(r':.*\)')
-METHODS_FILE = './docs/methods.json'
-RESPONSES_FILE = './docs/methods_v2.json'
+REGEX_LINE = re.compile(r":.*\)")
+METHODS_FILE = "./docs/methods.json"
+RESPONSES_FILE = "./docs/methods_v2.json"
 CATEGORY = 1
 
 TO_REPLACE = {
@@ -23,25 +23,25 @@ TO_REPLACE = {
     r":category\([0-9\-]+": str(CATEGORY),
 }
 
-with open(METHODS_FILE, 'r') as file:
+with open(METHODS_FILE, "r") as file:
     SEARCH_REQUESTS = json.load(file)
 
 
 def requestUrl(url: str) -> str:
     if REGEX_LINE.search(url):
-        if 'username' in url:
-            url = re.sub(REGEX_LINE, '', url)
+        if "username" in url:
+            url = re.sub(REGEX_LINE, "", url)
             url = url + USERNAME
-        elif 'id' in url:
-            url = re.sub(REGEX_LINE, '', url)
+        elif "id" in url:
+            url = re.sub(REGEX_LINE, "", url)
             url = url + str(ID)
-        elif 'filename' in url:
+        elif "filename" in url:
             return False
-        elif 'department' in url:
-            url = re.sub(REGEX_LINE, '', url)
+        elif "department" in url:
+            url = re.sub(REGEX_LINE, "", url)
             url = url + str(ID)
-        elif 'category' in url:
-            url = re.sub(REGEX_LINE, '', url)
+        elif "category" in url:
+            url = re.sub(REGEX_LINE, "", url)
             url = url + str(CATEGORY)
     for key, value in TO_REPLACE.items():
         if key in url:
@@ -52,74 +52,74 @@ def requestUrl(url: str) -> str:
 def formatHeaders(headers: list[str]) -> dict:
     header = {}
     for item in headers:
-        if item.lower() == 'Bearer'.lower():
-            header['Bearer'] = TOKEN
+        if item.lower() == "Bearer".lower():
+            header["Bearer"] = TOKEN
     return header
 
 
 def sendRequest(url: str, data: dict) -> requests.Response:
     url = requestUrl(url)
     headers = {}
-    if 'header_fields' in data:
-        headers = formatHeaders(data['header_fields'])
-    if data['method'] == 'get' and url:
+    if "header_fields" in data:
+        headers = formatHeaders(data["header_fields"])
+    if data["method"] == "get" and url:
         response = requests.get(URL + url, headers=headers, verify=False)
         return response
     return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     result = {
         "explanation:": {
             "request": {
                 "function": "technical field, just for backend",
                 "method": "allowed REST API method",
                 "body_fields": "required fields in request body",
-                "header_fields": "required fields in request header"
+                "header_fields": "required fields in request header",
             },
             "response": {
                 "status_code": "response status code",
                 "headers": "response headers",
                 "text": "response text",
-                "body": "response body, only first 2 results"
-            }
+                "body": "response body, only first 2 results",
+            },
         }
     }
     for url in SEARCH_REQUESTS:
-        print(f'Sending request to {url}, {SEARCH_REQUESTS[url]["method"]}')
-        if 'request' in SEARCH_REQUESTS[url]:
-            response = sendRequest(url, SEARCH_REQUESTS[url]['request'])
+        print(f"Sending request to {url}, {SEARCH_REQUESTS[url]['method']}")
+        if "request" in SEARCH_REQUESTS[url]:
+            response = sendRequest(url, SEARCH_REQUESTS[url]["request"])
         else:
-            try: 
+            try:
                 response = sendRequest(url, SEARCH_REQUESTS[url])
             except Exception as e:
-                print(f'Error: {e}')
-                print(f'url: {url}')
+                print(f"Error: {e}")
+                print(f"url: {url}")
                 exit(1)
         result[url] = {}
-        result[url]['request'] = SEARCH_REQUESTS[url]
-        result[url]['response'] = {}
+        result[url]["request"] = SEARCH_REQUESTS[url]
+        result[url]["response"] = {}
         if response:
-            result[url]['response']['status_code'] = response.status_code
-            if response.text != '':
-                if 'json' in response.headers['Content-Type']:
+            result[url]["response"]["status_code"] = response.status_code
+            if response.text != "":
+                if "json" in response.headers["Content-Type"]:
                     try:
-                        result[url]['response']['body'] = json.loads(response.text.replace('\\', ''))
+                        result[url]["response"]["body"] = json.loads(response.text.replace("\\", ""))
                     except:
                         print(f"Error parsing JSON for URL: {url}")
                         print(response.text)
                         exit(1)
                     try:
-                        if "result" in result[url]['response']['body']:
-                            result[url]['response']['body']["result"] = result[url]['response']['body']["result"][:2]
+                        if "result" in result[url]["response"]["body"]:
+                            result[url]["response"]["body"]["result"] = result[url]["response"]["body"]["result"][:2]
                     except:
-                        print(result[url]['response']['body'])
+                        print(result[url]["response"]["body"])
                         print(f"url: {url}")
                         exit(1)
-                elif 'text' in response.headers['Content-Type']:
-                    result[url]['response']['text'] = response.text
-            if response.headers != '' and response.headers != None and len(response.headers) != 0:
-                result[url]['response']['headers'] = list(response.headers.keys())
+                elif "text" in response.headers["Content-Type"]:
+                    result[url]["response"]["text"] = response.text
+            if response.headers != "" and response.headers != None and len(response.headers) != 0:
+                result[url]["response"]["headers"] = list(response.headers.keys())
         # time.sleep(0.1)
-    with open(RESPONSES_FILE, 'w') as file:
+    with open(RESPONSES_FILE, "w") as file:
         json.dump(result, file, indent=4)
