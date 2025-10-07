@@ -61,6 +61,13 @@ void hi(std::unique_ptr<restinio::router::express_router_t<>> &router,
             std::hash<std::string>{}(new_body["token"].GetString())))
         .done();
   });
+    router.get()->http_get("/test_file", [logger_ptr](auto req, auto) {
+        return req->create_response()
+                .append_header(restinio::http_field::content_type, "text/html")
+                .set_body(restinio::sendfile("my_file.html"))
+                .done();
+        
+    });
 }
 
 std::unique_ptr<restinio::router::express_router_t<>>

@@ -67,5 +67,6 @@ node_modules/*
 *.tar
 
 src/*.png
+src/pages/images/*/*.png
 
 src/configs/*

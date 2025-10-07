@@ -71,27 +71,7 @@ DECLARE
     rec RECORD;
     cat_id INTEGER;
 BEGIN
-    FOR rec IN SELECT DISTINCT category_name FROM posts LOOP
-        IF rec.category_name IS NULL OR trim(rec.category_name) = '' THEN
-            CONTINUE;
-        END IF;
-
-        SELECT category_id INTO cat_id
-        FROM post_category
-        WHERE category_name = rec.category_name;
-
-        IF NOT FOUND THEN
-            INSERT INTO post_category (category_name) 
-            VALUES (rec.category_name)
-            RETURNING category_id INTO cat_id;
-        END IF;
-
-        UPDATE posts
-        SET category = cat_id
-        WHERE category_name = rec.category_name;
-
-        RAISE NOTICE 'Assigned category_id: % for category_name: %', cat_id, rec.category_name;
-    END LOOP;
+update posts set post_path = null where post_path = '';
 END;
 $$ LANGUAGE plpgsql;
 
