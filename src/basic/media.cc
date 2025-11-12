@@ -94,12 +94,11 @@ bool is_secret(std::string file_name, std::string token,
   if (file_name[0] != '/') {
     file_name = '/' + file_name;
   }
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
   std::vector<std::string> params = {file_name};
   pqxx::result res = con->execute_params(
       "SELECT p.is_secret from \"posts\" p where p.post_path = ($1);", params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (res.empty())
     return false;

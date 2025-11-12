@@ -1,9 +1,9 @@
 import requests
 import pytest
 
-USERNAME = "scv-7"
+USERNAME = "scv"
 PASSWORD = "7"
-TOKEN = "5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9"
+TOKEN = "bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14"
 URL = "https://127.0.0.1/api/"
 ID = 1
 
@@ -38,7 +38,7 @@ def test_am_i_admin():
 
 
 def test_is_user_active():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/auth/isactive/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()
@@ -50,7 +50,7 @@ def test_is_user_active():
 
 
 def test_is_user():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/auth/isuser/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()
@@ -74,7 +74,7 @@ def test_auth_isadmin():
 
 
 def test_user_info():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/user/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()
@@ -83,7 +83,7 @@ def test_user_info():
     assert len(data["result"]) > 0
     user_data = data["result"][0]
     assert user_data["userid"] == "1762"
-    assert user_data["username"] == "scv-7"
+    assert user_data["username"] == "scv"
     assert user_data["userrights"] == "admin"
     assert user_data["jointime"] == "2024-12-05 23:52:49.393567"
     assert user_data["avatar_pic"] == "images/avatars/example_1.png"
@@ -98,7 +98,7 @@ def test_user_info():
 
 
 def test_full_user_info():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/user/full/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()
@@ -124,7 +124,7 @@ def test_full_user_info():
 
 
 def test_user_roles():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/user/roles/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()
@@ -144,7 +144,7 @@ def test_user_roles():
 
 
 def test_user_unactive_roles():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/user/unactive_roles/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()
@@ -441,7 +441,7 @@ def test_social_bycat():
 
 
 def test_user_achivemets():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/achivements/user/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()
@@ -613,7 +613,7 @@ def test_achivements_qr_code():
 
 
 def test_get_page_author():
-    username = "scv-7"
+    username = "scv"
     response = requests.get(f"{URL}/post/author/{username}", verify=False)
     assert response.status_code == 200
     data = response.json()

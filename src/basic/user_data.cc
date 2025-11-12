@@ -3,14 +3,13 @@
 namespace user {
 pqxx::result role(int role_id,
                   std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<int> params = {role_id};
 
   pqxx::result result =
       con->execute_params("select * from \"roles\" where roleid=($1);", params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -20,7 +19,7 @@ pqxx::result role(int role_id,
 
 int role_id(std::string role, int department,
             std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {role, std::to_string(department)};
 
@@ -28,7 +27,6 @@ int role_id(std::string role, int department,
       "select roleid from \"roles\" where rolename=($1) and departmentid=($2);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return -1;
@@ -38,7 +36,7 @@ int role_id(std::string role, int department,
 
 pqxx::result user_role(std::string username,
                        std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username};
 
@@ -48,7 +46,6 @@ pqxx::result user_role(std::string username,
                           "= \"roles\".roleid where \"user\".username=($1);",
                           params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -58,7 +55,7 @@ pqxx::result user_role(std::string username,
 
 pqxx::result user_info(std::string username,
                        std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username};
 
@@ -70,7 +67,6 @@ pqxx::result user_info(std::string username,
       "= \"roles\".roleid where \"user\".username=($1);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -81,7 +77,7 @@ pqxx::result user_info(std::string username,
 
 pqxx::result full_user_info(std::string username,
                             std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username};
 
@@ -95,7 +91,6 @@ pqxx::result full_user_info(std::string username,
       "\"department\".departmentid where \"user\".username = ($1);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -106,7 +101,7 @@ pqxx::result full_user_info(std::string username,
 
 pqxx::result user_roles(std::string username,
                         std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username};
 
@@ -117,7 +112,6 @@ pqxx::result user_roles(std::string username,
       "\"useroles\".username = ($1);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -128,7 +122,7 @@ pqxx::result user_roles(std::string username,
 pqxx::result
 user_unactive_roles(std::string username,
                     std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username};
 
@@ -140,7 +134,6 @@ user_unactive_roles(std::string username,
       "\"useroles\".username = ($1) and \"useroles\".roleid != \"user\".role;",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -151,7 +144,7 @@ user_unactive_roles(std::string username,
 pqxx::result best_user_roles(std::string username,
                              std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   // TODO: not working
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username};
 
@@ -163,7 +156,6 @@ pqxx::result best_user_roles(std::string username,
       "\"roles\".departmentid) and \"useroles\".username = ($1);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -175,7 +167,7 @@ bool add_user_role(std::string username, std::string role, int department,
                    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   int role_id = user::role_id(role, department, pool_ptr);
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username, std::to_string(role_id)};
   try {
@@ -185,16 +177,14 @@ bool add_user_role(std::string username, std::string role, int department,
     con->execute_params("UPDATE \"user\" SET role=($1) WHERE username=($2);",
                         params, true);
   } catch (const pqxx::unique_violation &e) {
-    pool_ptr->returnConnection(std::move(con));
     return false;
   }
-  pool_ptr->returnConnection(std::move(con));
   return true;
 }
 
 bool add_user_role(std::string username, int role_id,
                    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {std::to_string(role_id), username};
   try {
@@ -204,16 +194,14 @@ bool add_user_role(std::string username, int role_id,
     con->execute_params("UPDATE \"user\" SET role=($1) WHERE username=($2);",
                         params, true);
   } catch (const pqxx::unique_violation &e) {
-    pool_ptr->returnConnection(std::move(con));
     return false;
   }
-  pool_ptr->returnConnection(std::move(con));
   return true;
 }
 
 int create_role(std::string role, int department, int rang, int payment,
                 std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {role, std::to_string(department),
                                      std::to_string(rang),
@@ -226,24 +214,21 @@ int create_role(std::string role, int department, int rang, int payment,
         "VALUES($1, $2, $3, $4) returning \"roleid\";",
         params, true);
   } catch (const pqxx::unique_violation &e) {
-    pool_ptr->returnConnection(std::move(con));
     return -1;
   }
-  pool_ptr->returnConnection(std::move(con));
   return result[0]["roleid"].as<int>();
 }
 
 pqxx::result
 department_roles(int department,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<int> params = {department};
 
   pqxx::result result = con->execute_params(
       "SELECT * FROM \"roles\" WHERE departmentid=($1) order by rang;", params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -253,7 +238,7 @@ department_roles(int department,
 
 std::string department_name(int department,
                             std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<int> params = {department};
 
@@ -261,7 +246,6 @@ std::string department_name(int department,
       "SELECT departmentname FROM \"department\" WHERE departmentid=($1);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return "";
@@ -271,7 +255,7 @@ std::string department_name(int department,
 
 int department_id(std::string department,
                   std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {department};
 
@@ -279,7 +263,6 @@ int department_id(std::string department,
       "SELECT departmentid FROM \"department\" WHERE departmentname=($1);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return -1;
@@ -294,7 +277,7 @@ int best_users_role_by_department(
     return -1;
   }
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username, std::to_string(department)};
 
@@ -307,7 +290,6 @@ int best_users_role_by_department(
       "($2) and \"useroles\".username = ($1));",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return user::starter_role(department, pool_ptr);
@@ -322,14 +304,13 @@ int set_users_department(std::string username, int department,
   if (best_users_role == -1) {
     return -1;
   }
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {username, std::to_string(department)};
 
   con->execute_params("UPDATE \"user\" SET role=($1) WHERE username=($2);",
                       params, true);
 
-  pool_ptr->returnConnection(std::move(con));
 
   return best_users_role;
 }
@@ -344,11 +325,10 @@ int set_users_department(std::string username, std::string department,
 }
 
 pqxx::result all_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   pqxx::result result = con->execute("SELECT * FROM \"department\";");
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return {};
@@ -358,7 +338,7 @@ pqxx::result all_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
 
 int starter_role(int department,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<int> params = {department};
 
@@ -366,7 +346,6 @@ int starter_role(int department,
       "select roleid from \"roles\" where departmentid=($1) and rang=0;",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return -1;
@@ -385,14 +364,13 @@ int starter_role(std::string department,
 
 void set_avatar(std::string username, std::string avatar,
                 std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {avatar, username};
 
   con->execute_params(
       "UPDATE \"user\" SET avatar_pic=($1) WHERE username=($2);", params, true);
 
-  pool_ptr->returnConnection(std::move(con));
 }
 
 std::vector<std::string> all_avatars(bool is_admin) {

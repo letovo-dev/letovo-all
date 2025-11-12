@@ -29,14 +29,12 @@ std::string get_username(std::string token,
     return decoded;
   }
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   std::vector<std::string> params = {decoded};
 
   pqxx::result result = con->execute_params(
       "SELECT * FROM \"user\" WHERE \"username\"=($1);", params);
-
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     users_cash.remove_user(decoded);
@@ -78,12 +76,11 @@ bool is_user(std::string username,
   }
   std::vector<std::string> params = {username};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   pqxx::result result = con->execute_params(
       "SELECT * FROM \"user\" WHERE \"username\"=($1);", params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     users_cash.remove_user(username);
@@ -93,18 +90,21 @@ bool is_user(std::string username,
   return true;
 }
 
-bool is_rights_by_username(std::string username,
+bool is_rights_by_username(const std::string& username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
-                           std::string rights) {
-  std::vector<std::string> params = {username, rights};
+                           const std::string& rights) {
+  static const std::unordered_set<std::string> allowed = {"write_posts", "admin", "moder", "main_page"};
+  if (!allowed.count(rights)) {
+    return false;
+  }
+  std::vector<std::string> params = { username };
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   pqxx::result result = con->execute_params(
-      "SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"userrights\"=($2);",
+      "SELECT * FROM \"role\" WHERE \"username\"=($1) AND \""+ rights + "\"=true;",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return false;
@@ -116,14 +116,13 @@ bool is_active(std::string username,
                std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::vector<std::string> params = {username};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   pqxx::result result =
       con->execute_params("SELECT active FROM \"user\" WHERE \"username\"=($1) "
                           "and \"active\"=true;",
                           params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return false;
@@ -136,13 +135,12 @@ bool auth(std::string username, std::string password,
   std::string passwordHash = std::to_string(std::hash<std::string>{}(password));
   std::vector<std::string> params = {username, passwordHash};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   pqxx::result result = con->execute_params(
       "SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"passwdhash\"=($2);",
       params);
 
-  pool_ptr->returnConnection(std::move(con));
 
   if (result.empty()) {
     return false;
@@ -155,16 +153,14 @@ bool reg(std::string username, std::string password_hash, std::string userid,
          std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::vector<std::string> params = {userid, username, password_hash};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
   try {
     con->execute_params("INSERT INTO \"user\" (userid, username, passwdhash, "
                         "userrights, jointime) VALUES($1, $2, $3, '', now());",
                         params, true);
   } catch (const pqxx::unique_violation &e) {
-    pool_ptr->returnConnection(std::move(con));
     return false;
   }
-  pool_ptr->returnConnection(std::move(con));
   return true;
 }
 
@@ -172,12 +168,11 @@ bool delete_user(std::string username,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::vector<std::string> params = {username};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   con->execute_params("DELETE FROM \"user\" WHERE \"username\"=($1);", params,
                       true);
 
-  pool_ptr->returnConnection(std::move(con));
 
   return true;
 }
@@ -186,13 +181,12 @@ bool add_userrights(std::string username, std::string rights,
                     std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::vector<std::string> params = {rights, username};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   con->execute_params(
       "UPDATE \"user\" SET \"userrights\"=($1) WHERE \"username\"=($2);",
       params, true);
 
-  pool_ptr->returnConnection(std::move(con));
 
   return true;
 }
@@ -201,7 +195,7 @@ bool change_username(std::string username, std::string new_username,
                      std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::vector<std::string> params = {new_username, username};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   con->execute_params(
       "UPDATE \"user\" SET \"username\"=($1) WHERE \"username\"=($2);", params,
@@ -212,7 +206,6 @@ bool change_username(std::string username, std::string new_username,
   users_cash.remove_user(username);
   users_cash.add_user(new_username);
 
-  pool_ptr->returnConnection(std::move(con));
 
   return true;
 }
@@ -223,13 +216,12 @@ bool change_password(std::string username, std::string new_password,
       std::to_string(std::hash<std::string>{}(new_password));
   std::vector<std::string> params = {new_password_hash, username};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   con->execute_params(
       "UPDATE \"user\" SET \"passwdhash\"=($1) WHERE \"username\"=($2);",
       params, true);
 
-  pool_ptr->returnConnection(std::move(con));
 
   return true;
 }
@@ -238,13 +230,12 @@ bool register_true(std::string username,
                    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::vector<std::string> params = {username};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   con->execute_params(
       "UPDATE \"user\" SET \"registered\"=true WHERE \"username\"=($1);",
       params, true);
 
-  pool_ptr->returnConnection(std::move(con));
 
   return true;
 }
@@ -254,13 +245,12 @@ void save_cookie(const std::string &cookie, const std::string username,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::vector<std::string> params = {cookie, username, useragent};
 
-  auto con = std::move(pool_ptr->getConnection());
+  cp::SafeCon con{pool_ptr};
 
   con->execute_params("INSERT INTO \"cookies\" (cookie, username, useragent) "
                       "VALUES($1, $2, $3);",
                       params, true);
 
-  pool_ptr->returnConnection(std::move(con));
 }
 
 std::string get_cookie(const std::string &header) {

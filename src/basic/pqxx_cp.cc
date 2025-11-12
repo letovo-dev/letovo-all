@@ -292,4 +292,12 @@ void ConnectionsManager::returnConnection(
   cv.notify_one();
 }
 
+SafeCon::SafeCon(std::shared_ptr<ConnectionsManager> pool_ptr)
+    : std::unique_ptr<AsyncConnection>(std::move(pool_ptr->getConnection())),
+      pool_ptr_(pool_ptr) {}
+
+SafeCon::~SafeCon() {
+  pool_ptr_->returnConnection(std::move(*this));
+}
+
 } // namespace cp

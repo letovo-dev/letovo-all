@@ -36,9 +36,9 @@ bool is_admin(std::string token,
               std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool is_user(std::string token,
              std::shared_ptr<cp::ConnectionsManager> pool_ptr);
-bool is_rights_by_username(std::string username,
+bool is_rights_by_username(const std::string& username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
-                           std::string rights = "admin");
+                           const std::string& rights = "admin");
 bool is_authed_by_body(std::string req_body,
                        std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool auth(std::string token, std::string password,
