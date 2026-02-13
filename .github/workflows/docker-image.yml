@@ -125,32 +125,27 @@ jobs:
           # Create configs directory
           mkdir -p src/configs
           
-          # Create SQL config pointing to localhost
-          cat << 'SQLEOF' > src/configs/SqlConnectionConfig.json
-          {
+          # Create SQL config using echo (no heredoc)
+          echo '{
             "connections": 5,
             "dbname": "letovo_test",
             "host": "localhost",
             "password": "postgres",
             "user": "postgres",
             "port": 5432
-          }
-          SQLEOF
+          }' > src/configs/SqlConnectionConfig.json
           
           # Create server config
-          cat << 'SRVEOF' > src/configs/ServerConfig.json
-          {
+          echo '{
             "adress": "0.0.0.0",
             "port": 8080,
             "thread_pool_size": 2,
             "certs_path": "./certs",
             "update_hashes": false
-          }
-          SRVEOF
+          }' > src/configs/ServerConfig.json
           
           # Create pages config
-          cat << 'PGEOF' > src/configs/PagesConfig.json
-          {
+          echo '{
             "wiki_path": "/tmp/wiki",
             "user_avatars_path": "/tmp/avatars",
             "admin_avatars_path": "/tmp/admin_avatars",
@@ -159,16 +154,13 @@ jobs:
             "secret_example_path": "/tmp/secrets",
             "media_cache_size": 10,
             "create_file": false
-          }
-          PGEOF
+          }' > src/configs/PagesConfig.json
           
           # Create market config
-          cat << 'MKTEOF' > src/configs/MarketConfig.json
-          {
+          echo '{
             "bid_resolver_sleep_time": 1000,
             "junk_user": "system"
-          }
-          MKTEOF
+          }' > src/configs/MarketConfig.json
           
           # Create necessary directories
           mkdir -p /tmp/wiki /tmp/avatars /tmp/admin_avatars /tmp/achievements /tmp/media /tmp/secrets
