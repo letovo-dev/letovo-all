@@ -118,55 +118,76 @@ jobs:
           # Create test database schema
           psql -h localhost -U postgres -d letovo_test -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), password VARCHAR(255));"
           
-          # Ensure we're in the workspace root
-          cd $GITHUB_WORKSPACE
-          pwd
-          
           # Create configs directory
           mkdir -p src/configs
           
-          # Create SQL config using echo (no heredoc)
-          echo '{
-            "connections": 5,
-            "dbname": "letovo_test",
-            "host": "localhost",
-            "password": "postgres",
-            "user": "postgres",
-            "port": 5432
-          }' > src/configs/SqlConnectionConfig.json
+          # Create config files using Python (avoids shell quoting issues)
+          python3 << 'PYSCRIPT'
+          import json
+          import os
           
-          # Create server config
-          echo '{
-            "adress": "0.0.0.0",
-            "port": 8080,
-            "thread_pool_size": 2,
-            "certs_path": "./certs",
-            "update_hashes": false
-          }' > src/configs/ServerConfig.json
+          # SQL config
+          sql_config = {
+              "connections": 5,
+              "dbname": "letovo_test",
+              "host": "localhost",
+              "password": "postgres",
+              "user": "postgres",
+              "port": 5432
+          }
           
-          # Create pages config
-          echo '{
-            "wiki_path": "/tmp/wiki",
-            "user_avatars_path": "/tmp/avatars",
-            "admin_avatars_path": "/tmp/admin_avatars",
-            "achivements_path": "/tmp/achievements",
-            "media_path": "/tmp/media",
-            "secret_example_path": "/tmp/secrets",
-            "media_cache_size": 10,
-            "create_file": false
-          }' > src/configs/PagesConfig.json
+          # Server config
+          server_config = {
+              "adress": "0.0.0.0",
+              "port": 8080,
+              "thread_pool_size": 2,
+              "certs_path": "./certs",
+              "update_hashes": False
+          }
           
-          # Create market config
-          echo '{
-            "bid_resolver_sleep_time": 1000,
-            "junk_user": "system"
-          }' > src/configs/MarketConfig.json
+          # Pages config
+          pages_config = {
+              "wiki_path": "/tmp/wiki",
+              "user_avatars_path": "/tmp/avatars",
+              "admin_avatars_path": "/tmp/admin_avatars",
+              "achivements_path": "/tmp/achievements",
+              "media_path": "/tmp/media",
+              "secret_example_path": "/tmp/secrets",
+              "media_cache_size": 10,
+              "create_file": False
+          }
+          
+          # Market config
+          market_config = {
+              "bid_resolver_sleep_time": 1000,
+              "junk_user": "system"
+          }
+          
+          # Write files
+          with open("src/configs/SqlConnectionConfig.json", "w") as f:
+              json.dump(sql_config, f, indent=2)
+          
+          with open("src/configs/ServerConfig.json", "w") as f:
+              json.dump(server_config, f, indent=2)
+          
+          with open("src/configs/PagesConfig.json", "w") as f:
+              json.dump(pages_config, f, indent=2)
+          
+          with open("src/configs/MarketConfig.json", "w") as f:
+              json.dump(market_config, f, indent=2)
+          
+          print("✅ Created all config files")
+          PYSCRIPT
           
           # Create necessary directories
           mkdir -p /tmp/wiki /tmp/avatars /tmp/admin_avatars /tmp/achievements /tmp/media /tmp/secrets
           
-          echo "✅ Created all test configurations"
+          # Verify files were created
+          echo "Files created:"
           ls -la src/configs/
+          echo ""
+          echo "Sample (SqlConnectionConfig.json):"
+          cat src/configs/SqlConnectionConfig.json
       
       - name: Build with coverage
         env:
