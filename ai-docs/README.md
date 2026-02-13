@@ -1,6 +1,18 @@
 # Letovo Test Suite
 
+[![Test Coverage](https://codecov.io/gh/letovo-dev/letovo-all/branch/main/graph/badge.svg?flag=unittests)](https://codecov.io/gh/letovo-dev/letovo-all)
+[![Tests Status](https://github.com/letovo-dev/letovo-all/actions/workflows/docker-image.yml/badge.svg)](https://github.com/letovo-dev/letovo-all/actions/workflows/docker-image.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/letovo-dev/letovo-all/main?label=coverage&logo=codecov)](https://codecov.io/gh/letovo-dev/letovo-all)
+
 Comprehensive testing framework for the Letovo server application.
+
+## Current Status
+
+| Metric | Status |
+|--------|--------|
+| **Code Coverage** | ![Coverage](https://img.shields.io/codecov/c/github/letovo-dev/letovo-all/main) |
+| **Test Execution** | ![Tests](https://img.shields.io/github/actions/workflow/status/letovo-dev/letovo-all/docker-image.yml?branch=main&label=tests) |
+| **Target Coverage** | 70% |
 
 ## Table of Contents
 

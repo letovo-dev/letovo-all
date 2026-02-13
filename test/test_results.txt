@@ -1,0 +1,619 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-8.3.3, pluggy-1.5.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/sergei-scv/temp/letovo-all/test
+plugins: anyio-4.8.0
+collecting ... collected 213 items
+
+test_achievements_integration.py::test_get_user_achievements_existing PASSED [  0%]
+test_achievements_integration.py::test_get_user_achievements_nonexistent PASSED [  0%]
+test_achievements_integration.py::test_get_user_achievements_structure PASSED [  1%]
+test_achievements_integration.py::test_get_full_user_achievements_existing PASSED [  1%]
+test_achievements_integration.py::test_get_full_user_achievements_nonexistent PASSED [  2%]
+test_achievements_integration.py::test_get_full_user_achievements_includes_all PASSED [  2%]
+test_achievements_integration.py::test_get_achievement_tree_valid PASSED [  3%]
+test_achievements_integration.py::test_get_achievement_tree_invalid PASSED [  3%]
+test_achievements_integration.py::test_get_achievement_tree_structure PASSED [  4%]
+test_achievements_integration.py::test_get_achievement_info_valid PASSED [  4%]
+test_achievements_integration.py::test_get_achievement_info_invalid PASSED [  5%]
+test_achievements_integration.py::test_get_achievement_info_structure PASSED [  5%]
+test_achievements_integration.py::test_get_achievement_pictures PASSED   [  6%]
+test_achievements_integration.py::test_achievement_pictures_are_strings PASSED [  6%]
+test_achievements_integration.py::test_get_no_department_achievements FAILED [  7%]
+test_achievements_integration.py::test_get_achievements_by_user PASSED   [  7%]
+test_achievements_integration.py::test_get_achievements_by_user_no_token FAILED [  7%]
+test_achievements_integration.py::test_get_achievement_qr_code PASSED    [  8%]
+test_achievements_integration.py::test_get_achievement_qr_code_invalid PASSED [  8%]
+test_achievements_integration.py::test_add_achievement_non_admin PASSED  [  9%]
+test_achievements_integration.py::test_add_achievement_no_token PASSED   [  9%]
+test_achievements_integration.py::test_add_achievement_missing_fields PASSED [ 10%]
+test_achievements_integration.py::test_delete_achievement_non_admin PASSED [ 10%]
+test_achievements_integration.py::test_delete_achievement_no_token PASSED [ 11%]
+test_achievements_integration.py::test_delete_achievement_missing_fields PASSED [ 11%]
+test_achievements_integration.py::test_create_achievement_non_admin PASSED [ 12%]
+test_achievements_integration.py::test_create_achievement_no_token PASSED [ 12%]
+test_achievements_integration.py::test_create_achievement_missing_fields PASSED [ 13%]
+test_auth.py::test_placeholder PASSED                                    [ 13%]
+test_auth.py::test_registation PASSED                                    [ 14%]
+test_auth.py::test_login PASSED                                          [ 14%]
+test_auth.py::test_delete_user PASSED                                    [ 15%]
+test_auth_comprehensive.py::test_registration_success PASSED             [ 15%]
+test_auth_comprehensive.py::test_registration_duplicate_username FAILED  [ 15%]
+test_auth_comprehensive.py::test_registration_missing_fields PASSED      [ 16%]
+test_auth_comprehensive.py::test_login_success PASSED                    [ 16%]
+test_auth_comprehensive.py::test_login_wrong_password PASSED             [ 17%]
+test_auth_comprehensive.py::test_login_nonexistent_user PASSED           [ 17%]
+test_auth_comprehensive.py::test_login_missing_fields PASSED             [ 18%]
+test_auth_comprehensive.py::test_am_i_authed_valid_token PASSED          [ 18%]
+test_auth_comprehensive.py::test_am_i_authed_invalid_token PASSED        [ 19%]
+test_auth_comprehensive.py::test_am_i_authed_no_token PASSED             [ 19%]
+test_auth_comprehensive.py::test_am_i_admin_non_admin_user PASSED        [ 20%]
+test_auth_comprehensive.py::test_am_i_admin_no_token PASSED              [ 20%]
+test_auth_comprehensive.py::test_am_i_admin_invalid_token PASSED         [ 21%]
+test_auth_comprehensive.py::test_am_i_uploader_non_uploader PASSED       [ 21%]
+test_auth_comprehensive.py::test_am_i_uploader_no_token PASSED           [ 22%]
+test_auth_comprehensive.py::test_is_user_existing PASSED                 [ 22%]
+test_auth_comprehensive.py::test_is_user_nonexistent PASSED              [ 23%]
+test_auth_comprehensive.py::test_is_user_active_existing PASSED          [ 23%]
+test_auth_comprehensive.py::test_is_user_active_nonexistent PASSED       [ 23%]
+test_auth_comprehensive.py::test_is_admin_existing_user PASSED           [ 24%]
+test_auth_comprehensive.py::test_is_admin_nonexistent_user PASSED        [ 24%]
+test_auth_comprehensive.py::test_change_password_success PASSED          [ 25%]
+test_auth_comprehensive.py::test_change_password_no_token PASSED         [ 25%]
+test_auth_comprehensive.py::test_change_password_invalid_token PASSED    [ 26%]
+test_auth_comprehensive.py::test_change_username_success PASSED          [ 26%]
+test_auth_comprehensive.py::test_change_username_no_token PASSED         [ 27%]
+test_auth_comprehensive.py::test_register_true_with_auth PASSED          [ 27%]
+test_auth_comprehensive.py::test_register_true_no_token PASSED           [ 28%]
+test_auth_comprehensive.py::test_delete_user_success PASSED              [ 28%]
+test_auth_comprehensive.py::test_delete_user_no_token PASSED             [ 29%]
+test_auth_comprehensive.py::test_delete_user_invalid_token PASSED        [ 29%]
+test_auth_comprehensive.py::test_add_userrights_non_admin PASSED         [ 30%]
+test_generated.py::test_login PASSED                                     [ 30%]
+test_generated.py::test_am_i_authed PASSED                               [ 30%]
+test_generated.py::test_am_i_admin PASSED                                [ 31%]
+test_generated.py::test_is_user_active PASSED                            [ 31%]
+test_generated.py::test_is_user PASSED                                   [ 32%]
+test_generated.py::test_auth_isadmin FAILED                              [ 32%]
+test_generated.py::test_user_info FAILED                                 [ 33%]
+test_generated.py::test_full_user_info FAILED                            [ 33%]
+test_generated.py::test_user_roles FAILED                                [ 34%]
+test_generated.py::test_user_unactive_roles FAILED                       [ 34%]
+test_generated.py::test_department_roles PASSED                          [ 35%]
+test_generated.py::test_department_name PASSED                           [ 35%]
+test_generated.py::test_all_departments PASSED                           [ 36%]
+test_generated.py::test_all_avatars FAILED                               [ 36%]
+test_generated.py::test_media_get PASSED                                 [ 37%]
+test_generated.py::test_achivement_qr FAILED                             [ 37%]
+test_generated.py::test_get_post_with_qr_code FAILED                     [ 38%]
+test_generated.py::test_get_balance PASSED                               [ 38%]
+test_generated.py::test_transactions_my PASSED                           [ 38%]
+test_generated.py::test_get_authors_list PASSED                          [ 39%]
+test_generated.py::test_get_news PASSED                                  [ 39%]
+test_generated.py::test_get_comments PASSED                              [ 40%]
+test_generated.py::test_get_post_media PASSED                            [ 40%]
+test_generated.py::test_get_post PASSED                                  [ 41%]
+test_generated.py::test_get_all_posts PASSED                             [ 41%]
+test_generated.py::test_get_all_titles PASSED                            [ 42%]
+test_generated.py::test_get_saved_posts PASSED                           [ 42%]
+test_generated.py::test_get_post_categories PASSED                       [ 43%]
+test_generated.py::test_social_bycat PASSED                              [ 43%]
+test_generated.py::test_user_achivemets FAILED                           [ 44%]
+test_generated.py::test_full_user_achivemets PASSED                      [ 44%]
+test_generated.py::test_achivements_tree FAILED                          [ 45%]
+test_generated.py::test_achivement_info SKIPPED (Requires specific p...) [ 45%]
+test_generated.py::test_achivement_pictures PASSED                       [ 46%]
+test_generated.py::test_achivements_no_dep FAILED                        [ 46%]
+test_generated.py::test_achivements_by_user FAILED                       [ 46%]
+test_generated.py::test_achivements_qr_code PASSED                       [ 47%]
+test_generated.py::test_get_page_author PASSED                           [ 47%]
+test_generated.py::test_get_favourite_posts FAILED                       [ 48%]
+test_generated.py::test_authors_list PASSED                              [ 48%]
+test_gets.py::test_get_achievements_by_user FAILED                       [ 49%]
+test_gets.py::test_get_full_achievements_by_user PASSED                  [ 49%]
+test_gets.py::test_get_achievements_by_tree FAILED                       [ 50%]
+test_gets.py::test_get_achievement_info PASSED                           [ 50%]
+test_gets.py::test_get_achievement_images PASSED                         [ 51%]
+test_gets.py::test_get_post_by_id FAILED                                 [ 51%]
+test_gets.py::test_get_post_by_author PASSED                             [ 52%]
+test_gets.py::test_get_user_info PASSED                                  [ 52%]
+test_gets.py::test_check_user_active_status PASSED                       [ 53%]
+test_gets.py::test_check_user_existence PASSED                           [ 53%]
+test_gets.py::test_authentication_status PASSED                          [ 53%]
+test_gets.py::test_admin_status PASSED                                   [ 54%]
+test_gets.py::test_user_avatars FAILED                                   [ 54%]
+test_market.py::test_get_balance_with_auth PASSED                        [ 55%]
+test_market.py::test_get_balance_no_token PASSED                         [ 55%]
+test_market.py::test_get_balance_invalid_token PASSED                    [ 56%]
+test_market.py::test_get_transactions_with_auth PASSED                   [ 56%]
+test_market.py::test_get_transactions_no_token PASSED                    [ 57%]
+test_market.py::test_get_transactions_invalid_token PASSED               [ 57%]
+test_market.py::test_get_transactions_structure PASSED                   [ 58%]
+test_market.py::test_prepare_transaction_success PASSED                  [ 58%]
+test_market.py::test_prepare_transaction_zero_amount PASSED              [ 59%]
+test_market.py::test_prepare_transaction_nonexistent_receiver PASSED     [ 59%]
+test_market.py::test_prepare_transaction_no_token PASSED                 [ 60%]
+test_market.py::test_prepare_transaction_invalid_token PASSED            [ 60%]
+test_market.py::test_prepare_transaction_missing_receiver PASSED         [ 61%]
+test_market.py::test_prepare_transaction_missing_amount PASSED           [ 61%]
+test_market.py::test_prepare_transaction_invalid_amount PASSED           [ 61%]
+test_market.py::test_transfer_invalid_transaction_id PASSED              [ 62%]
+test_market.py::test_transfer_no_token PASSED                            [ 62%]
+test_market.py::test_transfer_invalid_token PASSED                       [ 63%]
+test_market.py::test_transfer_missing_tr_id PASSED                       [ 63%]
+test_market.py::test_transfer_empty_tr_id PASSED                         [ 64%]
+test_market.py::test_full_transaction_flow_insufficient_funds PASSED     [ 64%]
+test_market.py::test_transaction_to_self PASSED                          [ 65%]
+test_pages.py::test_get_page_content FAILED                              [ 65%]
+test_pages.py::test_add_page_by_content FAILED                           [ 66%]
+test_pages.py::test_add_page_by_page FAILED                              [ 66%]
+test_pages.py::test_update_likes FAILED                                  [ 67%]
+test_social_integration.py::test_get_authors_list PASSED                 [ 67%]
+test_social_integration.py::test_get_news_default FAILED                 [ 68%]
+test_social_integration.py::test_get_news_with_auth FAILED               [ 68%]
+test_social_integration.py::test_get_news_pagination FAILED              [ 69%]
+test_social_integration.py::test_get_all_posts PASSED                    [ 69%]
+test_social_integration.py::test_get_specific_post PASSED                [ 69%]
+test_social_integration.py::test_get_nonexistent_post FAILED             [ 70%]
+test_social_integration.py::test_get_all_titles FAILED                   [ 70%]
+test_social_integration.py::test_search_posts FAILED                     [ 71%]
+test_social_integration.py::test_search_empty_query FAILED               [ 71%]
+test_social_integration.py::test_get_comments_for_post FAILED            [ 72%]
+test_social_integration.py::test_add_comment_no_token PASSED             [ 72%]
+test_social_integration.py::test_add_comment_with_auth PASSED            [ 73%]
+test_social_integration.py::test_add_like_no_token PASSED                [ 73%]
+test_social_integration.py::test_add_like_with_auth PASSED               [ 74%]
+test_social_integration.py::test_add_like_missing_post_id PASSED         [ 74%]
+test_social_integration.py::test_delete_like_no_token PASSED             [ 75%]
+test_social_integration.py::test_delete_like_with_auth PASSED            [ 75%]
+test_social_integration.py::test_add_dislike_no_token PASSED             [ 76%]
+test_social_integration.py::test_add_dislike_with_auth PASSED            [ 76%]
+test_social_integration.py::test_delete_dislike_no_token PASSED          [ 76%]
+test_social_integration.py::test_delete_dislike_with_auth PASSED         [ 77%]
+test_social_integration.py::test_get_saved_posts_no_token PASSED         [ 77%]
+test_social_integration.py::test_get_saved_posts_with_auth PASSED        [ 78%]
+test_social_integration.py::test_save_post_no_token PASSED               [ 78%]
+test_social_integration.py::test_save_post_with_auth PASSED              [ 79%]
+test_social_integration.py::test_unsave_post_no_token PASSED             [ 79%]
+test_social_integration.py::test_unsave_post_with_auth PASSED            [ 80%]
+test_social_integration.py::test_get_categories PASSED                   [ 80%]
+test_social_integration.py::test_get_posts_by_category PASSED            [ 81%]
+test_social_integration.py::test_get_posts_by_invalid_category PASSED    [ 81%]
+test_social_integration.py::test_get_post_media PASSED                   [ 82%]
+test_user_comprehensive.py::test_user_info_existing PASSED               [ 82%]
+test_user_comprehensive.py::test_user_info_nonexistent PASSED            [ 83%]
+test_user_comprehensive.py::test_user_info_invalid_username PASSED       [ 83%]
+test_user_comprehensive.py::test_user_info_own_user PASSED               [ 84%]
+test_user_comprehensive.py::test_full_user_info_existing PASSED          [ 84%]
+test_user_comprehensive.py::test_full_user_info_nonexistent PASSED       [ 84%]
+test_user_comprehensive.py::test_full_user_info_structure PASSED         [ 85%]
+test_user_comprehensive.py::test_user_roles_existing PASSED              [ 85%]
+test_user_comprehensive.py::test_user_roles_nonexistent PASSED           [ 86%]
+test_user_comprehensive.py::test_user_roles_structure FAILED             [ 86%]
+test_user_comprehensive.py::test_user_unactive_roles_existing PASSED     [ 87%]
+test_user_comprehensive.py::test_user_unactive_roles_nonexistent PASSED  [ 87%]
+test_user_comprehensive.py::test_add_user_role_non_admin PASSED          [ 88%]
+test_user_comprehensive.py::test_add_user_role_no_token PASSED           [ 88%]
+test_user_comprehensive.py::test_add_user_role_missing_fields PASSED     [ 89%]
+test_user_comprehensive.py::test_delete_user_role_not_implemented PASSED [ 89%]
+test_user_comprehensive.py::test_create_role_non_admin SKIPPED (Serv...) [ 90%]
+test_user_comprehensive.py::test_create_role_no_token PASSED             [ 90%]
+test_user_comprehensive.py::test_create_role_missing_fields PASSED       [ 91%]
+test_user_comprehensive.py::test_department_roles_valid PASSED           [ 91%]
+test_user_comprehensive.py::test_department_roles_invalid_id PASSED      [ 92%]
+test_user_comprehensive.py::test_department_roles_non_numeric PASSED     [ 92%]
+test_user_comprehensive.py::test_department_name_valid PASSED            [ 92%]
+test_user_comprehensive.py::test_department_name_invalid PASSED          [ 93%]
+test_user_comprehensive.py::test_set_department_non_admin PASSED         [ 93%]
+test_user_comprehensive.py::test_set_department_no_token PASSED          [ 94%]
+test_user_comprehensive.py::test_set_department_missing_fields PASSED    [ 94%]
+test_user_comprehensive.py::test_all_departments PASSED                  [ 95%]
+test_user_comprehensive.py::test_starter_role_numeric PASSED             [ 95%]
+test_user_comprehensive.py::test_starter_role_name PASSED                [ 96%]
+test_user_comprehensive.py::test_starter_role_invalid PASSED             [ 96%]
+test_user_comprehensive.py::test_all_avatars_with_token PASSED           [ 97%]
+test_user_comprehensive.py::test_all_avatars_no_token PASSED             [ 97%]
+test_user_comprehensive.py::test_all_avatars_structure PASSED            [ 98%]
+test_user_comprehensive.py::test_set_avatar_success PASSED               [ 98%]
+test_user_comprehensive.py::test_set_avatar_no_token PASSED              [ 99%]
+test_user_comprehensive.py::test_set_avatar_invalid_token PASSED         [ 99%]
+test_user_comprehensive.py::test_set_avatar_missing_field PASSED         [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_get_no_department_achievements ______________________
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:534: in _make_request
+    response = conn.getresponse()
+../../../.local/lib/python3.10/site-packages/urllib3/connection.py:516: in getresponse
+    httplib_response = super().getresponse()
+/usr/lib/python3.10/http/client.py:1395: in getresponse
+    response.begin()
+/usr/lib/python3.10/http/client.py:323: in begin
+    version, status, reason = self._read_status()
+/usr/lib/python3.10/http/client.py:292: in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+E   http.client.RemoteDisconnected: Remote end closed connection without response
+
+During handling of the above exception, another exception occurred:
+../../../.local/lib/python3.10/site-packages/requests/adapters.py:667: in send
+    resp = conn.urlopen(
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+../../../.local/lib/python3.10/site-packages/urllib3/util/retry.py:474: in increment
+    raise reraise(type(error), error, _stacktrace)
+../../../.local/lib/python3.10/site-packages/urllib3/util/util.py:38: in reraise
+    raise value.with_traceback(tb)
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:534: in _make_request
+    response = conn.getresponse()
+../../../.local/lib/python3.10/site-packages/urllib3/connection.py:516: in getresponse
+    httplib_response = super().getresponse()
+/usr/lib/python3.10/http/client.py:1395: in getresponse
+    response.begin()
+/usr/lib/python3.10/http/client.py:323: in begin
+    version, status, reason = self._read_status()
+/usr/lib/python3.10/http/client.py:292: in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+E   urllib3.exceptions.ProtocolError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+test_achievements_integration.py:241: in test_get_no_department_achievements
+    response = requests.get(
+../../../.local/lib/python3.10/site-packages/requests/api.py:73: in get
+    return request("get", url, params=params, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/api.py:59: in request
+    return session.request(method=method, url=url, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+../../../.local/lib/python3.10/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/adapters.py:682: in send
+    raise ConnectionError(err, request=request)
+E   requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+test_achievements_integration.py:252: in test_get_no_department_achievements
+    pytest.fail("🚨 SERVER CRASH: /achivements/no_dep endpoint causes server to crash!")
+E   Failed: 🚨 SERVER CRASH: /achivements/no_dep endpoint causes server to crash!
+____________________ test_get_achievements_by_user_no_token ____________________
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:534: in _make_request
+    response = conn.getresponse()
+../../../.local/lib/python3.10/site-packages/urllib3/connection.py:516: in getresponse
+    httplib_response = super().getresponse()
+/usr/lib/python3.10/http/client.py:1395: in getresponse
+    response.begin()
+/usr/lib/python3.10/http/client.py:323: in begin
+    version, status, reason = self._read_status()
+/usr/lib/python3.10/http/client.py:292: in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+E   http.client.RemoteDisconnected: Remote end closed connection without response
+
+During handling of the above exception, another exception occurred:
+../../../.local/lib/python3.10/site-packages/requests/adapters.py:667: in send
+    resp = conn.urlopen(
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:841: in urlopen
+    retries = retries.increment(
+../../../.local/lib/python3.10/site-packages/urllib3/util/retry.py:474: in increment
+    raise reraise(type(error), error, _stacktrace)
+../../../.local/lib/python3.10/site-packages/urllib3/util/util.py:38: in reraise
+    raise value.with_traceback(tb)
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:787: in urlopen
+    response = self._make_request(
+../../../.local/lib/python3.10/site-packages/urllib3/connectionpool.py:534: in _make_request
+    response = conn.getresponse()
+../../../.local/lib/python3.10/site-packages/urllib3/connection.py:516: in getresponse
+    httplib_response = super().getresponse()
+/usr/lib/python3.10/http/client.py:1395: in getresponse
+    response.begin()
+/usr/lib/python3.10/http/client.py:323: in begin
+    version, status, reason = self._read_status()
+/usr/lib/python3.10/http/client.py:292: in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+E   urllib3.exceptions.ProtocolError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+test_achievements_integration.py:271: in test_get_achievements_by_user_no_token
+    response = requests.get(
+../../../.local/lib/python3.10/site-packages/requests/api.py:73: in get
+    return request("get", url, params=params, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/api.py:59: in request
+    return session.request(method=method, url=url, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/sessions.py:589: in request
+    resp = self.send(prep, **send_kwargs)
+../../../.local/lib/python3.10/site-packages/requests/sessions.py:703: in send
+    r = adapter.send(request, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/adapters.py:682: in send
+    raise ConnectionError(err, request=request)
+E   requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+
+During handling of the above exception, another exception occurred:
+test_achievements_integration.py:279: in test_get_achievements_by_user_no_token
+    pytest.fail("🚨 SERVER CRASH: /achivements/by_user endpoint (no auth) causes server to crash!")
+E   Failed: 🚨 SERVER CRASH: /achivements/by_user endpoint (no auth) causes server to crash!
+_____________________ test_registration_duplicate_username _____________________
+test_auth_comprehensive.py:88: in test_registration_duplicate_username
+    assert response.status_code == 403
+E   assert 200 == 403
+E    +  where 200 = <Response [200]>.status_code
+______________________________ test_auth_isadmin _______________________________
+../../../.local/lib/python3.10/site-packages/urllib3/util/url.py:423: in parse_url
+    host, port = _HOST_PORT_RE.match(host_port).groups()  # type: ignore[union-attr]
+E   AttributeError: 'NoneType' object has no attribute 'groups'
+
+The above exception was the direct cause of the following exception:
+../../../.local/lib/python3.10/site-packages/requests/models.py:433: in prepare_url
+    scheme, auth, host, port, path, query, fragment = parse_url(url)
+../../../.local/lib/python3.10/site-packages/urllib3/util/url.py:449: in parse_url
+    raise LocationParseError(source_url) from e
+E   urllib3.exceptions.LocationParseError: Failed to parse: http://0.0.0.0:8080auth/isadmin/test
+
+During handling of the above exception, another exception occurred:
+test_generated.py:66: in test_auth_isadmin
+    response = requests.get(f"{URL}auth/isadmin/{username}", verify=False)
+../../../.local/lib/python3.10/site-packages/requests/api.py:73: in get
+    return request("get", url, params=params, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/api.py:59: in request
+    return session.request(method=method, url=url, **kwargs)
+../../../.local/lib/python3.10/site-packages/requests/sessions.py:575: in request
+    prep = self.prepare_request(req)
+../../../.local/lib/python3.10/site-packages/requests/sessions.py:484: in prepare_request
+    p.prepare(
+../../../.local/lib/python3.10/site-packages/requests/models.py:367: in prepare
+    self.prepare_url(url, params)
+../../../.local/lib/python3.10/site-packages/requests/models.py:435: in prepare_url
+    raise InvalidURL(*e.args)
+E   requests.exceptions.InvalidURL: Failed to parse: http://0.0.0.0:8080auth/isadmin/test
+________________________________ test_user_info ________________________________
+test_generated.py:90: in test_user_info
+    assert "avatar_pic" in user_data and user_data["avatar_pic"].endswith(".png")
+E   AssertionError: assert ('avatar_pic' in {'active': 't', 'avatar_pic': '', 'departmentid': '0', 'jointime': '2026-02-13 18:24:09.914454', ...} and False)
+E    +  where False = <built-in method endswith of str object at 0x713cd6d08030>('.png')
+E    +    where <built-in method endswith of str object at 0x713cd6d08030> = ''.endswith
+_____________________________ test_full_user_info ______________________________
+test_generated.py:117: in test_full_user_info
+    assert user_info["avatar_pic"].endswith(".png")
+E   AssertionError: assert False
+E    +  where False = <built-in method endswith of str object at 0x713cd6d08030>('.png')
+E    +    where <built-in method endswith of str object at 0x713cd6d08030> = ''.endswith
+_______________________________ test_user_roles ________________________________
+test_generated.py:132: in test_user_roles
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+___________________________ test_user_unactive_roles ___________________________
+test_generated.py:152: in test_user_unactive_roles
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+_______________________________ test_all_avatars _______________________________
+test_generated.py:218: in test_all_avatars
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+______________________________ test_achivement_qr ______________________________
+test_generated.py:244: in test_achivement_qr
+    assert header in response.headers
+E   AssertionError: assert 'Server' in {'Connection': 'keep-alive', 'Content-Length': '1523', 'Content-Type': 'image/png'}
+E    +  where {'Connection': 'keep-alive', 'Content-Length': '1523', 'Content-Type': 'image/png'} = <Response [200]>.headers
+__________________________ test_get_post_with_qr_code __________________________
+test_generated.py:255: in test_get_post_with_qr_code
+    assert header in response.headers, f"Missing header: {header}"
+E   AssertionError: Missing header: Server
+E   assert 'Server' in {'Connection': 'keep-alive', 'Content-Length': '1991', 'Content-Type': 'image/png'}
+E    +  where {'Connection': 'keep-alive', 'Content-Length': '1991', 'Content-Type': 'image/png'} = <Response [200]>.headers
+_____________________________ test_user_achivemets _____________________________
+test_generated.py:449: in test_user_achivemets
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+____________________________ test_achivements_tree _____________________________
+test_generated.py:498: in test_achivements_tree
+    assert response.status_code == 200, "Response status code is not 200"
+E   AssertionError: Response status code is not 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+___________________________ test_achivements_no_dep ____________________________
+test_generated.py:568: in test_achivements_no_dep
+    assert isinstance(achievement["stage"], str)
+E   KeyError: 'stage'
+___________________________ test_achivements_by_user ___________________________
+test_generated.py:595: in test_achivements_by_user
+    assert "stage" in achivement
+E   AssertionError: assert 'stage' in {'achivement_decsription': 'Сложность 1: Успешно завершить свой первый заезд на автомодели без аварий', 'achivement_id': '159', 'achivement_name': 'Драйвер', 'achivement_pic': '/images/achivements/dep/dep_7.png', ...}
+___________________________ test_get_favourite_posts ___________________________
+test_generated.py:642: in test_get_favourite_posts
+    assert header in response.headers, f"Missing header: {header}"
+E   AssertionError: Missing header: Server
+E   assert 'Server' in {'Connection': 'keep-alive', 'Content-Length': '0'}
+E    +  where {'Connection': 'keep-alive', 'Content-Length': '0'} = <Response [200]>.headers
+________________________ test_get_achievements_by_user _________________________
+test_gets.py:30: in test_get_achievements_by_user
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+________________________ test_get_achievements_by_tree _________________________
+test_gets.py:48: in test_get_achievements_by_tree
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+_____________________________ test_get_post_by_id ______________________________
+test_gets.py:74: in test_get_post_by_id
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+______________________________ test_user_avatars _______________________________
+test_gets.py:136: in test_user_avatars
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+____________________________ test_get_page_content _____________________________
+test_pages.py:31: in test_get_page_content
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+___________________________ test_add_page_by_content ___________________________
+test_pages.py:48: in test_add_page_by_content
+    assert response.status_code == 200
+E   assert 501 == 200
+E    +  where 501 = <Response [501]>.status_code
+____________________________ test_add_page_by_page _____________________________
+test_pages.py:62: in test_add_page_by_page
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+______________________________ test_update_likes _______________________________
+test_pages.py:79: in test_update_likes
+    assert response.status_code == 200
+E   assert 501 == 200
+E    +  where 501 = <Response [501]>.status_code
+____________________________ test_get_news_default _____________________________
+test_social_integration.py:80: in test_get_news_default
+    assert response.status_code == 401
+E   assert 200 == 401
+E    +  where 200 = <Response [200]>.status_code
+___________________________ test_get_news_with_auth ____________________________
+test_social_integration.py:91: in test_get_news_with_auth
+    assert response.status_code == 401
+E   assert 200 == 401
+E    +  where 200 = <Response [200]>.status_code
+___________________________ test_get_news_pagination ___________________________
+test_social_integration.py:102: in test_get_news_pagination
+    assert response.status_code == 401
+E   assert 200 == 401
+E    +  where 200 = <Response [200]>.status_code
+__________________________ test_get_nonexistent_post ___________________________
+test_social_integration.py:141: in test_get_nonexistent_post
+    assert response.status_code in [502, 404]
+E   assert 200 in [502, 404]
+E    +  where 200 = <Response [200]>.status_code
+_____________________________ test_get_all_titles ______________________________
+test_social_integration.py:154: in test_get_all_titles
+    assert response.status_code == 401
+E   assert 200 == 401
+E    +  where 200 = <Response [200]>.status_code
+______________________________ test_search_posts _______________________________
+test_social_integration.py:166: in test_search_posts
+    assert response.status_code in [200, 502]
+E   assert 400 in [200, 502]
+E    +  where 400 = <Response [400]>.status_code
+___________________________ test_search_empty_query ____________________________
+test_social_integration.py:179: in test_search_empty_query
+    assert response.status_code in [200, 502]
+E   assert 400 in [200, 502]
+E    +  where 400 = <Response [400]>.status_code
+__________________________ test_get_comments_for_post __________________________
+test_social_integration.py:192: in test_get_comments_for_post
+    assert response.status_code == 401
+E   assert 200 == 401
+E    +  where 200 = <Response [200]>.status_code
+__________________________ test_user_roles_structure ___________________________
+test_user_comprehensive.py:177: in test_user_roles_structure
+    assert response.status_code == 200
+E   assert 502 == 200
+E    +  where 502 = <Response [502]>.status_code
+=============================== warnings summary ===============================
+test_auth.py:9
+  /home/sergei-scv/temp/letovo-all/test/test_auth.py:9: PytestUnknownMarkWarning: Unknown pytest.mark.order1 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order1
+
+test_auth.py:17
+  /home/sergei-scv/temp/letovo-all/test/test_auth.py:17: PytestUnknownMarkWarning: Unknown pytest.mark.order2 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order2
+
+test_auth.py:26
+  /home/sergei-scv/temp/letovo-all/test/test_auth.py:26: PytestUnknownMarkWarning: Unknown pytest.mark.order3 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order3
+
+test_generated.py:11
+  /home/sergei-scv/temp/letovo-all/test/test_generated.py:11: PytestUnknownMarkWarning: Unknown pytest.mark.order1 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order1
+
+test_pages.py:27
+  /home/sergei-scv/temp/letovo-all/test/test_pages.py:27: PytestUnknownMarkWarning: Unknown pytest.mark.order1 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order1
+
+test_pages.py:34
+  /home/sergei-scv/temp/letovo-all/test/test_pages.py:34: PytestUnknownMarkWarning: Unknown pytest.mark.order2 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order2
+
+test_pages.py:56
+  /home/sergei-scv/temp/letovo-all/test/test_pages.py:56: PytestUnknownMarkWarning: Unknown pytest.mark.order3 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order3
+
+test_pages.py:65
+  /home/sergei-scv/temp/letovo-all/test/test_pages.py:65: PytestUnknownMarkWarning: Unknown pytest.mark.order4 - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.order4
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test_achievements_integration.py::test_get_no_department_achievements - Failed: 🚨 SERVER CRASH: /achivements/no_dep endpoint causes server to crash!
+FAILED test_achievements_integration.py::test_get_achievements_by_user_no_token - Failed: 🚨 SERVER CRASH: /achivements/by_user endpoint (no auth) causes server to crash!
+FAILED test_auth_comprehensive.py::test_registration_duplicate_username - assert 200 == 403
+ +  where 200 = <Response [200]>.status_code
+FAILED test_generated.py::test_auth_isadmin - requests.exceptions.InvalidURL: Failed to parse: http://0.0.0.0:8080auth/isadmin/test
+FAILED test_generated.py::test_user_info - AssertionError: assert ('avatar_pic' in {'active': 't', 'avatar_pic': '', 'departmentid': '0', 'jointime': '2026-02-13 18:24:09.914454', ...} and False)
+ +  where False = <built-in method endswith of str object at 0x713cd6d08030>('.png')
+ +    where <built-in method endswith of str object at 0x713cd6d08030> = ''.endswith
+FAILED test_generated.py::test_full_user_info - AssertionError: assert False
+ +  where False = <built-in method endswith of str object at 0x713cd6d08030>('.png')
+ +    where <built-in method endswith of str object at 0x713cd6d08030> = ''.endswith
+FAILED test_generated.py::test_user_roles - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_generated.py::test_user_unactive_roles - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_generated.py::test_all_avatars - assert 401 == 200
+ +  where 401 = <Response [401]>.status_code
+FAILED test_generated.py::test_achivement_qr - AssertionError: assert 'Server' in {'Connection': 'keep-alive', 'Content-Length': '1523', 'Content-Type': 'image/png'}
+ +  where {'Connection': 'keep-alive', 'Content-Length': '1523', 'Content-Type': 'image/png'} = <Response [200]>.headers
+FAILED test_generated.py::test_get_post_with_qr_code - AssertionError: Missing header: Server
+assert 'Server' in {'Connection': 'keep-alive', 'Content-Length': '1991', 'Content-Type': 'image/png'}
+ +  where {'Connection': 'keep-alive', 'Content-Length': '1991', 'Content-Type': 'image/png'} = <Response [200]>.headers
+FAILED test_generated.py::test_user_achivemets - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_generated.py::test_achivements_tree - AssertionError: Response status code is not 200
+assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_generated.py::test_achivements_no_dep - KeyError: 'stage'
+FAILED test_generated.py::test_achivements_by_user - AssertionError: assert 'stage' in {'achivement_decsription': 'Сложность 1: Успешно завершить свой первый заезд на автомодели без аварий', 'achivement_id': '159', 'achivement_name': 'Драйвер', 'achivement_pic': '/images/achivements/dep/dep_7.png', ...}
+FAILED test_generated.py::test_get_favourite_posts - AssertionError: Missing header: Server
+assert 'Server' in {'Connection': 'keep-alive', 'Content-Length': '0'}
+ +  where {'Connection': 'keep-alive', 'Content-Length': '0'} = <Response [200]>.headers
+FAILED test_gets.py::test_get_achievements_by_user - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_gets.py::test_get_achievements_by_tree - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_gets.py::test_get_post_by_id - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_gets.py::test_user_avatars - assert 401 == 200
+ +  where 401 = <Response [401]>.status_code
+FAILED test_pages.py::test_get_page_content - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+FAILED test_pages.py::test_add_page_by_content - assert 501 == 200
+ +  where 501 = <Response [501]>.status_code
+FAILED test_pages.py::test_add_page_by_page - assert 401 == 200
+ +  where 401 = <Response [401]>.status_code
+FAILED test_pages.py::test_update_likes - assert 501 == 200
+ +  where 501 = <Response [501]>.status_code
+FAILED test_social_integration.py::test_get_news_default - assert 200 == 401
+ +  where 200 = <Response [200]>.status_code
+FAILED test_social_integration.py::test_get_news_with_auth - assert 200 == 401
+ +  where 200 = <Response [200]>.status_code
+FAILED test_social_integration.py::test_get_news_pagination - assert 200 == 401
+ +  where 200 = <Response [200]>.status_code
+FAILED test_social_integration.py::test_get_nonexistent_post - assert 200 in [502, 404]
+ +  where 200 = <Response [200]>.status_code
+FAILED test_social_integration.py::test_get_all_titles - assert 200 == 401
+ +  where 200 = <Response [200]>.status_code
+FAILED test_social_integration.py::test_search_posts - assert 400 in [200, 502]
+ +  where 400 = <Response [400]>.status_code
+FAILED test_social_integration.py::test_search_empty_query - assert 400 in [200, 502]
+ +  where 400 = <Response [400]>.status_code
+FAILED test_social_integration.py::test_get_comments_for_post - assert 200 == 401
+ +  where 200 = <Response [200]>.status_code
+FAILED test_user_comprehensive.py::test_user_roles_structure - assert 502 == 200
+ +  where 502 = <Response [502]>.status_code
+============ 33 failed, 178 passed, 2 skipped, 8 warnings in 8.61s =============
