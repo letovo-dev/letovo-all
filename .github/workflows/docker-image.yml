@@ -118,6 +118,9 @@ jobs:
           # Create test database schema
           psql -h localhost -U postgres -d letovo_test -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), password VARCHAR(255));"
           
+          # Remove symlinked config files (they point to non-existent paths in CI)
+          rm -rf src/configs
+          
           # Create config files using Python script
           python3 scripts/create_test_configs.py
           
