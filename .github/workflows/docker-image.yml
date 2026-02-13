@@ -118,76 +118,14 @@ jobs:
           # Create test database schema
           psql -h localhost -U postgres -d letovo_test -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), password VARCHAR(255));"
           
-          # Create config files using Python
-          python3 << 'PYSCRIPT'
-          import json
-          import os
-          
-          # Change to workspace directory
-          workspace = os.environ.get('GITHUB_WORKSPACE', os.getcwd())
-          os.chdir(workspace)
-          print(f"Working in: {os.getcwd()}")
-          
-          # Create configs directory
-          os.makedirs("src/configs", exist_ok=True)
-          
-          # SQL config
-          sql_config = {
-              "connections": 5,
-              "dbname": "letovo_test",
-              "host": "localhost",
-              "password": "postgres",
-              "user": "postgres",
-              "port": 5432
-          }
-          
-          # Server config
-          server_config = {
-              "adress": "0.0.0.0",
-              "port": 8080,
-              "thread_pool_size": 2,
-              "certs_path": "./certs",
-              "update_hashes": False
-          }
-          
-          # Pages config
-          pages_config = {
-              "wiki_path": "/tmp/wiki",
-              "user_avatars_path": "/tmp/avatars",
-              "admin_avatars_path": "/tmp/admin_avatars",
-              "achivements_path": "/tmp/achievements",
-              "media_path": "/tmp/media",
-              "secret_example_path": "/tmp/secrets",
-              "media_cache_size": 10,
-              "create_file": False
-          }
-          
-          # Market config
-          market_config = {
-              "bid_resolver_sleep_time": 1000,
-              "junk_user": "system"
-          }
-          
-          # Write files
-          with open("src/configs/SqlConnectionConfig.json", "w") as f:
-              json.dump(sql_config, f, indent=2)
-          
-          with open("src/configs/ServerConfig.json", "w") as f:
-              json.dump(server_config, f, indent=2)
-          
-          with open("src/configs/PagesConfig.json", "w") as f:
-              json.dump(pages_config, f, indent=2)
-          
-          with open("src/configs/MarketConfig.json", "w") as f:
-              json.dump(market_config, f, indent=2)
-          
-          print("✅ Created 4 config files in src/configs/")
-          PYSCRIPT
+          # Create config files using Python script
+          python3 scripts/create_test_configs.py
           
           # Create necessary directories
           mkdir -p /tmp/wiki /tmp/avatars /tmp/admin_avatars /tmp/achievements /tmp/media /tmp/secrets
           
           # Verify files were created
+          echo ""
           echo "Files created:"
           ls -la src/configs/
           echo ""
