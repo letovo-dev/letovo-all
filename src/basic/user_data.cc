@@ -402,7 +402,7 @@ void user_info(std::unique_ptr<restinio::router::express_router_t<>> &router,
                std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
   router.get()->http_get(
-      R"(/user/:username([a-zA-Z0-9\-]+))",
+      R"(/user/:username([a-zA-Z0-9\-_]+))",
       [pool_ptr, logger_ptr](auto req, auto params) {
         logger_ptr->trace([] { return "called /user/:username"; });
         auto qrl = req->header().path();
@@ -433,7 +433,7 @@ void full_user_info(
     std::shared_ptr<cp::ConnectionsManager> pool_ptr,
     std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
   router.get()->http_get(
-      R"(/user/full/:username([a-zA-Z0-9\-]+))",
+      R"(/user/full/:username([a-zA-Z0-9\-_]+))",
       [pool_ptr, logger_ptr](auto req, auto params) {
         logger_ptr->trace([] { return "called /user/full/:username"; });
         auto qrl = req->header().path();
@@ -465,7 +465,7 @@ void user_roles(std::unique_ptr<restinio::router::express_router_t<>> &router,
   // TODO: not working as it should: shows only the last role, not all of them
   // idk why
   router.get()->http_get(
-      R"(/user/roles/:username([a-zA-Z0-9\-]+))",
+      R"(/user/roles/:username([a-zA-Z0-9\-_]+))",
       [pool_ptr, logger_ptr](auto req, auto params) {
         logger_ptr->trace([] { return "called /user/roles/:username"; });
         auto qrl = req->header().path();
@@ -495,7 +495,7 @@ void user_unactive_roles(
   // TODO: not working as it should: shows only the last role, not all of them
   // idk why
   router.get()->http_get(
-      R"(/user/unactive_roles/:username([a-zA-Z0-9\-]+))",
+      R"(/user/unactive_roles/:username([a-zA-Z0-9\-_]+))",
       [pool_ptr, logger_ptr](auto req, auto params) {
         logger_ptr->trace(
             [] { return "called /user/unactive_roles/:username"; });

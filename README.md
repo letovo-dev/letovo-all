@@ -1,3 +1,21 @@
+# Letovo Server
+
+[![Build Status](https://github.com/letovo-dev/letovo-all/actions/workflows/docker-image.yml/badge.svg)](https://github.com/letovo-dev/letovo-all/actions/workflows/docker-image.yml)
+[![codecov](https://codecov.io/gh/letovo-dev/letovo-all/branch/main/graph/badge.svg)](https://codecov.io/gh/letovo-dev/letovo-all)
+[![Coverage](https://codecov.io/gh/letovo-dev/letovo-all/branch/main/graph/badge.svg?flag=unittests)](https://codecov.io/gh/letovo-dev/letovo-all)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/letovo-dev/letovo-all/actions/workflows/docker-image.yml)
+
+## Статус проекта
+
+| Метрика | Значение |
+|---------|----------|
+| **Покрытие тестами** | ![Coverage](https://img.shields.io/codecov/c/github/letovo-dev/letovo-all/main?label=coverage) |
+| **Статус сборки** | ![Build](https://img.shields.io/github/actions/workflow/status/letovo-dev/letovo-all/docker-image.yml?branch=main&label=build) |
+| **Статус тестов** | ![Tests](https://img.shields.io/github/actions/workflow/status/letovo-dev/letovo-all/docker-image.yml?branch=main&label=tests) |
+| **Последний коммит** | ![Last Commit](https://img.shields.io/github/last-commit/letovo-dev/letovo-all) |
+
+---
+
 ## Разработка
 
 ### Как добавить свои модули - С++

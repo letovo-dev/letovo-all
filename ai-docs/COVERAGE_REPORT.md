@@ -1,8 +1,11 @@
 # Code Coverage Report
 
+[![Coverage Status](https://codecov.io/gh/letovo-dev/letovo-all/branch/main/graph/badge.svg)](https://codecov.io/gh/letovo-dev/letovo-all)
+[![Coverage Graph](https://codecov.io/gh/letovo-dev/letovo-all/branch/main/graphs/sunburst.svg?width=200&height=200)](https://codecov.io/gh/letovo-dev/letovo-all)
+
 **Date**: [To be updated after coverage run]  
 **Target**: 70% line coverage  
-**Current**: [To be measured]
+**Current**: ![Coverage](https://img.shields.io/codecov/c/github/letovo-dev/letovo-all/main?label=coverage)
 
 ## Overview
 
