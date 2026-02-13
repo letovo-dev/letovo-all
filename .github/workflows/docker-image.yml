@@ -96,7 +96,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y lcov gcovr python3-pip libpqxx-dev libssl-dev libpng-dev libqrencode-dev libfmt-dev
+          sudo apt-get install -y lcov gcovr python3-pip libpqxx-dev libssl-dev libpng-dev libqrencode-dev libfmt-dev libasio-dev
           pip3 install --upgrade pip
           pip3 install requests pytest
       
@@ -105,7 +105,14 @@ jobs:
           cd /tmp
           git clone https://github.com/Stiffstream/restinio.git
           cd restinio/dev
-          cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DRESTINIO_TEST=OFF -DRESTINIO_SAMPLE=OFF -DRESTINIO_INSTALL_SAMPLES=OFF .
+          cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
+                -DRESTINIO_TEST=OFF \
+                -DRESTINIO_SAMPLE=OFF \
+                -DRESTINIO_INSTALL_SAMPLES=OFF \
+                -DRESTINIO_BENCHMARK=OFF \
+                -DRESTINIO_WITH_SOBJECTIZER=OFF \
+                -DRESTINIO_DEP_STANDALONE_ASIO=system \
+                .
           sudo cmake --build . --target install
       
       - name: Setup test database
