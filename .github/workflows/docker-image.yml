@@ -111,12 +111,65 @@ jobs:
           pip3 install --upgrade pip
           pip3 install requests pytest
       
-      - name: Setup test database
+      - name: Setup test database and configs
         env:
           PGPASSWORD: postgres
         run: |
           # Create test database schema
           psql -h localhost -U postgres -d letovo_test -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), password VARCHAR(255));"
+          
+          # Create configs directory
+          mkdir -p src/configs
+          
+          # Create SQL config pointing to localhost
+          cat > src/configs/SqlConnectionConfig.json << 'EOF'
+          {
+            "connections": 5,
+            "dbname": "letovo_test",
+            "host": "localhost",
+            "password": "postgres",
+            "user": "postgres",
+            "port": 5432
+          }
+          EOF
+          
+          # Create server config
+          cat > src/configs/ServerConfig.json << 'EOF'
+          {
+            "adress": "0.0.0.0",
+            "port": 8080,
+            "thread_pool_size": 2,
+            "certs_path": "./certs",
+            "update_hashes": false
+          }
+          EOF
+          
+          # Create pages config
+          cat > src/configs/PagesConfig.json << 'EOF'
+          {
+            "wiki_path": "/tmp/wiki",
+            "user_avatars_path": "/tmp/avatars",
+            "admin_avatars_path": "/tmp/admin_avatars",
+            "achivements_path": "/tmp/achievements",
+            "media_path": "/tmp/media",
+            "secret_example_path": "/tmp/secrets",
+            "media_cache_size": 10,
+            "create_file": false
+          }
+          EOF
+          
+          # Create market config
+          cat > src/configs/MarketConfig.json << 'EOF'
+          {
+            "bid_resolver_sleep_time": 1000,
+            "junk_user": "system"
+          }
+          EOF
+          
+          # Create necessary directories
+          mkdir -p /tmp/wiki /tmp/avatars /tmp/admin_avatars /tmp/achievements /tmp/media /tmp/secrets
+          
+          echo "✅ Created all test configurations"
       
       - name: Build with coverage
         env:
@@ -125,12 +178,29 @@ jobs:
         run: |
           cd src
           # Build with coverage flags
-          echo "Adding coverage flags..."
+          echo "Building with coverage instrumentation..."
           cmake -DCMAKE_BUILD_TYPE=Debug \
                 -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
                 -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
                 .
-          cmake --build .
+          cmake --build . --verbose
+          
+          # Verify binary was created
+          if [ ! -f "server_starter" ]; then
+            echo "ERROR: server_starter binary not found"
+            exit 1
+          fi
+          
+          echo "Build successful: server_starter created"
+          ls -lh server_starter
+          
+          # Check for .gcno files (compile-time coverage data)
+          GCNO_COUNT=$(find . -name "*.gcno" -type f | wc -l)
+          echo "Found $GCNO_COUNT .gcno files (coverage instrumentation)"
+          
+          if [ $GCNO_COUNT -eq 0 ]; then
+            echo "WARNING: No .gcno files found - coverage may not work"
+          fi
       
       - name: Run tests with coverage
         env:
@@ -146,22 +216,55 @@ jobs:
           SERVER_PID=$!
           sleep 5
           
+          # Check if server is running
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "ERROR: Server failed to start"
+            exit 1
+          fi
+          
+          echo "Server running with PID $SERVER_PID"
+          
           # Run tests
           cd ../test
-          pytest test_auth.py -v || true
+          pytest test_auth.py -v
+          TEST_RESULT=$?
           
-          # Stop server
+          # Stop server gracefully
+          cd ../src
           kill $SERVER_PID || true
+          wait $SERVER_PID 2>/dev/null || true
           sleep 2
+          
+          # Check for coverage files
+          echo "Checking for .gcda files..."
+          find . -name "*.gcda" -type f | head -10
+          GCDA_COUNT=$(find . -name "*.gcda" -type f | wc -l)
+          echo "Found $GCDA_COUNT .gcda files"
+          
+          if [ $GCDA_COUNT -eq 0 ]; then
+            echo "WARNING: No coverage data generated"
+            exit 1
+          fi
+          
+          exit $TEST_RESULT
       
       - name: Generate coverage report
+        if: success() || failure()
         run: |
           cd src
-          lcov --capture --directory . --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' '*/jwt-cpp/*' '*/llhttp/*' --output-file coverage.info
+          # Check if we have coverage data
+          if [ $(find . -name "*.gcda" -type f | wc -l) -eq 0 ]; then
+            echo "No coverage data available, skipping report generation"
+            exit 0
+          fi
+          
+          # Generate coverage report
+          lcov --capture --directory . --output-file coverage.info --ignore-errors empty
+          lcov --remove coverage.info '/usr/*' '*/jwt-cpp/*' '*/llhttp/*' '*/_deps/*' --output-file coverage.info
           lcov --list coverage.info
       
       - name: Upload coverage to Codecov
+        if: success() || failure()
         uses: codecov/codecov-action@v4
         with:
           files: ./src/coverage.info
@@ -169,4 +272,5 @@ jobs:
           name: letovo-coverage
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
 
