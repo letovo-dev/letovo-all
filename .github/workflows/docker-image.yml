@@ -115,8 +115,22 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: |
-          # Create test database schema
-          psql -h localhost -U postgres -d letovo_test -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), password VARCHAR(255));"
+          # Create test database schema from SQL file
+          echo "Creating database schema..."
+          psql -h localhost -U postgres -d letovo_test -f docs/psql_schema.sql
+          
+          # Insert minimal seed data for server startup
+          echo "Inserting seed data..."
+          psql -h localhost -U postgres -d letovo_test << 'EOF'
+          -- Create a test department
+          INSERT INTO department (departmentid, departmentname) VALUES (1, 'test_department') ON CONFLICT DO NOTHING;
+          
+          -- Create a starter role (rang=0) for the department
+          INSERT INTO roles (roleid, rolename, rang, departmentid, payment) 
+          VALUES (1, 'starter', 0, 1, 0) ON CONFLICT DO NOTHING;
+          EOF
+          
+          echo "Database setup complete"
           
           # Remove symlinked config files (they point to non-existent paths in CI)
           rm -rf src/configs
