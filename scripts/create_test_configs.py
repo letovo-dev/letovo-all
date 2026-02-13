@@ -43,10 +43,11 @@ def main():
     print(f"   Contents: {os.listdir(config_dir)}")
     
     # SQL configuration (points to localhost test database)
+    # Use 127.0.0.1 instead of localhost for GitHub Actions compatibility
     sql_config = {
         "connections": 5,
         "dbname": "letovo_test",
-        "host": "localhost",
+        "host": "127.0.0.1",
         "password": "postgres",
         "user": "postgres",
         "port": 5432
