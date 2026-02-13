@@ -25,6 +25,17 @@ def main():
     os.makedirs(config_dir, exist_ok=True)
     print(f"Created directory: {config_dir}")
     
+    # Verify directory exists
+    if not os.path.exists(config_dir):
+        print(f"❌ ERROR: Directory {config_dir} was not created!")
+        print(f"Current directory contents:")
+        print(os.listdir('.'))
+        if os.path.exists('src'):
+            print(f"src/ contents: {os.listdir('src')}")
+        sys.exit(1)
+    
+    print(f"✅ Verified: {os.path.abspath(config_dir)} exists")
+    
     # SQL configuration (points to localhost test database)
     sql_config = {
         "connections": 5,
@@ -72,9 +83,27 @@ def main():
     
     for filename, config_data in configs.items():
         filepath = os.path.join(config_dir, filename)
-        with open(filepath, "w") as f:
-            json.dump(config_data, f, indent=2)
-        print(f"✅ Created: {filepath}")
+        abs_filepath = os.path.abspath(filepath)
+        
+        # Debug: show what we're trying to write
+        print(f"Attempting to create: {abs_filepath}")
+        
+        # Verify parent directory exists
+        parent_dir = os.path.dirname(abs_filepath)
+        if not os.path.exists(parent_dir):
+            print(f"❌ Parent directory does not exist: {parent_dir}")
+            sys.exit(1)
+        
+        # Write the file
+        try:
+            with open(abs_filepath, "w") as f:
+                json.dump(config_data, f, indent=2)
+            print(f"✅ Created: {filepath}")
+        except Exception as e:
+            print(f"❌ Failed to create {filepath}: {e}")
+            print(f"   Parent dir exists: {os.path.exists(parent_dir)}")
+            print(f"   Parent dir writable: {os.access(parent_dir, os.W_OK)}")
+            raise
     
     print(f"\n✅ Successfully created {len(configs)} configuration files")
     return 0
