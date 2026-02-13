@@ -157,8 +157,10 @@ jobs:
           cd src
           # Build with coverage flags
           echo "Building with coverage instrumentation..."
-          cmake -DCMAKE_BUILD_TYPE=Debug \
-                -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          # Use Coverage build type to trigger CMakeLists.txt coverage settings
+          # Disable optimization flags that interfere with coverage
+          cmake -DCMAKE_BUILD_TYPE=Coverage \
+                -DCMAKE_CXX_FLAGS="-g -O0 --coverage -fprofile-arcs -ftest-coverage" \
                 -DCMAKE_EXE_LINKER_FLAGS="--coverage" \
                 .
           cmake --build . --verbose
