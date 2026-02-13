@@ -123,6 +123,11 @@ jobs:
           import json
           import os
           
+          # Change to workspace directory
+          workspace = os.environ.get('GITHUB_WORKSPACE', os.getcwd())
+          os.chdir(workspace)
+          print(f"Working in: {os.getcwd()}")
+          
           # Create configs directory
           os.makedirs("src/configs", exist_ok=True)
           
