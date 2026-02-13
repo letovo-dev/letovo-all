@@ -1,7 +1,7 @@
 import requests
 import os
 
-BASE_URL = "http://localhost/api"
+BASE_URL = "http://0.0.0.0:8080"
 TOKEN = "5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9"
 
 
@@ -48,7 +48,7 @@ def test_get_achievement_images():
     assert "result" in data
     assert isinstance(data["result"], list)
     for picture in data["result"]:
-        assert os.path.exists(f"src/pages{picture}")
+        assert os.path.exists(f"../src/pages/{picture}")
 
 
 def test_get_post_by_id():
@@ -121,4 +121,4 @@ def test_user_avatars():
     assert "result" in data
     assert isinstance(data["result"], list)
     for avatar in data["result"]:
-        assert os.path.exists(f"src/pages{avatar}")
+        assert os.path.exists(f"../src/pages/{avatar}")

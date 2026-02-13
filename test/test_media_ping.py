@@ -9,7 +9,7 @@ MEDIAS_TO_CHECK = [
 def load_media(how_many=len(MEDIAS_TO_CHECK)):
     for i in range(1, how_many):
         now = datetime.datetime.now()
-        r = requests.get(f"http://localhost/api/media/get/{MEDIAS_TO_CHECK[i]}", verify=False)
+        r = requests.get(f"http://0.0.0.0:8080/media/get/{MEDIAS_TO_CHECK[i]}", verify=False)
         assert r.status_code == 200, f"Failed to load media {MEDIAS_TO_CHECK[i]}"
         delay = datetime.datetime.now() - now
         print(f"Media {i} loaded in {delay.microseconds} microseconds or {delay.seconds} seconds")

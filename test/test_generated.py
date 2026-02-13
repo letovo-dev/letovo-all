@@ -4,7 +4,7 @@ import pytest
 USERNAME = "scv"
 PASSWORD = "7"
 TOKEN = "bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14"
-URL = "https://127.0.0.1/api/"
+URL = "http://0.0.0.0:8080"
 ID = 1
 
 

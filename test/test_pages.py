@@ -2,7 +2,7 @@ import pytest
 import requests
 
 
-BASE_URL = "http://localhost/api"
+BASE_URL = "http://0.0.0.0:8080"
 TOKEN = "5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9"
 
 

@@ -75,6 +75,9 @@ private:
     sql_config.dbname = config_map["dbname"].GetString();
     sql_config.hostaddr = config_map["host"].GetString();
     sql_config.connections_count = config_map["connections"].GetInt();
+    if (config_map.HasMember("port")) {
+      sql_config.port = std::to_string(config_map["port"].GetInt());
+    }
 
     config_map.Parse(GetJson("./configs/ServerConfig.json").c_str());
     const char *env_adress = std::getenv("SERVER_ADRESS");
