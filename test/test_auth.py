@@ -28,9 +28,11 @@ def test_delete_user():
     url = "http://0.0.0.0:8080/auth/login/"
     data = {"login": "test", "password": "test"}
     response = requests.post(url, json=data, verify=False)
-    token = response.json()["token"]
-    url = "http://0.0.0.0:8080/auth/delete/{}".format(token)
-    response = requests.delete(url, verify=False)
+    token = response.headers.get("Authorization")
+    assert token is not None, "Authorization token not found in response headers"
+    url = "http://0.0.0.0:8080/auth/delete"
+    headers = {"Bearer": token}
+    response = requests.delete(url, headers=headers, verify=False)
     assert response.status_code == 200
 
     url = "http://0.0.0.0:8080/auth/login/"

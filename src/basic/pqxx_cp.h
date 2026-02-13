@@ -77,15 +77,23 @@ public:
   void connect();
   std::unique_ptr<AsyncConnection> getConnection();
   void returnConnection(std::unique_ptr<AsyncConnection> db_ptr);
-
-private:
+  std::queue<std::unique_ptr<AsyncConnection>> connections;
+  
+  private:
   connection_options options;
   std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr_;
   int numberOfConnections;
-  std::queue<std::unique_ptr<AsyncConnection>> connections;
   std::thread worker;
   std::mutex mtx;
   std::condition_variable cv;
+};
+
+class SafeCon : public std::unique_ptr<AsyncConnection> {
+public:
+  SafeCon(std::shared_ptr<ConnectionsManager> pool_ptr);
+  ~SafeCon();
+private:
+  std::shared_ptr<ConnectionsManager> pool_ptr_;
 };
 
 } // namespace cp

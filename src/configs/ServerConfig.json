@@ -1,7 +1,1 @@
-{
-  "adress": "0.0.0.0",
-  "certs_path": "../certs",
-  "port": 8080,
-  "thread_pool_size": 5,
-  "update_hashes": false
-}
+/mnt/server-configs/ServerConfig.json

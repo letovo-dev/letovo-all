@@ -57,6 +57,13 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_link_options(-flto=auto)
 endif()
 
+# Coverage build configuration
+if(CMAKE_BUILD_TYPE MATCHES Coverage)
+    message(STATUS "Building with coverage instrumentation")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+endif()
+
 
 add_executable(server_starter ${SOURCES})
 

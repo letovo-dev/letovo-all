@@ -1,9 +1,1 @@
-{
-  "achivements_path": "images/achivements/",
-  "admin_avatars_path": "images/admin_avatars/",
-  "create_file": true,
-  "media_path": "/pages/",
-  "secret_example_path": "posts/secret_example.md",
-  "user_avatars_path": "images/avatars/",
-  "wiki_path": "wiki/"
-}
+/mnt/server-configs/PagesConfig.json
