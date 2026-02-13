@@ -118,13 +118,13 @@ jobs:
           # Create test database schema
           psql -h localhost -U postgres -d letovo_test -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), password VARCHAR(255));"
           
-          # Create configs directory
-          mkdir -p src/configs
-          
-          # Create config files using Python (avoids shell quoting issues)
+          # Create config files using Python
           python3 << 'PYSCRIPT'
           import json
           import os
+          
+          # Create configs directory
+          os.makedirs("src/configs", exist_ok=True)
           
           # SQL config
           sql_config = {
@@ -176,7 +176,7 @@ jobs:
           with open("src/configs/MarketConfig.json", "w") as f:
               json.dump(market_config, f, indent=2)
           
-          print("✅ Created all config files")
+          print("✅ Created 4 config files in src/configs/")
           PYSCRIPT
           
           # Create necessary directories
