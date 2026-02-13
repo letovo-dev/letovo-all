@@ -20,21 +20,27 @@ def main():
     os.chdir(workspace)
     print(f"Working directory: {os.getcwd()}")
     
-    # Create configs directory
-    config_dir = "src/configs"
+    # Check if src directory exists
+    if not os.path.exists("src"):
+        print(f"❌ ERROR: src/ directory does not exist in {os.getcwd()}")
+        print(f"Directory contents: {os.listdir('.')}")
+        sys.exit(1)
+    
+    # Create configs directory with absolute path
+    config_dir = os.path.join(os.getcwd(), "src", "configs")
     os.makedirs(config_dir, exist_ok=True)
     print(f"Created directory: {config_dir}")
     
-    # Verify directory exists
+    # Verify directory exists and show details
     if not os.path.exists(config_dir):
         print(f"❌ ERROR: Directory {config_dir} was not created!")
-        print(f"Current directory contents:")
-        print(os.listdir('.'))
-        if os.path.exists('src'):
-            print(f"src/ contents: {os.listdir('src')}")
         sys.exit(1)
     
-    print(f"✅ Verified: {os.path.abspath(config_dir)} exists")
+    print(f"✅ Verified: {config_dir} exists")
+    print(f"   Absolute path: {os.path.abspath(config_dir)}")
+    print(f"   Is directory: {os.path.isdir(config_dir)}")
+    print(f"   Writable: {os.access(config_dir, os.W_OK)}")
+    print(f"   Contents: {os.listdir(config_dir)}")
     
     # SQL configuration (points to localhost test database)
     sql_config = {
@@ -82,28 +88,39 @@ def main():
     }
     
     for filename, config_data in configs.items():
+        # Use absolute path from the start
         filepath = os.path.join(config_dir, filename)
-        abs_filepath = os.path.abspath(filepath)
         
         # Debug: show what we're trying to write
-        print(f"Attempting to create: {abs_filepath}")
-        
-        # Verify parent directory exists
-        parent_dir = os.path.dirname(abs_filepath)
-        if not os.path.exists(parent_dir):
-            print(f"❌ Parent directory does not exist: {parent_dir}")
-            sys.exit(1)
+        print(f"Attempting to create: {filepath}")
         
         # Write the file
         try:
-            with open(abs_filepath, "w") as f:
+            # Try creating a test file first
+            test_path = os.path.join(config_dir, ".test")
+            with open(test_path, "w") as f:
+                f.write("test")
+            os.remove(test_path)
+            
+            # Now write the actual config
+            with open(filepath, "w") as f:
                 json.dump(config_data, f, indent=2)
-            print(f"✅ Created: {filepath}")
+            
+            # Verify file was actually created
+            if os.path.exists(filepath):
+                print(f"✅ Created: {filename}")
+            else:
+                print(f"❌ File not found after write: {filepath}")
+                sys.exit(1)
         except Exception as e:
-            print(f"❌ Failed to create {filepath}: {e}")
-            print(f"   Parent dir exists: {os.path.exists(parent_dir)}")
-            print(f"   Parent dir writable: {os.access(parent_dir, os.W_OK)}")
-            raise
+            print(f"❌ Failed to create {filename}: {e}")
+            print(f"   Attempted path: {filepath}")
+            print(f"   Config dir: {config_dir}")
+            print(f"   Config dir exists: {os.path.exists(config_dir)}")
+            print(f"   Config dir is dir: {os.path.isdir(config_dir)}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
     
     print(f"\n✅ Successfully created {len(configs)} configuration files")
     return 0
