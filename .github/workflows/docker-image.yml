@@ -118,11 +118,15 @@ jobs:
           # Create test database schema
           psql -h localhost -U postgres -d letovo_test -c "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username VARCHAR(255), password VARCHAR(255));"
           
+          # Ensure we're in the workspace root
+          cd $GITHUB_WORKSPACE
+          pwd
+          
           # Create configs directory
           mkdir -p src/configs
           
           # Create SQL config pointing to localhost
-          cat > src/configs/SqlConnectionConfig.json <<EOF
+          cat << 'SQLEOF' > src/configs/SqlConnectionConfig.json
           {
             "connections": 5,
             "dbname": "letovo_test",
@@ -131,10 +135,10 @@ jobs:
             "user": "postgres",
             "port": 5432
           }
-          EOF
+          SQLEOF
           
           # Create server config
-          cat > src/configs/ServerConfig.json <<EOF
+          cat << 'SRVEOF' > src/configs/ServerConfig.json
           {
             "adress": "0.0.0.0",
             "port": 8080,
@@ -142,10 +146,10 @@ jobs:
             "certs_path": "./certs",
             "update_hashes": false
           }
-          EOF
+          SRVEOF
           
           # Create pages config
-          cat > src/configs/PagesConfig.json <<EOF
+          cat << 'PGEOF' > src/configs/PagesConfig.json
           {
             "wiki_path": "/tmp/wiki",
             "user_avatars_path": "/tmp/avatars",
@@ -156,15 +160,15 @@ jobs:
             "media_cache_size": 10,
             "create_file": false
           }
-          EOF
+          PGEOF
           
           # Create market config
-          cat > src/configs/MarketConfig.json <<EOF
+          cat << 'MKTEOF' > src/configs/MarketConfig.json
           {
             "bid_resolver_sleep_time": 1000,
             "junk_user": "system"
           }
-          EOF
+          MKTEOF
           
           # Create necessary directories
           mkdir -p /tmp/wiki /tmp/avatars /tmp/admin_avatars /tmp/achievements /tmp/media /tmp/secrets
