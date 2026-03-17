@@ -58,4 +58,4 @@ COPY --from=builder /app/build/server_starter .
 
 EXPOSE 8080
 
-CMD ["./server_starter"]
+CMD ["./server_starter", "-o"]
