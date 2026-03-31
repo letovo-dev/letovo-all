@@ -223,48 +223,7 @@
         "request": {
             "method": "get"
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": [
-                    {
-                        "post_id": "31",
-                        "post_path": "/posts/1751366513_086132_article_1.md",
-                        "is_secret": "f",
-                        "likes": "0",
-                        "title": "World News 24",
-                        "author": "",
-                        "text": "",
-                        "dislikes": "0",
-                        "parent_id": "",
-                        "date": "2025-07-01 13:41:53.17649",
-                        "saved_count": "0",
-                        "category": "1",
-                        "category_name": "\u041c\u0435\u0434\u0438\u0430"
-                    },
-                    {
-                        "post_id": "33",
-                        "post_path": "/posts/1751367034_829527_article_2.md",
-                        "is_secret": "f",
-                        "likes": "0",
-                        "title": "\u0428\u043e\u0440\u0442\u0441\u043c\u044d\u0439\u043a\u0435\u0440\u044b",
-                        "author": "",
-                        "text": "",
-                        "dislikes": "0",
-                        "parent_id": "",
-                        "date": "2025-07-01 13:50:35.063876",
-                        "saved_count": "0",
-                        "category": "1",
-                        "category_name": "\u041c\u0435\u0434\u0438\u0430"
-                    }
-                ]
-            },
-            "headers": [
-                "Connection",
-                "Content-Length",
-                "Content-Type"
-            ]
-        }
+        "response": {}
     },
     "/achivements/user/departments/:username([a-zA-Z0-9\\-]+)": {
         "request": {
@@ -378,14 +337,7 @@
         "request": {
             "method": "get"
         },
-        "response": {
-            "status_code": 200,
-            "headers": [
-                "Connection",
-                "Content-Length",
-                "Content-Type"
-            ]
-        }
+        "response": {}
     },
     "/post/:id(\\d+)": {
         "request": {
@@ -545,15 +497,7 @@
         "request": {
             "method": "get"
         },
-        "response": {
-            "status_code": 200,
-            "text": "\u289a\u28fb\u2804\u2878\u2847\u28b8\u28db\u285b\u2800\u28ff\u2840\u28b8\u28c0\u2847\u28b8\u28c0\u2800\u2800\u28b8\u2887\u28fc\u2847\u28df\u28db\u28b8\u28c0\u28f8\u28a0\u285e\u28bb\n\u28cc\u28f9\u28a6\u2817\u28ba\u28f8\u28c9\u28f9\u28f8\u2812\u28a7\u28b8\u2809\u2847\u28b8\u28c9\u2847\u2800\u28b8\u2818\u28b9\u2847\u28cf\u28c9\u28b8\u2809\u28b9\u2880\u281f\u28b9\n\u2800\u2800\u2800\u2800\u2800\u28b0\u28c6\u28a0\u28f6\u2880\u2876\u2812\u28b2\u2844\u28b0\u2856\u28b2\u2800\u28f6\u28d2\u28d2\u28b0\u2856\u28b2\u2844\u2800\u2800\u2800\u2800\u2800\n\u2800\u2800\u2800\u2800\u2800\u28b8\u2808\u280b\u28ff\u2818\u28a7\u28c0\u287c\u2883\u28fc\u28c0\u28f8\u2840\u28ff\u28c9\u28c9\u28b8\u284f\u2809\u2800\u2800\u2800\u2800\u2800\u2800\n\u2876\u2836\u2802\u2810\u2832\u2836\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u2876\u2836\u2876\u28f6\n\u28d7\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2809\u281b\u283f\u283f\u28ff\u283f\u28ff\u28ff\u28ff\u28ff\u283f\u283f\u283f\u281f\u281b\u2809\u2801\u2800\u2800\u2800\u28a0\u28ff\n\u28ff\u28f7\u28c0\u2800\u2808\u281b\u2822\u2825\u2834\u281f\u2802\u2800\u2800\u2800\u2809\u28db\u2809\u2801\u2800\u2810\u2832\u2824\u2816\u281b\u2801\u2800\u2800\u28d0\u28ff\u28ff\n\u28ff\u28ff\u28ff\u28e6\u28c4\u2840\u2800\u2800\u2800\u2800\u28c0\u2860\u28e4\u28e6\u28ff\u28ff\u28ff\u28c6\u28f4\u28e0\u28c0\u28c0\u2840\u28c0\u28c0\u28da\u28ff\u28ff\u28ff\u28b3\n\u28e7\u2809\u2819\u28bf\u28ff\u28ff\u28f6\u28f6\u28fe\u28ff\u287f\u28bf\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u283f\u2887\u28ff\n\u28ff\u28f7\u2844\u2808\u28ff\u28ff\u28ff\u28ff\u28ef\u28e5\u28e6\u28bf\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u285f\u2889\u28f4\u28ff\u28ff\n\u28ff\u28ff\u28ff\u28e6\u28d8\u280b\u28bb\u283f\u28bf\u28ff\u28ff\u28ff\u28fe\u28ed\u28db\u28db\u28db\u28ef\u28f7\u28ff\u28ff\u283f\u281f\u280b\u2809\u28f4\u28ff\u28ff\u28ff\n\u28a0\u2816\u28b2\u2800\u2800\u2856\u28b2\u2844\u2874\u2812\u2806\u2856\u2812\u2802\u2800\u28f6\u2832\u2844\u28b0\u2846\u2800\u2856\u28a6\u2800\u2846\u28b0\u2846\u2874\u2812\u28c4\n\u28a8\u281f\u28bb\u2800\u2800\u28cf\u28c9\u2807\u28a7\u28c0\u2844\u28cf\u28c9\u2841\u2800\u28ff\u281a\u28a1\u2817\u283a\u2844\u28cf\u28f9\u2806\u284f\u28b9\u2847\u28a7\u28c0\u285e\n\u28b0\u28d2\u2852\u2830\u2844\u2874\u2800\u2876\u28b2\u2846\u28a2\u28c0\u2856\u2800\u2800\u2856\u2812\u2832\u28b0\u2812\u28e6\u2880\u2876\u2844\u2812\u28b2\u2812\u28b2\u28c6\u28c0\n\u2838\u2824\u283d\u2820\u283d\u2801\u28f4\u2827\u283c\u28e7\u2824\u281f\u2800\u2800\u2808\u2827\u28e4\u2824\u2838\u2809\u2801\u281e\u2812\u2833\u2800\u2838\u2800\u2838\u2827\u283c",
-            "headers": [
-                "Connection",
-                "Content-Length",
-                "Content-Type"
-            ]
-        }
+        "response": {}
     },
     "/authors_list": {
         "request": {
@@ -562,16 +506,6 @@
                 "Bearer"
             ]
         },
-        "response": {
-            "status_code": 200,
-            "body": {
-                "result": []
-            },
-            "headers": [
-                "Connection",
-                "Content-Length",
-                "Content-Type"
-            ]
-        }
+        "response": {}
     }
 }
