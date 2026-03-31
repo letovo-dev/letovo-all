@@ -126,6 +126,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   transactions::server::get_balance(router, pool_ptr, logger_ptr);
   transactions::server::get_transactions(router, pool_ptr, logger_ptr);
 
+  achivements::server::user_achivements_by_department(router, pool_ptr, logger_ptr);
   achivements::server::user_achivemets(router, pool_ptr, logger_ptr);
   achivements::server::add_achivement(router, pool_ptr, logger_ptr);
   achivements::server::delete_achivement(router, pool_ptr, logger_ptr);

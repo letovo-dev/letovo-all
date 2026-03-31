@@ -21,6 +21,8 @@ def search_in_file(file_path, active_functions) -> dict:
         last_method = ""
         res = {}
         fields = {}
+        header_fields = []
+        params = []
         last_function = ""
         function = ""
         method_pattern = re.compile(r"->http_(.*?)\(.*?(\/.*?)\)?\"")

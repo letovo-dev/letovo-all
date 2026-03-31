@@ -6,10 +6,12 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-USERNAME = "scv-7"
+USERNAME = "scv"
 PASSWORD = "7"
 TOKEN = "5261aa7439b988c0f93d38f676e3bfd2a070ddd64bf174282f37cfa3348320e9"
-URL = "http://127.0.0.1/api/"
+with open('/mnt/server-configs/ServerConfig.json', 'r') as server_config:
+    conf = json.load(server_config)
+    URL = f"http://{conf['adress']}:{conf['port']}/"
 ID = 1
 REGEX_LINE = re.compile(r":.*\)")
 METHODS_FILE = "./docs/methods.json"
@@ -86,11 +88,12 @@ if __name__ == "__main__":
         }
     }
     for url in SEARCH_REQUESTS:
-        print(f"Sending request to {url}, {SEARCH_REQUESTS[url]['method']}")
         if "request" in SEARCH_REQUESTS[url]:
+            print(f"Sending request to {url}, {SEARCH_REQUESTS[url]['request']}")
             response = sendRequest(url, SEARCH_REQUESTS[url]["request"])
         else:
             try:
+                print(f"Sending request to {url}, {SEARCH_REQUESTS[url]}")
                 response = sendRequest(url, SEARCH_REQUESTS[url])
             except Exception as e:
                 print(f"Error: {e}")

@@ -60,7 +60,8 @@ pqxx::result user_info(std::string username,
   std::vector<std::string> params = {username};
 
   pqxx::result result = con->execute_params(
-      "select \"user\".userid, \"user\".username, \"user\".userrights, "
+      "select \"user\".userid, \"user\".username, \"user\".display_name, "
+      "\"user\".userrights, "
       "\"user\".jointime, \"user\".avatar_pic, \"user\".active, "
       "\"user\".times_visited, \"roles\".departmentid, \"roles\".rolename, "
       "\"user\".registered from \"user\" left join \"roles\" on \"user\".role "
@@ -82,7 +83,8 @@ pqxx::result full_user_info(std::string username,
   std::vector<std::string> params = {username};
 
   pqxx::result result = con->execute_params(
-      "select \"user\".userid, \"user\".username, \"user\".userrights, "
+      "select \"user\".userid, \"user\".username, \"user\".display_name, "
+      "\"user\".userrights, "
       "\"user\".balance, \"user\".registered, \"user\".jointime, "
       "\"user\".avatar_pic, \"user\".active, \"user\".times_visited, "
       "\"roles\".rolename as role, \"roles\".payment as paycheck, "

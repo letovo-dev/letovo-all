@@ -1,854 +1,577 @@
 {
-  "/achivements/add": {
-    "request": {
-      "body_fields": {
-        "achivement_id": "Int",
-        "username": "String"
-      },
-      "function": "add_achivement",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
+    "explanation:": {
+        "request": {
+            "function": "technical field, just for backend",
+            "method": "allowed REST API method",
+            "body_fields": "required fields in request body",
+            "header_fields": "required fields in request header"
+        },
+        "response": {
+            "status_code": "response status code",
+            "headers": "response headers",
+            "text": "response text",
+            "body": "response body, only first 2 results"
+        }
     },
-    "response": {}
-  },
-  "/achivements/by_user": {
-    "request": {
-      "function": "department_achivements_by_user",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
+    "/transactions/prepare": {
+        "request": {
+            "function": "prepare_transaction",
+            "method": "POST",
+            "body_fields": {
+                "receiver": "String",
+                "amount": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/create": {
-    "request": {
-      "body_fields": {
-        "description": "String",
-        "level": "Int",
-        "name": "String",
-        "pic": "String",
-        "stages": "Int",
-        "tree_id": "Int"
-      },
-      "function": "create_achivement",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
+    "/transactions/send": {
+        "request": {
+            "function": "transfer",
+            "method": "POST",
+            "body_fields": {
+                "tr_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/delete": {
-    "request": {
-      "body_fields": {
-        "achivement_id": "Int",
-        "username": "String"
-      },
-      "function": "delete_achivement",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
+    "/transactions/balance": {
+        "request": {
+            "function": "get_balance",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/info/:achivement_id([0-9]+)": {
-    "request": {
-      "function": "achivement_info",
-      "method": "GET"
+    "/transactions/my": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/no_dep": {
-    "request": {
-      "function": "no_department_achivements",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
+    "/social/authors": {
+        "request": {
+            "function": "get_authors_list",
+            "method": "GET"
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/pictures": {
-    "request": {
-      "function": "achivement_pictures",
-      "method": "GET"
+    "/social/news:search(.*)": {
+        "request": {
+            "function": "get_news",
+            "method": "GET",
+            "params": [
+                "start",
+                "size"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/qr/:achivement_id([0-9]+)": {
-    "request": {
-      "function": "achivement_qr",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
+    "/social/comments:search(.*)": {
+        "request": {
+            "function": "get_comments",
+            "method": "GET",
+            "params": [
+                "post_id",
+                "start",
+                "size"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     },
-    "response": {}
-  },
-  "/achivements/qr_code/:achivement_id([0-9]+)": {
-    "request": {
-      "method": "get"
+    "/social/media/pics/:post_id(.*)": {
+        "request": {
+            "function": "get_post_media",
+            "method": "GET",
+            "header_fields": [
+                "pics"
+            ]
+        },
+        "response": {}
     },
-    "response": {
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200
+    "/social/new/:post_id(.*)": {
+        "request": {
+            "function": "get_post",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/posts": {
+        "request": {
+            "function": "get_all_posts",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/titles": {
+        "request": {
+            "function": "get_all_titles",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/saved": {
+        "request": {
+            "function": "get_saved_posts",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/save": {
+        "request": {
+            "function": "delete_saved_post",
+            "method": "DELETE",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/search:search(.*)": {
+        "request": {
+            "function": "search_by_title",
+            "method": "GET",
+            "params": [
+                "title"
+            ],
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/like": {
+        "request": {
+            "function": "delete_like",
+            "method": "DELETE",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/dislike": {
+        "request": {
+            "function": "delete_dislike",
+            "method": "DELETE",
+            "body_fields": {
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/comments": {
+        "request": {
+            "function": "add_comment",
+            "method": "POST",
+            "body_fields": {
+                "author": "String",
+                "comment": "String",
+                "post_id": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/social/categories": {
+        "request": {
+            "function": "get_post_categories",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/social/bycat/:category([0-9\\-]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": [
+                    {
+                        "post_id": "31",
+                        "post_path": "/posts/1751366513_086132_article_1.md",
+                        "is_secret": "f",
+                        "likes": "0",
+                        "title": "World News 24",
+                        "author": "",
+                        "text": "",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-07-01 13:41:53.17649",
+                        "saved_count": "0",
+                        "category": "1",
+                        "category_name": "\u041c\u0435\u0434\u0438\u0430"
+                    },
+                    {
+                        "post_id": "33",
+                        "post_path": "/posts/1751367034_829527_article_2.md",
+                        "is_secret": "f",
+                        "likes": "0",
+                        "title": "\u0428\u043e\u0440\u0442\u0441\u043c\u044d\u0439\u043a\u0435\u0440\u044b",
+                        "author": "",
+                        "text": "",
+                        "dislikes": "0",
+                        "parent_id": "",
+                        "date": "2025-07-01 13:50:35.063876",
+                        "saved_count": "0",
+                        "category": "1",
+                        "category_name": "\u041c\u0435\u0434\u0438\u0430"
+                    }
+                ]
+            },
+            "headers": [
+                "Connection",
+                "Content-Length",
+                "Content-Type"
+            ]
+        }
+    },
+    "/achivements/user/departments/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "function": "user_achivements_by_department",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "function": "user_achivemets",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "function": "full_user_achivemets",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/achivements/add": {
+        "request": {
+            "function": "add_achivement",
+            "method": "POST",
+            "body_fields": {
+                "username": "String",
+                "achivement_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/delete": {
+        "request": {
+            "function": "delete_achivement",
+            "method": "DELETE",
+            "body_fields": {
+                "username": "String",
+                "achivement_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/tree/:tree_id([0-9]+)": {
+        "request": {
+            "function": "achivements_tree",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/achivements/info/:achivement_id([0-9]+)": {
+        "request": {
+            "function": "achivement_info",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/achivements/create": {
+        "request": {
+            "function": "create_achivement",
+            "method": "POST",
+            "body_fields": {
+                "name": "String",
+                "tree_id": "Int",
+                "level": "Int",
+                "pic": "String",
+                "description": "String",
+                "stages": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/pictures": {
+        "request": {
+            "function": "achivement_pictures",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/achivements/no_dep": {
+        "request": {
+            "function": "no_department_achivements",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/by_user": {
+        "request": {
+            "function": "department_achivements_by_user",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/achivements/qr_code/:achivement_id([0-9]+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "headers": [
+                "Connection",
+                "Content-Length",
+                "Content-Type"
+            ]
+        }
+    },
+    "/post/:id(\\d+)": {
+        "request": {
+            "function": "get_page_content",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/post/author/:username([a-zA-Z0-9\\-]+)": {
+        "request": {
+            "function": "get_page_author",
+            "method": "GET"
+        },
+        "response": {}
+    },
+    "/post/add_page": {
+        "request": {
+            "function": "add_page",
+            "method": "POST",
+            "body_fields": {
+                "title": "String",
+                "post_path": "String",
+                "category_name": "String",
+                "is_secret": "String",
+                "author": "String",
+                "text": "String",
+                "likes": "String",
+                "dislikes": "String",
+                "saved": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/update_likes": {
+        "request": {
+            "function": "update_likes",
+            "method": "PUT",
+            "body_fields": {
+                "post_id": "Int",
+                "likes": "Int"
+            }
+        },
+        "response": {}
+    },
+    "/post/favourite/": {
+        "request": {
+            "function": "get_favourite_posts",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite": {
+        "request": {
+            "function": "post_add_favourite_post",
+            "method": "POST",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/favourite/:id(\\d+)": {
+        "request": {
+            "function": "delete_favourite_post",
+            "method": "DELETE",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/rename_category": {
+        "request": {
+            "function": "rename_category",
+            "method": "PUT",
+            "body_fields": {
+                "old_name": "String",
+                "new_name": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/delete": {
+        "request": {
+            "function": "delete_post",
+            "method": "DELETE",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/update": {
+        "request": {
+            "function": "update_post",
+            "method": "PUT",
+            "body_fields": {
+                "post_id": "String",
+                "text": "String",
+                "title": "String",
+                "author": "String",
+                "is_secret": "String",
+                "likes": "String",
+                "dislikes": "String",
+                "saved_count": "String",
+                "category_name": "String",
+                "post_path": "String"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/add_media": {
+        "request": {
+            "function": "add_media",
+            "method": "POST",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/delete_media": {
+        "request": {
+            "function": "delete_media",
+            "method": "DELETE",
+            "body_fields": {
+                "post_id": "Int"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/post/reveal_secret/:id(\\d+)": {
+        "request": {
+            "method": "get"
+        },
+        "response": {
+            "status_code": 200,
+            "text": "\u289a\u28fb\u2804\u2878\u2847\u28b8\u28db\u285b\u2800\u28ff\u2840\u28b8\u28c0\u2847\u28b8\u28c0\u2800\u2800\u28b8\u2887\u28fc\u2847\u28df\u28db\u28b8\u28c0\u28f8\u28a0\u285e\u28bb\n\u28cc\u28f9\u28a6\u2817\u28ba\u28f8\u28c9\u28f9\u28f8\u2812\u28a7\u28b8\u2809\u2847\u28b8\u28c9\u2847\u2800\u28b8\u2818\u28b9\u2847\u28cf\u28c9\u28b8\u2809\u28b9\u2880\u281f\u28b9\n\u2800\u2800\u2800\u2800\u2800\u28b0\u28c6\u28a0\u28f6\u2880\u2876\u2812\u28b2\u2844\u28b0\u2856\u28b2\u2800\u28f6\u28d2\u28d2\u28b0\u2856\u28b2\u2844\u2800\u2800\u2800\u2800\u2800\n\u2800\u2800\u2800\u2800\u2800\u28b8\u2808\u280b\u28ff\u2818\u28a7\u28c0\u287c\u2883\u28fc\u28c0\u28f8\u2840\u28ff\u28c9\u28c9\u28b8\u284f\u2809\u2800\u2800\u2800\u2800\u2800\u2800\n\u2876\u2836\u2802\u2810\u2832\u2836\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u28f6\u2876\u2836\u2876\u28f6\n\u28d7\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2809\u281b\u283f\u283f\u28ff\u283f\u28ff\u28ff\u28ff\u28ff\u283f\u283f\u283f\u281f\u281b\u2809\u2801\u2800\u2800\u2800\u28a0\u28ff\n\u28ff\u28f7\u28c0\u2800\u2808\u281b\u2822\u2825\u2834\u281f\u2802\u2800\u2800\u2800\u2809\u28db\u2809\u2801\u2800\u2810\u2832\u2824\u2816\u281b\u2801\u2800\u2800\u28d0\u28ff\u28ff\n\u28ff\u28ff\u28ff\u28e6\u28c4\u2840\u2800\u2800\u2800\u2800\u28c0\u2860\u28e4\u28e6\u28ff\u28ff\u28ff\u28c6\u28f4\u28e0\u28c0\u28c0\u2840\u28c0\u28c0\u28da\u28ff\u28ff\u28ff\u28b3\n\u28e7\u2809\u2819\u28bf\u28ff\u28ff\u28f6\u28f6\u28fe\u28ff\u287f\u28bf\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u283f\u2887\u28ff\n\u28ff\u28f7\u2844\u2808\u28ff\u28ff\u28ff\u28ff\u28ef\u28e5\u28e6\u28bf\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u28ff\u285f\u2889\u28f4\u28ff\u28ff\n\u28ff\u28ff\u28ff\u28e6\u28d8\u280b\u28bb\u283f\u28bf\u28ff\u28ff\u28ff\u28fe\u28ed\u28db\u28db\u28db\u28ef\u28f7\u28ff\u28ff\u283f\u281f\u280b\u2809\u28f4\u28ff\u28ff\u28ff\n\u28a0\u2816\u28b2\u2800\u2800\u2856\u28b2\u2844\u2874\u2812\u2806\u2856\u2812\u2802\u2800\u28f6\u2832\u2844\u28b0\u2846\u2800\u2856\u28a6\u2800\u2846\u28b0\u2846\u2874\u2812\u28c4\n\u28a8\u281f\u28bb\u2800\u2800\u28cf\u28c9\u2807\u28a7\u28c0\u2844\u28cf\u28c9\u2841\u2800\u28ff\u281a\u28a1\u2817\u283a\u2844\u28cf\u28f9\u2806\u284f\u28b9\u2847\u28a7\u28c0\u285e\n\u28b0\u28d2\u2852\u2830\u2844\u2874\u2800\u2876\u28b2\u2846\u28a2\u28c0\u2856\u2800\u2800\u2856\u2812\u2832\u28b0\u2812\u28e6\u2880\u2876\u2844\u2812\u28b2\u2812\u28b2\u28c6\u28c0\n\u2838\u2824\u283d\u2820\u283d\u2801\u28f4\u2827\u283c\u28e7\u2824\u281f\u2800\u2800\u2808\u2827\u28e4\u2824\u2838\u2809\u2801\u281e\u2812\u2833\u2800\u2838\u2800\u2838\u2827\u283c",
+            "headers": [
+                "Connection",
+                "Content-Length",
+                "Content-Type"
+            ]
+        }
+    },
+    "/authors_list": {
+        "request": {
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {
+            "status_code": 200,
+            "body": {
+                "result": []
+            },
+            "headers": [
+                "Connection",
+                "Content-Length",
+                "Content-Type"
+            ]
+        }
     }
-  },
-  "/achivements/tree/:tree_id([0-9]+)": {
-    "request": {
-      "function": "achivements_tree",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/achivements/user/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "function": "user_achivemets",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/achivements/user/full/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "function": "full_user_achivemets",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/auth/add_userrights": {
-    "request": {
-      "body_fields": {
-        "rights": "String",
-        "username": "String"
-      },
-      "function": "add_userrights",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/auth/amiadmin": {
-    "request": {
-      "function": "am_i_admin",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/auth/amiauthed": {
-    "request": {
-      "function": "am_i_authed",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/auth/change_password": {
-    "request": {
-      "body_fields": {
-        "new_password": "String",
-        "unlogin": "Bool"
-      },
-      "function": "change_password",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/auth/change_username": {
-    "request": {
-      "body_fields": {
-        "new_username": "String"
-      },
-      "function": "change_username",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/auth/delete": {
-    "request": {
-      "function": "enable_delete",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/auth/isactive/:username(.*)": {
-    "request": {
-      "function": "is_user_active",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/auth/isadmin/:username(.*)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {
-      "body": {
-        "status": "t"
-      },
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200
-    }
-  },
-  "/auth/isuser/:username(.*)": {
-    "request": {
-      "function": "is_user",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/auth/login": {
-    "request": {
-      "body_fields": {
-        "login": "String",
-        "password": "String"
-      },
-      "function": "enable_auth",
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/auth/reg": {
-    "request": {
-      "body_fields": {
-        "login": "String",
-        "password": "String",
-        "temp_token": "String"
-      },
-      "function": "enable_reg",
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/auth/register_true": {
-    "request": {
-      "function": "register_true",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/authors_list": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {
-      "body": {
-        "result": [
-          {
-            "avatar_pic": "images/avatars/example_1.png",
-            "username": "scv-7"
-          },
-          {
-            "avatar_pic": "/images/avatars/example_5.png",
-            "username": "scv2"
-          }
-        ]
-      },
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200
-    }
-  },
-  "/media/get/:filename(.*)": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/post/:id(\\d+)": {
-    "request": {
-      "function": "get_page_content",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/post/add_media": {
-    "request": {
-      "body_fields": {
-        "post_id": "Int"
-      },
-      "function": "add_media",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/post/add_page": {
-    "request": {
-      "body_fields": {
-        "author": "String",
-        "category": "String",
-        "dislikes": "Int",
-        "is_secret": "Bool",
-        "likes": "Int",
-        "post_path": "String",
-        "saved": "Int",
-        "text": "String",
-        "title": "String"
-      },
-      "function": "add_page",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/post/author/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "function": "get_page_author",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/post/delete": {
-    "request": {
-      "body_fields": {
-        "post_id": "Int"
-      },
-      "function": "delete_post",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/post/delete_media": {
-    "request": {
-      "body_fields": {
-        "post_id": "Int"
-      },
-      "function": "delete_media",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/post/favourite": {
-    "request": {
-      "body_fields": {
-        "post_id": "Int"
-      },
-      "function": "post_add_favourite_post",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/post/favourite/": {
-    "request": {
-      "function": "get_favourite_posts",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/post/favourite/:id(\\d+)": {
-    "request": {
-      "function": "delete_favourite_post",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/post/qr/:post_id([0-9]+)": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200
-    }
-  },
-  "/post/rename_category": {
-    "request": {
-      "body_fields": {
-        "new_name": "String",
-        "old_name": "String"
-      },
-      "function": "rename_category",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/post/update": {
-    "request": {
-      "body_fields": {
-        "author": "String",
-        "category": "String",
-        "dislikes": "String",
-        "is_secret": "String",
-        "likes": "String",
-        "post_id": "String",
-        "saved_count": "String",
-        "text": "String",
-        "title": "String"
-      },
-      "function": "update_post",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/post/update_likes": {
-    "request": {
-      "body_fields": {
-        "likes": "Int",
-        "post_id": "Int"
-      },
-      "function": "update_likes",
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/social/authors": {
-    "request": {
-      "function": "get_authors_list",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/social/bycat/:category([0-9\\-]+)": {
-    "request": {
-      "method": "get"
-    },
-    "response": {}
-  },
-  "/social/categories": {
-    "request": {
-      "function": "get_post_categories",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/social/comments": {
-    "request": {
-      "body_fields": {
-        "comment": "String",
-        "post_id": "String"
-      },
-      "function": "add_comment",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/social/comments:search(.*)": {
-    "request": {
-      "function": "get_comments",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET",
-      "params": [
-        "post_id",
-        "start",
-        "size"
-      ]
-    },
-    "response": {}
-  },
-  "/social/dislike": {
-    "request": {
-      "body_fields": {
-        "post_id": "String"
-      },
-      "function": "delete_dislike",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/social/like": {
-    "request": {
-      "body_fields": {
-        "post_id": "String"
-      },
-      "function": "delete_like",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/social/media/pics/:post_id(.*)": {
-    "request": {
-      "function": "get_post_media",
-      "header_fields": [
-        "pics"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/social/new/:post_id(.*)": {
-    "request": {
-      "function": "get_post",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/social/news:search(.*)": {
-    "request": {
-      "function": "get_news",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET",
-      "params": [
-        "start",
-        "size"
-      ]
-    },
-    "response": {}
-  },
-  "/social/posts": {
-    "request": {
-      "function": "get_all_posts",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/social/save": {
-    "request": {
-      "body_fields": {
-        "post_id": "String"
-      },
-      "function": "delete_saved_post",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/social/saved": {
-    "request": {
-      "function": "get_saved_posts",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/social/search:search(.*)": {
-    "request": {
-      "function": "search_by_title",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET",
-      "params": [
-        "title"
-      ]
-    },
-    "response": {}
-  },
-  "/social/titles": {
-    "request": {
-      "function": "get_all_titles",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/transactions/balance": {
-    "request": {
-      "function": "get_balance",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/transactions/my": {
-    "request": {
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "get"
-    },
-    "response": {
-      "body": {
-        "result": [
-          {
-            "amount": "100",
-            "receiver": "scv-8",
-            "sender": "scv-7",
-            "transactionid": "19",
-            "transactiontime": "2025-02-23 12:55:16.552781"
-          },
-          {
-            "amount": "100",
-            "receiver": "scv-8",
-            "sender": "scv-7",
-            "transactionid": "20",
-            "transactiontime": "2025-02-23 13:09:05.239221"
-          }
-        ]
-      },
-      "headers": [
-        "Server",
-        "Date",
-        "Content-Type",
-        "Content-Length",
-        "Connection"
-      ],
-      "status_code": 200
-    }
-  },
-  "/transactions/prepare": {
-    "request": {
-      "body_fields": {
-        "amount": "Int",
-        "receiver": "String"
-      },
-      "function": "prepare_transaction",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/transactions/send": {
-    "request": {
-      "body_fields": {
-        "tr_id": "String"
-      },
-      "function": "transfer",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/user/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "function": "user_info",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/add_role": {
-    "request": {
-      "body_fields": {
-        "department": "Int",
-        "role": "String",
-        "role_id": "Int",
-        "username": "String"
-      },
-      "function": "add_user_role",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/user/all_avatars": {
-    "request": {
-      "function": "all_avatars",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/create_role": {
-    "request": {
-      "body_fields": {
-        "department": "Int",
-        "payment": "Int",
-        "rang": "Int",
-        "role": "String"
-      },
-      "function": "create_role",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "POST"
-    },
-    "response": {}
-  },
-  "/user/delete_role": {
-    "request": {
-      "function": "delete_user_role",
-      "method": "DELETE"
-    },
-    "response": {}
-  },
-  "/user/department/name/:department([0-9]+)": {
-    "request": {
-      "function": "department_name",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/department/roles": {
-    "request": {
-      "function": "all_departments",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/department/roles/:department([0-9]+)": {
-    "request": {
-      "function": "department_roles",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/department/start/:department(.*)": {
-    "request": {
-      "function": "starter_role",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/full/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "function": "full_user_info",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/roles/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "function": "user_roles",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "/user/set_avatar": {
-    "request": {
-      "body_fields": {
-        "avatar": "String"
-      },
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "put"
-    },
-    "response": {}
-  },
-  "/user/set_department": {
-    "request": {
-      "body_fields": {
-        "department": "String",
-        "username": "String"
-      },
-      "function": "set_users_department",
-      "header_fields": [
-        "Bearer"
-      ],
-      "method": "PUT"
-    },
-    "response": {}
-  },
-  "/user/unactive_roles/:username([a-zA-Z0-9\\-]+)": {
-    "request": {
-      "function": "user_unactive_roles",
-      "method": "GET"
-    },
-    "response": {}
-  },
-  "explanation:": {
-    "request": {
-      "body_fields": "required fields in request body",
-      "function": "technical field, just for backend",
-      "header_fields": "required fields in request header",
-      "method": "allowed REST API method"
-    },
-    "response": {
-      "body": "response body, only first 2 results",
-      "headers": "response headers",
-      "status_code": "response status code",
-      "text": "response text"
-    }
-  }
 }
