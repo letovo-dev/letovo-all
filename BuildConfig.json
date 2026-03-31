@@ -17,7 +17,8 @@
     "letovo-soc-net/social.cc",
     "letovo-soc-net/achivements.cc",
     "letovo-soc-net/page_server.cc",
-    "letovo-soc-net/authors.cc"
+    "letovo-soc-net/authors.cc",
+    "letovo-soc-net/chat.cc"
   ],
   "required_sub_repos": {
     "letovo-secrets": "https://github.com/letovo-dev/letovo-secrets.git",

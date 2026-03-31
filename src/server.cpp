@@ -18,6 +18,7 @@
 #include "./letovo-soc-net/achivements.h"
 #include "./letovo-soc-net/authors.h"
 #include "./letovo-soc-net/page_server.h"
+#include "./letovo-soc-net/chat.h"
 #include "./letovo-soc-net/social.h"
 #include "./market/transactions.h"
 
@@ -158,6 +159,10 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   social::server::delete_saved_post(router, pool_ptr, logger_ptr);
   social::server::get_post_categories(router, pool_ptr, logger_ptr);
   social::server::get_post_by_category(router, pool_ptr, logger_ptr);
+
+  chat::server::get_chats(router, pool_ptr, logger_ptr);
+  chat::server::get_chat(router, pool_ptr, logger_ptr);
+  chat::server::new_message(router, pool_ptr, logger_ptr);
 
   authors::server::get_avaluable_authors(router, pool_ptr, logger_ptr);
 

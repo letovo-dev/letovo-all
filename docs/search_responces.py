@@ -24,13 +24,7 @@ TO_REPLACE = {
 }
 
 with open(METHODS_FILE, "r") as file:
-    raw = file.read().strip()
-    if not raw:
-        raise SystemExit(
-            f"{METHODS_FILE} is empty. Run `./install-run-core.sh -g` (or "
-            "`python3 docs/search_methods.py`) after fixing any search_methods errors."
-        )
-    SEARCH_REQUESTS = json.loads(raw)
+    SEARCH_REQUESTS = json.load(file)
 
 
 def requestUrl(url: str) -> str:

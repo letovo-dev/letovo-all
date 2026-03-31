@@ -42,7 +42,7 @@ jobs:
           build-args: |
             MAIN_FILE=server.cpp
             TEST_FILE=test.cpp
-            BUILD_FILES=basic/auth.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc basic/media.cc basic/media_cash.cc basic/qr_worker.cc market/transactions.cc market/actives.cc market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc letovo-soc-net/page_server.cc letovo-soc-net/authors.cc
+            BUILD_FILES=basic/auth.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc basic/media.cc basic/media_cash.cc basic/qr_worker.cc market/transactions.cc market/actives.cc market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc letovo-soc-net/page_server.cc letovo-soc-net/authors.cc letovo-soc-net/chat.cc
           tags: |
             ghcr.io/${{ github.repository_owner }}/letovo-server:latest
             ghcr.io/${{ github.repository_owner }}/letovo-server:${{ github.sha }}

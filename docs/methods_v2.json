@@ -507,5 +507,39 @@
             ]
         },
         "response": {}
+    },
+    "/chats/": {
+        "request": {
+            "function": "get_chats",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/chat/:username([a-zA-Z0-9\\-_]+)": {
+        "request": {
+            "function": "get_chat",
+            "method": "GET",
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
+    },
+    "/new_message": {
+        "request": {
+            "method": "post",
+            "body_fields": {
+                "receiver": "String",
+                "text": "String",
+                "attachments": "Array"
+            },
+            "header_fields": [
+                "Bearer"
+            ]
+        },
+        "response": {}
     }
 }

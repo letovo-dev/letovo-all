@@ -63,6 +63,7 @@ SET default_table_access_method = heap;
 CREATE TABLE public."user" (
     userid integer NOT NULL,
     username character varying(255) NOT NULL,
+    display_name text,
     passwdhash character varying(255) NOT NULL,
     userrights character varying(255) NOT NULL,
     jointime timestamp without time zone DEFAULT now(),

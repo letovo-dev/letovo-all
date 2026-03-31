@@ -85,6 +85,7 @@ def test_user_info():
     # Check structure and types
     assert "userid" in user_data and user_data["userid"].isdigit()
     assert user_data["username"] == username
+    assert "display_name" in user_data and isinstance(user_data["display_name"], str)
     assert "userrights" in user_data and isinstance(user_data["userrights"], str)
     assert "jointime" in user_data and isinstance(user_data["jointime"], str)
     assert "avatar_pic" in user_data and user_data["avatar_pic"].endswith(".png")
@@ -110,6 +111,7 @@ def test_full_user_info():
     # Check structure and types
     assert "userid" in user_info and user_info["userid"].isdigit()
     assert user_info["username"] == username
+    assert "display_name" in user_info and isinstance(user_info["display_name"], str)
     assert "userrights" in user_info and isinstance(user_info["userrights"], str)
     assert "balance" in user_info and user_info["balance"].replace("-", "").isdigit()
     assert user_info["registered"] in ["t", "f", "yes", "no"]

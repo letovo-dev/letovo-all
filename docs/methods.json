@@ -358,5 +358,30 @@
         "header_fields": [
             "Bearer"
         ]
+    },
+    "/chats/": {
+        "function": "get_chats",
+        "method": "GET",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/chat/:username([a-zA-Z0-9\\-_]+)": {
+        "function": "get_chat",
+        "method": "GET",
+        "header_fields": [
+            "Bearer"
+        ]
+    },
+    "/new_message": {
+        "method": "post",
+        "body_fields": {
+            "receiver": "String",
+            "text": "String",
+            "attachments": "Array"
+        },
+        "header_fields": [
+            "Bearer"
+        ]
     }
 }
