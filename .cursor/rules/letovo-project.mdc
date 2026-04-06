@@ -1,0 +1,68 @@
+---
+description: letovo-all repo layout, build via install-run-core.sh, and mandatory curl examples for touched API endpoints after changes
+alwaysApply: true
+---
+
+# letovo-all — repository guide
+
+## Build and tests (mandatory)
+
+**Do not run `cmake` / `cmake --build` manually under `src/`** for normal verification. The build depends on environment variables `MAIN_FILE` and `BUILD_FILES`, which are set only by the root script; otherwise the translation unit set and entry point may not match the real project.
+
+**Always use from the repository root** for dependency install, build, and running the server or test main:
+
+```bash
+./install-run-core.sh
+```
+
+The script runs `python3 src/python-helpers/action-maker.py` first and **requires** `BuildConfig.json` at the repo root.
+
+Useful flags (see `./install-run-core.sh -h` for the full list):
+
+- **`-i`** — install dependencies only (venv, OS packages, nginx, etc.), no build/run.
+- **`-t`** — build and run the **test** main: file from `test_file` in `BuildConfig.json` (path relative to `src/`, default `test.cpp`).
+- **`-o`** — log to the console instead of `src/launch_logs/`.
+- **`-s`** — skip pre-run checks.
+- **`-p`** — `git pull` and update submodules before launch.
+
+After a successful build under `src/`, the binary is **`server_starter`** (fixed name in CMake).
+
+## After code changes: curl for affected endpoints (mandatory)
+
+Whenever a change touches HTTP API behavior (new or modified routes, handlers, request/response shape, auth, or status codes), **you must end your response with ready-to-run `curl` examples** for every affected endpoint.
+
+- Use a realistic base URL (e.g. `https://localhost/api` or whatever the project/nginx setup uses; the script mentions the backend at `localhost/api`).
+- Include method, headers (e.g. `Authorization`, `Content-Type`), and a sample body if the endpoint expects JSON or form data.
+- If multiple endpoints were touched, show one `curl` per endpoint (or a minimal set that covers the change).
+
+If the change is purely internal (no route/handler change), state that no new curl is required. For non-HTTP work (build scripts, docs only), skip curl.
+
+## Build configuration
+
+- **`BuildConfig.json`** (repo root): `build_files` lists `.cc` paths **relative to `src/`**; `work_file` is the server main (usually `server.cpp`); `test_file` is the main used with `-t`. New C++ modules must be listed here (see root `README.md`).
+- **`src/CMakeLists.txt`** — do not edit “to add a file”; sources are injected via `BUILD_FILES` and `MAIN_FILE` from the environment.
+
+## Directory map
+
+| Path | Role |
+|------|------|
+| `src/server.cpp` | API wiring: register routes in `create` like existing handlers. |
+| `src/basic/` | Core modules (auth, user_data, pqxx, media, utilities). Each feature: `.h` + `.cc`. |
+| `src/market/` | Market (transactions, DOM, actives). |
+| `src/letovo-soc-net/` | Social network, chat, pages, achievements. |
+| `src/python-helpers/` | Python helpers; `action-maker.py` is invoked by `install-run-core.sh`. |
+| `src/configs/`, config in code | Anything configurable must go through config and `config.h` (see README). |
+| `docs/` | Docs, `nginx.conf`, generators such as `search_methods.py`. |
+| `certs/` | TLS material for nginx (local/deploy). |
+| `test/` | Other tests (e.g. Python); not the same as C++ `test_file` in BuildConfig. |
+| `scripts/` | Repo helper scripts. |
+| `ai-docs/` | AI/agent notes (do not treat as the canonical build path). |
+
+Submodules and external repos: `BuildConfig.json` → `required_sub_repos`.
+
+## C++ style (short)
+
+- Prefer one namespace per additional file; server handlers follow patterns like `namespace::server` (see `auth.cc`).
+- Every new `.cc` needs a matching `.h`; register the `.cc` in `build_files` in `BuildConfig.json`.
+
+When explaining how to build or run, always point to **`./install-run-core.sh`**, not raw CMake.
