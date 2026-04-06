@@ -41,9 +41,12 @@ pqxx::result user_role(std::string username,
   std::vector<std::string> params = {username};
 
   pqxx::result result =
-      con->execute_params("select \"roles\".departmentid, \"roles\".rolename "
+      con->execute_params("select \"roles\".departmentid, \"roles\".rolename, "
+                          "\"user\".brigade, \"brigade\".name as brigadename "
                           "from \"user\" left join \"roles\" on \"user\".role "
-                          "= \"roles\".roleid where \"user\".username=($1);",
+                          "= \"roles\".roleid left join \"brigade\" on "
+                          "\"user\".brigade = \"brigade\".brigade_id where "
+                          "\"user\".username=($1);",
                           params);
 
 
@@ -63,9 +66,11 @@ pqxx::result user_info(std::string username,
       "select \"user\".userid, \"user\".username, \"user\".display_name, "
       "\"user\".userrights, "
       "\"user\".jointime, \"user\".avatar_pic, \"user\".active, "
-      "\"user\".times_visited, \"roles\".departmentid, \"roles\".rolename, "
+      "\"user\".times_visited, \"user\".brigade, \"roles\".departmentid, "
+      "\"roles\".rolename, \"brigade\".name as brigadename, "
       "\"user\".registered from \"user\" left join \"roles\" on \"user\".role "
-      "= \"roles\".roleid where \"user\".username=($1);",
+      "= \"roles\".roleid left join \"brigade\" on \"user\".brigade = "
+      "\"brigade\".brigade_id where \"user\".username=($1);",
       params);
 
 
@@ -87,10 +92,13 @@ pqxx::result full_user_info(std::string username,
       "\"user\".userrights, "
       "\"user\".balance, \"user\".registered, \"user\".jointime, "
       "\"user\".avatar_pic, \"user\".active, \"user\".times_visited, "
+      "\"user\".brigade, "
       "\"roles\".rolename as role, \"roles\".payment as paycheck, "
-      "\"department\".* from \"user\"  left join \"roles\" on \"user\".role = "
+      "\"department\".*, \"brigade\".name as brigadename from \"user\"  left "
+      "join \"roles\" on \"user\".role = "
       "\"roles\".roleid  left join \"department\" on \"roles\".departmentid = "
-      "\"department\".departmentid where \"user\".username = ($1);",
+      "\"department\".departmentid left join \"brigade\" on \"user\".brigade = "
+      "\"brigade\".brigade_id where \"user\".username = ($1);",
       params);
 
 
@@ -108,9 +116,12 @@ pqxx::result user_roles(std::string username,
   std::vector<std::string> params = {username};
 
   pqxx::result result = con->execute_params(
-      "select distinct * from \"useroles\" left join \"roles\" on "
+      "select distinct \"useroles\".*, \"roles\".*, \"department\".*, u.brigade, "
+      "b_br.name as brigadename from \"useroles\" left join \"roles\" on "
       "\"useroles\".roleid = \"roles\".roleid  left join \"department\" on "
-      "\"roles\".departmentid = \"department\".departmentid where "
+      "\"roles\".departmentid = \"department\".departmentid left join "
+      "\"user\" u on u.username = \"useroles\".username left join \"brigade\" "
+      "b_br on u.brigade = b_br.brigade_id where "
       "\"useroles\".username = ($1);",
       params);
 
@@ -129,10 +140,12 @@ user_unactive_roles(std::string username,
   std::vector<std::string> params = {username};
 
   pqxx::result result = con->execute_params(
-      "select distinct \"roles\".*, \"department\".* from \"useroles\" left "
-      "join \"roles\" on \"useroles\".roleid = \"roles\".roleid  left join "
-      "\"department\" on \"roles\".departmentid = \"department\".departmentid "
-      "left join \"user\" on \"user\".username = \"useroles\".username where "
+      "select distinct \"roles\".*, \"department\".*, \"user\".brigade, "
+      "b_br.name as brigadename from \"useroles\" left join \"roles\" on "
+      "\"useroles\".roleid = \"roles\".roleid left join \"department\" on "
+      "\"roles\".departmentid = \"department\".departmentid left join "
+      "\"user\" on \"user\".username = \"useroles\".username left join "
+      "\"brigade\" b_br on \"user\".brigade = b_br.brigade_id where "
       "\"useroles\".username = ($1) and \"useroles\".roleid != \"user\".role;",
       params);
 
@@ -152,10 +165,13 @@ pqxx::result best_user_roles(std::string username,
 
   pqxx::result result = con->execute_params(
       "SELECT distinct \"useroles\".username , \"roles\".rolename , "
-      "\"roles\".departmentid, \"roles\".rang FROM \"roles\" left join "
-      "\"useroles\" on \"roles\".roleid = \"useroles\".roleid WHERE "
-      "\"roles\".rang = (SELECT MAX(rang) FROM roles WHERE departmentid = "
-      "\"roles\".departmentid) and \"useroles\".username = ($1);",
+      "\"roles\".departmentid, \"roles\".rang, u.brigade, b.name as brigadename "
+      "FROM \"roles\" left join \"useroles\" on \"roles\".roleid = "
+      "\"useroles\".roleid LEFT JOIN \"user\" u ON u.username = "
+      "\"useroles\".username LEFT JOIN \"brigade\" b ON u.brigade = "
+      "b.brigade_id WHERE \"roles\".rang = (SELECT MAX(rang) FROM roles WHERE "
+      "departmentid = \"roles\".departmentid) and \"useroles\".username = "
+      "($1);",
       params);
 
 
