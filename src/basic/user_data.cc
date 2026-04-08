@@ -41,13 +41,20 @@ pqxx::result user_role(std::string username,
   std::vector<std::string> params = {username};
 
   pqxx::result result =
-      con->execute_params("select \"roles\".departmentid, \"roles\".rolename, "
-                          "\"user\".brigade, \"brigade\".name as brigadename "
-                          "from \"user\" left join \"roles\" on \"user\".role "
-                          "= \"roles\".roleid left join \"brigade\" on "
-                          "\"user\".brigade = \"brigade\".brigade_id where "
-                          "\"user\".username=($1);",
-                          params);
+      con->execute_params(
+          "select \"roles\".departmentid, \"roles\".rolename, "
+          "\"user\".brigade, \"brigade\".name as brigadename, "
+          "(SELECT COALESCE(json_agg(json_build_object("
+          "'id', uub.id, 'datetime', uub.datetime, 'brigade_id', uub.brigade_id, "
+          "'name', bu.name) ORDER BY uub.datetime DESC), '[]'::json) "
+          "FROM \"user_brigades\" uub INNER JOIN \"brigade\" bu ON "
+          "bu.brigade_id = uub.brigade_id WHERE uub.username = ($1)) AS "
+          "user_brigades "
+          "from \"user\" left join \"roles\" on \"user\".role "
+          "= \"roles\".roleid left join \"brigade\" on "
+          "\"user\".brigade = \"brigade\".brigade_id where "
+          "\"user\".username=($1);",
+          params);
 
 
   if (result.empty()) {
@@ -68,6 +75,12 @@ pqxx::result user_info(std::string username,
       "\"user\".jointime, \"user\".avatar_pic, \"user\".active, "
       "\"user\".times_visited, \"user\".brigade, \"roles\".departmentid, "
       "\"roles\".rolename, \"brigade\".name as brigadename, "
+      "(SELECT COALESCE(json_agg(json_build_object("
+      "'id', uub.id, 'datetime', uub.datetime, 'brigade_id', uub.brigade_id, "
+      "'name', bu.name) ORDER BY uub.datetime DESC), '[]'::json) "
+      "FROM \"user_brigades\" uub INNER JOIN \"brigade\" bu ON "
+      "bu.brigade_id = uub.brigade_id WHERE uub.username = ($1)) AS "
+      "user_brigades, "
       "\"user\".registered from \"user\" left join \"roles\" on \"user\".role "
       "= \"roles\".roleid left join \"brigade\" on \"user\".brigade = "
       "\"brigade\".brigade_id where \"user\".username=($1);",
@@ -94,7 +107,13 @@ pqxx::result full_user_info(std::string username,
       "\"user\".avatar_pic, \"user\".active, \"user\".times_visited, "
       "\"user\".brigade, "
       "\"roles\".rolename as role, \"roles\".payment as paycheck, "
-      "\"department\".*, \"brigade\".name as brigadename from \"user\"  left "
+      "\"department\".*, \"brigade\".name as brigadename, "
+      "(SELECT COALESCE(json_agg(json_build_object("
+      "'id', uub.id, 'datetime', uub.datetime, 'brigade_id', uub.brigade_id, "
+      "'name', bu.name) ORDER BY uub.datetime DESC), '[]'::json) "
+      "FROM \"user_brigades\" uub INNER JOIN \"brigade\" bu ON "
+      "bu.brigade_id = uub.brigade_id WHERE uub.username = ($1)) AS "
+      "user_brigades from \"user\"  left "
       "join \"roles\" on \"user\".role = "
       "\"roles\".roleid  left join \"department\" on \"roles\".departmentid = "
       "\"department\".departmentid left join \"brigade\" on \"user\".brigade = "
@@ -117,7 +136,13 @@ pqxx::result user_roles(std::string username,
 
   pqxx::result result = con->execute_params(
       "select distinct \"useroles\".*, \"roles\".*, \"department\".*, u.brigade, "
-      "b_br.name as brigadename from \"useroles\" left join \"roles\" on "
+      "b_br.name as brigadename, "
+      "(SELECT COALESCE(json_agg(json_build_object("
+      "'id', uub.id, 'datetime', uub.datetime, 'brigade_id', uub.brigade_id, "
+      "'name', bu.name) ORDER BY uub.datetime DESC), '[]'::json) "
+      "FROM \"user_brigades\" uub INNER JOIN \"brigade\" bu ON "
+      "bu.brigade_id = uub.brigade_id WHERE uub.username = ($1)) AS "
+      "user_brigades from \"useroles\" left join \"roles\" on "
       "\"useroles\".roleid = \"roles\".roleid  left join \"department\" on "
       "\"roles\".departmentid = \"department\".departmentid left join "
       "\"user\" u on u.username = \"useroles\".username left join \"brigade\" "
@@ -141,7 +166,13 @@ user_unactive_roles(std::string username,
 
   pqxx::result result = con->execute_params(
       "select distinct \"roles\".*, \"department\".*, \"user\".brigade, "
-      "b_br.name as brigadename from \"useroles\" left join \"roles\" on "
+      "b_br.name as brigadename, "
+      "(SELECT COALESCE(json_agg(json_build_object("
+      "'id', uub.id, 'datetime', uub.datetime, 'brigade_id', uub.brigade_id, "
+      "'name', bu.name) ORDER BY uub.datetime DESC), '[]'::json) "
+      "FROM \"user_brigades\" uub INNER JOIN \"brigade\" bu ON "
+      "bu.brigade_id = uub.brigade_id WHERE uub.username = ($1)) AS "
+      "user_brigades from \"useroles\" left join \"roles\" on "
       "\"useroles\".roleid = \"roles\".roleid left join \"department\" on "
       "\"roles\".departmentid = \"department\".departmentid left join "
       "\"user\" on \"user\".username = \"useroles\".username left join "
@@ -165,7 +196,13 @@ pqxx::result best_user_roles(std::string username,
 
   pqxx::result result = con->execute_params(
       "SELECT distinct \"useroles\".username , \"roles\".rolename , "
-      "\"roles\".departmentid, \"roles\".rang, u.brigade, b.name as brigadename "
+      "\"roles\".departmentid, \"roles\".rang, u.brigade, b.name as brigadename, "
+      "(SELECT COALESCE(json_agg(json_build_object("
+      "'id', uub.id, 'datetime', uub.datetime, 'brigade_id', uub.brigade_id, "
+      "'name', bu.name) ORDER BY uub.datetime DESC), '[]'::json) "
+      "FROM \"user_brigades\" uub INNER JOIN \"brigade\" bu ON "
+      "bu.brigade_id = uub.brigade_id WHERE uub.username = ($1)) AS "
+      "user_brigades "
       "FROM \"roles\" left join \"useroles\" on \"roles\".roleid = "
       "\"useroles\".roleid LEFT JOIN \"user\" u ON u.username = "
       "\"useroles\".username LEFT JOIN \"brigade\" b ON u.brigade = "

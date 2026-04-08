@@ -1,4 +1,26 @@
 #include "./auth.h"
+#include "../market/transactions.h"
+
+namespace {
+
+/** Appends payment fields to cp::serialize output without re-parsing it (serialize() can emit invalid JSON when values contain quotes). */
+std::string append_login_payments_fields(const std::string &user_serialized,
+                                         const std::string &payments_json) {
+  if (user_serialized.empty() || user_serialized.back() != '}') {
+    return user_serialized;
+  }
+  std::string body = user_serialized;
+  body.pop_back();
+  if (payments_json.size() >= 2 && payments_json.front() == '{' &&
+      payments_json.back() == '}') {
+    body += ',';
+    body.append(payments_json.begin() + 1, payments_json.end() - 1);
+  }
+  body += '}';
+  return body;
+}
+
+} // namespace
 
 namespace auth {
 auth::UsersCash users_cash;
@@ -294,9 +316,13 @@ void enable_auth(
             .done();
       } else {
         auto user = user::full_user_info(loginHeader, pool_ptr);
+        std::string login_body = append_login_payments_fields(
+            cp::serialize(user),
+            transactions::last_incoming_outgoing_payments_json(loginHeader,
+                                                               pool_ptr));
         auto token = hashing::hash_from_string(loginHeader);
         auto responce = req->create_response()
-                            .set_body(cp::serialize(user))
+                            .set_body(login_body)
                             .append_header("Authorization", token)
                             .append_header("Content-Type",
                                            "application/json; charset=utf-8");
