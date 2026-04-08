@@ -1,5 +1,51 @@
 #include "pqxx_cp.h"
 
+#include <cstdio>
+#include <string_view>
+
+namespace {
+
+std::string json_escape(std::string_view s) {
+  std::string out;
+  out.reserve(s.size() + 8);
+  for (unsigned char c : s) {
+    switch (c) {
+    case '\\':
+      out += "\\\\";
+      break;
+    case '"':
+      out += "\\\"";
+      break;
+    case '\b':
+      out += "\\b";
+      break;
+    case '\f':
+      out += "\\f";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    case '\r':
+      out += "\\r";
+      break;
+    case '\t':
+      out += "\\t";
+      break;
+    default:
+      if (c < 0x20U) {
+        char buf[7];
+        std::snprintf(buf, sizeof(buf), "\\u%04x", c);
+        out += buf;
+      } else {
+        out += static_cast<char>(c);
+      }
+    }
+  }
+  return out;
+}
+
+} // namespace
+
 namespace cp {
 std::string serialize(const pqxx::result &res) {
   // TODO: it can be better
@@ -23,8 +69,17 @@ std::string serialize(const pqxx::row &row) {
   }
   std::string res_str = "{";
   for (auto const &field : row) {
-    res_str += '"' + std::string(field.name()) + "\": \"" +
-               std::string(field.c_str()) + "\",";
+    res_str += '"';
+    res_str += json_escape(field.name());
+    res_str += "\": ";
+    if (field.is_null()) {
+      res_str += "null";
+    } else {
+      res_str += '"';
+      res_str += json_escape(field.c_str());
+      res_str += '"';
+    }
+    res_str += ',';
   }
 
   res_str[res_str.length() - 1] = '}';
@@ -37,7 +92,9 @@ std::string serialize(const std::vector<std::string> &vec) {
   }
   std::string res_str = "{\"result\": [";
   for (auto const &field : vec) {
-    res_str += '"' + field + "\",";
+    res_str += '"';
+    res_str += json_escape(field);
+    res_str += "\",";
   }
   res_str[res_str.length() - 1] = ']';
   res_str += "}";
