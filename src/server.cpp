@@ -140,6 +140,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   achivements::server::department_achivements_by_user(router, pool_ptr,
                                                       logger_ptr);
   achivements::server::qr_code_by_achivement(router, pool_ptr, logger_ptr);
+  achivements::server::calendar_day(router, pool_ptr, logger_ptr);
 
   social::server::get_authors_list(router, pool_ptr, logger_ptr);
   social::server::get_news(router, pool_ptr, logger_ptr);

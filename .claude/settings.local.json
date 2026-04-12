@@ -4,7 +4,9 @@
       "Bash(./install-run-core.sh -o)",
       "Bash(echo \"PID: $!\")",
       "Bash(curl -s http://localhost:8080/hi)",
-      "Bash(PGPASSWORD=HdrQgWJ8 psql:*)"
+      "Bash(PGPASSWORD=HdrQgWJ8 psql:*)",
+      "Bash(bash ./install-run-core.sh)",
+      "Bash(curl -s 'http://localhost:8080/social/news?start=0&size=2' -H 'Bearer: bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14')"
     ]
   }
 }

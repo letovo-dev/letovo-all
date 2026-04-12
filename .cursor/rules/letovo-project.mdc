@@ -17,6 +17,8 @@ alwaysApply: true
 
 The script runs `python3 src/python-helpers/action-maker.py` first and **requires** `BuildConfig.json` at the repo root.
 
+Do not rely on existing documentation: it can be deprecated.
+
 Useful flags (see `./install-run-core.sh -h` for the full list):
 
 - **`-i`** — install dependencies only (venv, OS packages, nginx, etc.), no build/run.

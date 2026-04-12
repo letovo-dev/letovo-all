@@ -1,6 +1,7 @@
 #include "pqxx_cp.h"
 
 #include <cstdio>
+#include <ctime>
 #include <string_view>
 
 namespace {
@@ -42,6 +43,46 @@ std::string json_escape(std::string_view s) {
     }
   }
   return out;
+}
+
+struct CalendarSegment {
+    std::string chapter;
+    time_t start;
+    time_t end;
+};
+
+// Parse PostgreSQL timestamp "YYYY-MM-DD HH:MM:SS"
+time_t parse_pg_timestamp(const std::string &s) {
+    struct tm t = {};
+    std::sscanf(s.c_str(), "%d-%d-%d %d:%d:%d",
+                &t.tm_year, &t.tm_mon, &t.tm_mday,
+                &t.tm_hour, &t.tm_min, &t.tm_sec);
+    t.tm_year -= 1900;
+    t.tm_mon -= 1;
+    t.tm_isdst = -1;
+    return std::mktime(&t);
+}
+
+struct SegmentInfo {
+    int day = -1;       // 1-based, -1 means not found
+    std::string chapter;
+};
+
+// Returns 1-based day and chapter name, or day=-1 if datetime is outside all segments
+SegmentInfo compute_segment_info(time_t dt, const std::vector<CalendarSegment> &calendar) {
+    for (const auto &seg : calendar) {
+        if (dt >= seg.start && dt <= seg.end) {
+            struct tm dt_tm, seg_tm;
+            localtime_r(&dt, &dt_tm);
+            localtime_r(&seg.start, &seg_tm);
+            dt_tm.tm_hour = dt_tm.tm_min = dt_tm.tm_sec = 0;
+            seg_tm.tm_hour = seg_tm.tm_min = seg_tm.tm_sec = 0;
+            time_t dt_day = std::mktime(&dt_tm);
+            time_t seg_day = std::mktime(&seg_tm);
+            return {static_cast<int>((dt_day - seg_day) / 86400) + 1, seg.chapter};
+        }
+    }
+    return {};
 }
 
 } // namespace
@@ -95,6 +136,82 @@ std::string serialize(const std::vector<std::string> &vec) {
     res_str += '"';
     res_str += json_escape(field);
     res_str += "\",";
+  }
+  res_str[res_str.length() - 1] = ']';
+  res_str += "}";
+  return res_str;
+}
+
+std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<ConnectionsManager> pool_ptr) {
+  if (res.empty()) {
+    return "{\"result\": []}";
+  }
+
+  // Find 'datetime' or 'date' column index
+  int datetime_col = -1;
+  for (int i = 0; i < static_cast<int>(res.columns()); ++i) {
+    std::string col(res.column_name(i));
+    if (col == "datetime" || col == "date") {
+      datetime_col = i;
+      break;
+    }
+  }
+
+  if (datetime_col == -1) {
+    return serialize(res);
+  }
+
+  // Fetch all calendar segments once
+  std::vector<CalendarSegment> calendar;
+  try {
+    auto con = std::move(pool_ptr->getConnection());
+    pqxx::result cal = con->execute(
+        R"(SELECT chapter, start, "end" FROM "calendar" ORDER BY start)");
+    pool_ptr->returnConnection(std::move(con));
+
+    for (const auto &row : cal) {
+      CalendarSegment seg;
+      seg.chapter = row["chapter"].as<std::string>();
+      seg.start = parse_pg_timestamp(row["start"].as<std::string>());
+      seg.end = parse_pg_timestamp(row["end"].as<std::string>());
+      calendar.push_back(std::move(seg));
+    }
+  } catch (...) {
+    return serialize(res);
+  }
+
+  std::string res_str = "{\"result\": [";
+  for (const auto &row : res) {
+    std::string row_str = "{";
+    for (const auto &field : row) {
+      row_str += '"';
+      row_str += json_escape(field.name());
+      row_str += "\": ";
+      if (field.is_null()) {
+        row_str += "null";
+      } else {
+        row_str += '"';
+        row_str += json_escape(field.c_str());
+        row_str += '"';
+      }
+      row_str += ',';
+    }
+
+    if (!row[datetime_col].is_null()) {
+      SegmentInfo info = compute_segment_info(
+          parse_pg_timestamp(row[datetime_col].as<std::string>()), calendar);
+      if (info.day > 0) {
+        row_str += "\"segment_day\": ";
+        row_str += std::to_string(info.day);
+        row_str += ", \"segment_chapter\": \"";
+        row_str += json_escape(info.chapter);
+        row_str += "\",";
+      }
+    }
+
+    row_str[row_str.length() - 1] = '}';
+    res_str += row_str;
+    res_str += ',';
   }
   res_str[res_str.length() - 1] = ']';
   res_str += "}";
