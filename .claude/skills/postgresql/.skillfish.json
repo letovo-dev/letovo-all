@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "postgresql",
+  "owner": "tianzecn",
+  "repo": "myclaudecode",
+  "path": "plugins/database/skills/postgresql",
+  "branch": "main",
+  "sha": "8337ae376caa1d5fc6db4364bebd23165a2a9a34",
+  "source": "manual"
+}

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./install-run-core.sh -o)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s http://localhost:8080/hi)",
+      "Bash(PGPASSWORD=HdrQgWJ8 psql:*)"
+    ]
+  }
+}
