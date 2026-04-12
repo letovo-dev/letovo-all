@@ -1,9 +1,9 @@
 [submodule "src/market"]
 	path = src/market
-	url = https://github.com/letovo-dev/market.git
+	url = git@github.com:letovo-dev/market.git
 [submodule "src/letovo-soc-net"]
 	path = src/letovo-soc-net
-	url = https://github.com/letovo-dev/letovo-soc-net.git
+	url = git@github.com:letovo-dev/letovo-soc-net.git
 [submodule "src/python-helpers"]
 	path = src/python-helpers
 	url = git@github.com:letovo-dev/python-helpers.git
