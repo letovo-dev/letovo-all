@@ -10,7 +10,11 @@
       "Bash(git submodule:*)",
       "Bash(curl -s http://localhost:8080/achivements/no_dep -H 'Bearer: bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14')",
       "Bash(python3 -m json.tool)",
-      "Bash(curl -s https://ya.sergeiscv.ru/letovo-api/achivements/no_dep -H 'Bearer: bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14')"
+      "Bash(curl -s https://ya.sergeiscv.ru/letovo-api/achivements/no_dep -H 'Bearer: bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14')",
+      "Bash(chmod +x /home/sergei-scv/temp/letovo-all/test/run_tests.sh)",
+      "Bash(mkdir -p ~/.claude/skills/run-project-tests)",
+      "Bash(./test/run_tests.sh:*)",
+      "Bash(ls -t /home/sergei-scv/temp/letovo-all/src/launch_logs/run_*.log)"
     ]
   }
 }
