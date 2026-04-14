@@ -7,7 +7,10 @@
       "Bash(PGPASSWORD=HdrQgWJ8 psql:*)",
       "Bash(bash ./install-run-core.sh)",
       "Bash(curl -s 'http://localhost:8080/social/news?start=0&size=2' -H 'Bearer: bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14')",
-      "Bash(git submodule:*)"
+      "Bash(git submodule:*)",
+      "Bash(curl -s http://localhost:8080/achivements/no_dep -H 'Bearer: bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s https://ya.sergeiscv.ru/letovo-api/achivements/no_dep -H 'Bearer: bdb57bee241dc7a25dc383bb4b78888dc84db1453ae7996fd915cab5dd56ce14')"
     ]
   }
 }

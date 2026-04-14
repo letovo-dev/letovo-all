@@ -97,5 +97,6 @@ private:
 };
 
 std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<ConnectionsManager> pool_ptr);
+std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<ConnectionsManager> pool_ptr, const std::string &completed_field);
 
 } // namespace cp

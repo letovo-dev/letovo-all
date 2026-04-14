@@ -218,6 +218,45 @@ std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<
   return res_str;
 }
 
+std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<ConnectionsManager> pool_ptr, const std::string &completed_field) {
+  int completed_col = -1;
+  for (int i = 0; i < static_cast<int>(res.columns()); ++i) {
+    if (std::string(res.column_name(i)) == completed_field) {
+      completed_col = i;
+      break;
+    }
+  }
+
+  std::string base = serialize_with_segment_day(res, pool_ptr);
+
+  if (completed_col == -1) {
+    return base;
+  }
+
+  int completed_count = 0, not_completed_count = 0;
+  for (const auto &row : res) {
+    if (!row[completed_col].is_null()) {
+      std::string val = row[completed_col].as<std::string>();
+      if (val == "t" || val == "true" || val == "1") {
+        ++completed_count;
+      } else {
+        ++not_completed_count;
+      }
+    } else {
+      ++not_completed_count;
+    }
+  }
+
+  // base ends with "}" — inject counts before closing brace
+  base.pop_back();
+  base += ", \"completed_count\": ";
+  base += std::to_string(completed_count);
+  base += ", \"not_completed_count\": ";
+  base += std::to_string(not_completed_count);
+  base += "}";
+  return base;
+}
+
 AsyncConnection::AsyncConnection(
     const connection_options &options,
     std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr,
