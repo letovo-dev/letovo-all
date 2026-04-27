@@ -70,3 +70,5 @@ src/*.png
 src/pages/images/*/*.png
 
 src/configs/*
+
+.worktrees/
