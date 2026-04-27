@@ -164,6 +164,9 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   chat::server::get_chats(router, pool_ptr, logger_ptr);
   chat::server::get_chat(router, pool_ptr, logger_ptr);
   chat::server::new_message(router, pool_ptr, logger_ptr);
+  chat::server::delete_message(router, pool_ptr, logger_ptr);
+  chat::server::set_permission(router, pool_ptr, logger_ptr);
+  chat::server::clear_permission(router, pool_ptr, logger_ptr);
 
   authors::server::get_avaluable_authors(router, pool_ptr, logger_ptr);
 
