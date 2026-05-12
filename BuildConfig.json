@@ -11,6 +11,9 @@
     "basic/media.cc",
     "basic/media_cash.cc",
     "basic/qr_worker.cc",
+    "basic/ws_topic_authorizer.cc",
+    "basic/ws_event_bus.cc",
+    "basic/ws_endpoint.cc",
     "market/transactions.cc",
     "market/actives.cc",
     "market/DOM.cc",
@@ -18,7 +21,8 @@
     "letovo-soc-net/achivements.cc",
     "letovo-soc-net/page_server.cc",
     "letovo-soc-net/authors.cc",
-    "letovo-soc-net/chat.cc"
+    "letovo-soc-net/chat.cc",
+    "letovo-soc-net/chat_ws.cc"
   ],
   "required_sub_repos": {
     "letovo-secrets": "https://github.com/letovo-dev/letovo-secrets.git",

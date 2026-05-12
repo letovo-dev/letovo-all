@@ -8,6 +8,7 @@
 #include <fmt/ostream.h>
 
 #include "./basic/checks.h"
+#include "./basic/server_traits.h"
 
 // server functions
 #include "./basic/auth.h"
@@ -21,6 +22,10 @@
 #include "./letovo-soc-net/chat.h"
 #include "./letovo-soc-net/social.h"
 #include "./market/transactions.h"
+#include "./basic/ws_event_bus.h"
+#include "./basic/ws_topic_authorizer.h"
+#include "./basic/ws_endpoint.h"
+#include "./letovo-soc-net/chat_ws.h"
 
 #include <filesystem>
 namespace fs = std::filesystem;
@@ -73,7 +78,9 @@ void hi(std::unique_ptr<restinio::router::express_router_t<>> &router,
 
 std::unique_ptr<restinio::router::express_router_t<>>
 create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
-       std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+       std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr,
+       std::shared_ptr<ws::EventBus> bus_ptr,
+       std::shared_ptr<ws::TopicAuthorizer> authorizer_ptr) {
   auto router = std::make_unique<router::express_router_t<>>();
 
   hi(router, pool_ptr, logger_ptr);
@@ -163,10 +170,13 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
 
   chat::server::get_chats(router, pool_ptr, logger_ptr);
   chat::server::get_chat(router, pool_ptr, logger_ptr);
-  chat::server::new_message(router, pool_ptr, logger_ptr);
-  chat::server::delete_message(router, pool_ptr, logger_ptr);
+  chat::server::new_message(router, pool_ptr, logger_ptr, bus_ptr);
+  chat::server::delete_message(router, pool_ptr, logger_ptr, bus_ptr);
   chat::server::set_permission(router, pool_ptr, logger_ptr);
   chat::server::clear_permission(router, pool_ptr, logger_ptr);
+
+  ws::server::register_endpoint   (router, pool_ptr, logger_ptr, bus_ptr, authorizer_ptr);
+  ws::server::list_active_sessions(router, pool_ptr, logger_ptr, bus_ptr);
 
   authors::server::get_avaluable_authors(router, pool_ptr, logger_ptr);
 
@@ -201,16 +211,12 @@ int main() {
 
   pre_run_checks::do_checks(pool_ptr);
 
-  auto router = create(pool_ptr, logger_ptr);
+  auto bus_ptr        = std::make_shared<ws::EventBus>(logger_ptr, pool_ptr);
+  auto authorizer_ptr = std::make_shared<ws::TopicAuthorizer>();
+  chat::ws::register_topic_rules(authorizer_ptr, pool_ptr);
+  bus_ptr->recover_from_crash();
 
-  using traits_t = restinio::single_thread_tls_traits_t<
-      restinio::asio_timer_manager_t,
-      restinio::single_threaded_ostream_logger_t,
-      restinio::router::express_router_t<>>;
-
-  struct traits : public default_traits_t {
-    using request_handler_t = restinio::router::express_router_t<>;
-  };
+  auto router = create(pool_ptr, logger_ptr, bus_ptr, authorizer_ptr);
 
   logger_ptr->info([] {
     return fmt::format("Server is starting at {}:{}",
@@ -218,7 +224,7 @@ int main() {
                        Config::giveMe().server_config.port);
   });
 
-  restinio::run(restinio::on_thread_pool<traits>(
+  restinio::run(restinio::on_thread_pool<ws::server_traits>(
                     Config::giveMe().server_config.thread_pool_size)
                     .address(Config::giveMe().server_config.adress)
                     .port(Config::giveMe().server_config.port)

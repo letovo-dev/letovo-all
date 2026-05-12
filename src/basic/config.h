@@ -39,12 +39,20 @@ struct MarketConfig {
   std::string junk_user;
 };
 
+struct WsConfig {
+  bool enabled = true;
+  int ping_interval_sec = 30;
+  int pong_timeout_sec = 60;
+  int max_pending_msgs = 256;
+};
+
 class Config {
 public:
   cp::connection_options sql_config;
   ServerConfig server_config;
   PagesConfig pages_config;
   MarketConfig market_config;
+  WsConfig ws_config;
   std::string current_path;
   std::vector<std::string> required_paths;
 
@@ -95,6 +103,17 @@ private:
     server_config.thread_pool_size = config_map["thread_pool_size"].GetInt();
     server_config.certs_path = config_map["certs_path"].GetString();
     server_config.update_hashes = config_map["update_hashes"].GetBool();
+    if (config_map.HasMember("ws") && config_map["ws"].IsObject()) {
+      const auto &ws = config_map["ws"];
+      if (ws.HasMember("enabled"))
+        ws_config.enabled = ws["enabled"].GetBool();
+      if (ws.HasMember("ping_interval_sec"))
+        ws_config.ping_interval_sec = ws["ping_interval_sec"].GetInt();
+      if (ws.HasMember("pong_timeout_sec"))
+        ws_config.pong_timeout_sec = ws["pong_timeout_sec"].GetInt();
+      if (ws.HasMember("max_pending_msgs"))
+        ws_config.max_pending_msgs = ws["max_pending_msgs"].GetInt();
+    }
 
     config_map.Parse(GetJson("./configs/PagesConfig.json").c_str());
     pages_config.media_path.absolute =

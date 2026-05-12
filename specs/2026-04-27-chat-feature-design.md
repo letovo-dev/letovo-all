@@ -35,21 +35,27 @@ The current implementation has these issues, fixed by this spec:
 
 ## Permission Model
 
-The function `chat::can_chat(A, B)` is the single source of truth for whether two users can exchange messages. It is used both for **send-message authorization** and for **filtering the chat list**.
+The function `chat::can_chat(A, B)` is the single source of truth for whether two users can exchange messages. It is used for **send-message authorization** and for **WebSocket pair-topic authorization**; `GET /chats/` mirrors the same logic in SQL (it cannot call `can_chat` per row without an N+1).
 
 ```
-function can_chat(A, B):
+function can_chat(A, B):                              # A = the user trying to chat with B
     pair = (min(A,B), max(A,B))                       # canonical ordering
     override = SELECT override_type FROM chat_override
                 WHERE user_a = pair[0] AND user_b = pair[1]
+    if override == 'block':  return false             # admin block always wins
     if override == 'allow':  return true
-    if override == 'block':  return false
-    return B.chattable                                # fall back to receiver's flag
+    if B.chattable:                       return true # may write to chattable users
+    if conversation_exists(A, B):         return true # may keep writing in an existing dialog
+    return is_admin(A)                                # admins may message anyone
 ```
 
+`conversation_exists(A, B)` is true iff there is at least one **non-deleted** `direct_message` row between the two users (in either direction) — the same condition that makes a pair appear in `GET /chats/`.
+
 - Overrides are **symmetric**: one row per pair, ordered canonically.
-- An override always wins over the global `chattable` flag.
-- With no override, the rule reduces to "receiver must be chattable" — matching the spec sentence "users can only write to users marked as writable in the database".
+- An admin-set `block` override always wins — over the `chattable` flag, over an existing dialog, and over the admin shortcut (an admin can be blocked from a pair too).
+- The rule is otherwise symmetric: once a dialog exists, either side may keep writing in it (this is what lets a chattable recipient reply to whoever first reached out, even if that sender is not `chattable`).
+
+`GET /chats/` lists users `u` where the pair `(current_user, u)` is **not** `block`-overridden **and** (`allow`-overridden OR `u.chattable` OR a non-deleted message already exists between them). When the caller is an admin the list is the full set of users they may chat with — every user except `block`-overridden pairs. Either way the list is sorted by last-message recency (`ORDER BY last_message_time DESC NULLS LAST, username`), so existing conversations float to the top and the rest follow alphabetically.
 
 ## Database Changes
 

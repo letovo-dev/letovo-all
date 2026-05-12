@@ -456,3 +456,230 @@ def test_clear_permission():
                             json={"user_a": USERNAME, "user_b": SECOND_USER},
                             headers=auth_headers(), verify=False)
     assert again.status_code == 404
+
+
+########################################
+# Existing-dialog access + admin reach — regression for the
+# "a chattable user receives a message but can't see it or reply" bug.
+########################################
+
+THIRD_USER = "test_chat_stranger"
+
+
+def _ensure_third_user_non_chattable():
+    with _db() as c, c.cursor() as cur:
+        cur.execute(
+            'INSERT INTO "user" (username, passwdhash, chattable, userrights) '
+            "VALUES (%s, %s, false, 'user') ON CONFLICT (username) DO UPDATE "
+            "SET chattable = false;",
+            (THIRD_USER, "x"),
+        )
+
+
+def test_reply_allowed_in_existing_dialog_even_if_peer_not_chattable():
+    # A dialog is opened while the peer is chattable; the peer then becomes
+    # non-chattable. Either side must still be able to keep writing in it.
+    _ensure_second_user()
+    _set_chattable(SECOND_USER, True)
+    assert _send_via_api(SECOND_USER, "opening the dialog").status_code == 200
+    _set_chattable(SECOND_USER, False)
+    try:
+        again = _send_via_api(SECOND_USER, "replying after peer turned non-chattable")
+        assert again.status_code == 200, again.text
+    finally:
+        _set_chattable(SECOND_USER, True)
+
+
+def test_get_chats_includes_existing_dialog_with_non_chattable_peer():
+    _ensure_second_user()
+    _set_chattable(SECOND_USER, True)
+    assert _send_via_api(SECOND_USER, "dialog so it shows up").status_code == 200
+    _set_chattable(SECOND_USER, False)
+    try:
+        response = requests.get(f"{URL}/chats/", headers=auth_headers(), verify=False)
+        assert response.status_code == 200
+        usernames = [u["username"] for u in response.json()["result"]]
+        assert SECOND_USER in usernames
+    finally:
+        _set_chattable(SECOND_USER, True)
+
+
+def test_admin_can_text_non_chattable_stranger():
+    # scv is the admin test user; THIRD_USER is non-chattable with no override
+    # and no prior dialog — only the admin shortcut can permit this.
+    _ensure_third_user_non_chattable()
+    resp = _send_via_api(THIRD_USER, "admin reaching out")
+    assert resp.status_code == 200, resp.text
+
+
+def test_block_override_wins_over_existing_dialog():
+    _ensure_second_user()
+    _set_chattable(SECOND_USER, True)
+    assert _send_via_api(SECOND_USER, "dialog before block").status_code == 200
+    _set_override(USERNAME, SECOND_USER, "block")
+    try:
+        resp = _send_via_api(SECOND_USER, "should be blocked despite the dialog")
+        assert resp.status_code == 403, resp.text
+        chats = requests.get(f"{URL}/chats/", headers=auth_headers(), verify=False).json()["result"]
+        assert SECOND_USER not in [u["username"] for u in chats]
+    finally:
+        _clear_override(USERNAME, SECOND_USER)
+
+
+ADMIN_LIST_PROBE_USER = "test_chat_admin_probe"
+
+
+def test_get_chats_admin_sees_every_user_but_non_admin_does_not():
+    # A brand-new non-chattable user with no override and no message history.
+    with _db() as c, c.cursor() as cur:
+        cur.execute(
+            'INSERT INTO "user" (username, passwdhash, chattable, userrights) '
+            "VALUES (%s, %s, false, 'user') ON CONFLICT (username) DO UPDATE "
+            "SET chattable = false;",
+            (ADMIN_LIST_PROBE_USER, "x"),
+        )
+    _clear_override(USERNAME, ADMIN_LIST_PROBE_USER)
+    _clear_override(NON_ADMIN_USER, ADMIN_LIST_PROBE_USER)
+
+    admin_chats = requests.get(f"{URL}/chats/", headers=auth_headers(), verify=False)
+    assert admin_chats.status_code == 200
+    assert ADMIN_LIST_PROBE_USER in [u["username"] for u in admin_chats.json()["result"]]
+
+    non_admin_chats = requests.get(f"{URL}/chats/", headers=non_admin_headers(), verify=False)
+    assert non_admin_chats.status_code == 200
+    assert ADMIN_LIST_PROBE_USER not in [u["username"] for u in non_admin_chats.json()["result"]]
+
+
+def test_get_chats_admin_list_sorted_by_recency():
+    _ensure_second_user()
+    _set_chattable(SECOND_USER, True)
+    assert _send_via_api(SECOND_USER, "freshest message for sort check").status_code == 200
+    chats = requests.get(f"{URL}/chats/", headers=auth_headers(), verify=False).json()["result"]
+    names = [u["username"] for u in chats]
+    assert SECOND_USER in names
+    # Everything ahead of SECOND_USER must itself be a real conversation — i.e. message-less
+    # users (the bulk of an admin's list) sort after conversations.
+    for u in chats[: names.index(SECOND_USER)]:
+        assert u["last_message_time"] is not None, \
+            f"{u['username']} has no history but sorted before {SECOND_USER}"
+
+
+########################################
+# WebSocket push for chat events (from feat: ws infra)
+########################################
+
+import asyncio
+import json
+import websockets
+
+
+WS_URL = "ws://0.0.0.0:8080/ws"
+
+
+def _ws_url():
+    return f"{WS_URL}?token={TOKEN}"
+
+
+def test_chat_new_message_pushes_to_inbox():
+    """Posting a DM via HTTP delivers chat.message.new on inbox:<receiver>."""
+    receiver = USERNAME  # self-chat: simplest; the test user is allowed to chat to self
+
+    async def go():
+        async with websockets.connect(_ws_url()) as conn:
+            await asyncio.wait_for(conn.recv(), timeout=5)  # welcome
+
+            r = requests.post(
+                f"{URL}/new_message",
+                headers=auth_headers(),
+                json={"receiver": receiver, "text": "hello-ws"},
+                verify=False,
+            )
+            assert r.status_code == 200
+
+            evt = json.loads(await asyncio.wait_for(conn.recv(), timeout=5))
+            assert evt["type"] == "chat.message.new"
+            assert evt["topic"] == f"inbox:{receiver}"
+            assert evt["data"]["text"] == "hello-ws"
+            assert evt["data"]["sender"] == USERNAME
+            assert evt["data"]["receiver"] == receiver
+
+    asyncio.run(go())
+
+
+def test_chat_self_chat_no_duplicate():
+    """Sending to self produces exactly one chat.message.new (not two)."""
+    async def go():
+        async with websockets.connect(_ws_url()) as conn:
+            await asyncio.wait_for(conn.recv(), timeout=5)  # welcome
+
+            r = requests.post(
+                f"{URL}/new_message",
+                headers=auth_headers(),
+                json={"receiver": USERNAME, "text": "self-msg"},
+                verify=False,
+            )
+            assert r.status_code == 200
+
+            evt = json.loads(await asyncio.wait_for(conn.recv(), timeout=5))
+            assert evt["type"] == "chat.message.new"
+            # Wait briefly to ensure no second event arrives.
+            try:
+                second = await asyncio.wait_for(conn.recv(), timeout=1.5)
+                pytest.fail(f"unexpected second event: {second}")
+            except asyncio.TimeoutError:
+                pass
+
+    asyncio.run(go())
+
+
+def test_chat_delete_message_pushes_event():
+    """Deleting a DM publishes chat.message.deleted on the pair topic.
+    Skip if no peer user is available; this needs a 2nd participant.
+    """
+    # Probe: can we chat with anyone besides ourselves?
+    r = requests.get(f"{URL}/chats/", headers=auth_headers(), verify=False)
+    assert r.status_code == 200
+    peers = [u for u in r.json().get("result", []) if u["username"] != USERNAME]
+    if not peers:
+        pytest.skip("no other chattable user available to test pair-topic delivery")
+    peer = peers[0]["username"]
+
+    async def go():
+        async with websockets.connect(_ws_url()) as conn:
+            await asyncio.wait_for(conn.recv(), timeout=5)  # welcome
+
+            # Subscribe to pair topic.
+            a, b = sorted([USERNAME, peer])
+            pair_topic = f"chat:{a}:{b}"
+            await conn.send(json.dumps({"op": "subscribe", "topic": pair_topic}))
+            ack = json.loads(await asyncio.wait_for(conn.recv(), timeout=5))
+            assert ack["type"] == "subscribed"
+
+            # Send a message via HTTP.
+            r = requests.post(
+                f"{URL}/new_message",
+                headers=auth_headers(),
+                json={"receiver": peer, "text": "to-delete"},
+                verify=False,
+            )
+            assert r.status_code == 200
+            mid = r.json()["message_id"]
+
+            # Drain the chat.message.new events.
+            for _ in range(2):  # inbox + pair
+                await asyncio.wait_for(conn.recv(), timeout=5)
+
+            # Delete via HTTP.
+            d = requests.delete(
+                f"{URL}/chat/message/{mid}",
+                headers=auth_headers(),
+                verify=False,
+            )
+            assert d.status_code == 200
+
+            evt = json.loads(await asyncio.wait_for(conn.recv(), timeout=5))
+            assert evt["type"] == "chat.message.deleted"
+            assert evt["topic"] == pair_topic
+            assert evt["data"]["message_id"] == mid
+
+    asyncio.run(go())

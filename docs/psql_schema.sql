@@ -1192,3 +1192,32 @@ ALTER TABLE ONLY public.usertogroup
 -- PostgreSQL database dump complete
 --
 
+--
+-- Name: ws_session; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE IF NOT EXISTS public.ws_session (
+    id              bigint PRIMARY KEY,
+    username        character varying(255) NOT NULL,
+    connected_at    timestamp without time zone NOT NULL DEFAULT now(),
+    disconnected_at timestamp without time zone,
+    remote_addr     inet,
+    CONSTRAINT ws_session_username_fkey
+        FOREIGN KEY (username) REFERENCES public."user"(username) ON DELETE CASCADE
+);
+
+CREATE SEQUENCE IF NOT EXISTS public.ws_session_id_seq
+    AS bigint START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+
+ALTER SEQUENCE public.ws_session_id_seq OWNED BY public.ws_session.id;
+
+ALTER TABLE ONLY public.ws_session
+    ALTER COLUMN id SET DEFAULT nextval('public.ws_session_id_seq'::regclass);
+
+CREATE INDEX IF NOT EXISTS idx_ws_session_username
+    ON public.ws_session USING btree (username);
+
+CREATE INDEX IF NOT EXISTS idx_ws_session_open
+    ON public.ws_session USING btree (connected_at)
+    WHERE disconnected_at IS NULL;
+
