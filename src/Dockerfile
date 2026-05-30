@@ -27,7 +27,7 @@ COPY . .
 
 # Удаляем старые артефакты CMake, если они попали из локальной машины
 RUN rm -f CMakeCache.txt
-RUN rm -rf CMakeFiles
+RUN rm -rf CMakeFiles build
 
 # Передаём CMake переменные MAIN_FILE и BUILD_FILES из build-args
 ARG MAIN_FILE

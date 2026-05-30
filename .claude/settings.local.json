@@ -15,7 +15,8 @@
       "Bash(mkdir -p ~/.claude/skills/run-project-tests)",
       "Bash(./test/run_tests.sh:*)",
       "Bash(ls -t /home/sergei-scv/temp/letovo-all/src/launch_logs/run_*.log)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(./install-run-core.sh *)"
     ]
   }
 }
