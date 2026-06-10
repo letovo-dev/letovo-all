@@ -938,7 +938,7 @@
     }
   },
   "/social/news:search(.*)": {
-    "explanation": "This method retrieves news using a search query. It utilizes an API call with parameters including 'start', 'size' for pagination, and requires an authorization header 'Bearer'.",
+    "explanation": "This method retrieves news using a search query. It utilizes an API call with parameters including 'start', 'size' for pagination and optional 'date' in yyyy-mm-dd format for day filtering, and requires an authorization header 'Bearer'.",
     "request": {
       "function": "get_news",
       "header_fields": [
@@ -947,7 +947,8 @@
       "method": "get",
       "params": [
         "start",
-        "size"
+        "size",
+        "date"
       ]
     },
     "response": {}

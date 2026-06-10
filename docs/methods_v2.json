@@ -72,7 +72,8 @@
             "method": "GET",
             "params": [
                 "start",
-                "size"
+                "size",
+                "date"
             ],
             "header_fields": [
                 "Bearer"
