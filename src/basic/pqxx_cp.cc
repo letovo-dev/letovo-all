@@ -6,6 +6,9 @@
 
 namespace {
 
+constexpr std::string_view kShiftDayField = "shift_day";
+constexpr std::string_view kShiftNameField = "shift_name";
+
 std::string json_escape(std::string_view s) {
   std::string out;
   out.reserve(s.size() + 8);
@@ -51,6 +54,12 @@ struct CalendarSegment {
     time_t end;
 };
 
+struct CampShift {
+    std::string name;
+    time_t start;
+    time_t end;
+};
+
 // Parse PostgreSQL timestamp "YYYY-MM-DD HH:MM:SS"
 time_t parse_pg_timestamp(const std::string &s) {
     struct tm t = {};
@@ -68,18 +77,49 @@ struct SegmentInfo {
     std::string chapter;
 };
 
+struct ShiftInfo {
+    int day = -1;       // 1-based, -1 means not found
+    std::string name;
+};
+
+int find_datetime_column(const pqxx::result &res) {
+  for (int i = 0; i < static_cast<int>(res.columns()); ++i) {
+    std::string col(res.column_name(i));
+    if (col == "datetime" || col == "date" || col == "dealtime" ||
+        col == "transactiontime" || col == "messagetime") {
+      return i;
+    }
+  }
+  return -1;
+}
+
+time_t truncate_to_local_day(time_t value) {
+    struct tm day_tm;
+    localtime_r(&value, &day_tm);
+    day_tm.tm_hour = day_tm.tm_min = day_tm.tm_sec = 0;
+    return std::mktime(&day_tm);
+}
+
 // Returns 1-based day and chapter name, or day=-1 if datetime is outside all segments
 SegmentInfo compute_segment_info(time_t dt, const std::vector<CalendarSegment> &calendar) {
     for (const auto &seg : calendar) {
         if (dt >= seg.start && dt <= seg.end) {
-            struct tm dt_tm, seg_tm;
-            localtime_r(&dt, &dt_tm);
-            localtime_r(&seg.start, &seg_tm);
-            dt_tm.tm_hour = dt_tm.tm_min = dt_tm.tm_sec = 0;
-            seg_tm.tm_hour = seg_tm.tm_min = seg_tm.tm_sec = 0;
-            time_t dt_day = std::mktime(&dt_tm);
-            time_t seg_day = std::mktime(&seg_tm);
+            time_t dt_day = truncate_to_local_day(dt);
+            time_t seg_day = truncate_to_local_day(seg.start);
             return {static_cast<int>((dt_day - seg_day) / 86400) + 1, seg.chapter};
+        }
+    }
+    return {};
+}
+
+// Returns 1-based shift day and shift name, or day=-1 if datetime is outside all shifts.
+ShiftInfo compute_shift_info(time_t dt, const std::vector<CampShift> &shifts) {
+    time_t dt_day = truncate_to_local_day(dt);
+    for (const auto &shift : shifts) {
+        time_t shift_day = truncate_to_local_day(shift.start);
+        time_t shift_end_day = truncate_to_local_day(shift.end);
+        if (dt_day >= shift_day && dt_day <= shift_end_day) {
+            return {static_cast<int>((dt_day - shift_day) / 86400) + 1, shift.name};
         }
     }
     return {};
@@ -142,31 +182,98 @@ std::string serialize(const std::vector<std::string> &vec) {
   return res_str;
 }
 
+std::string serialize_with_shift_day(const pqxx::result &res, std::shared_ptr<ConnectionsManager> pool_ptr) {
+  if (res.empty()) {
+    return "{\"result\": []}";
+  }
+
+  int datetime_col = find_datetime_column(res);
+  if (datetime_col == -1) {
+    return serialize(res);
+  }
+
+  std::vector<CampShift> shifts;
+  auto con = std::move(pool_ptr->getConnection());
+  try {
+    pqxx::result shift_rows = con->execute(
+        R"(SELECT name, start_date, end_date FROM "camp_dates" ORDER BY start_date)");
+    pool_ptr->returnConnection(std::move(con));
+
+    for (const auto &row : shift_rows) {
+      CampShift shift;
+      shift.name = row["name"].as<std::string>();
+      shift.start = parse_pg_timestamp(row["start_date"].as<std::string>());
+      shift.end = parse_pg_timestamp(row["end_date"].as<std::string>());
+      shifts.push_back(std::move(shift));
+    }
+  } catch (...) {
+    if (con) {
+      pool_ptr->returnConnection(std::move(con));
+    }
+    return serialize(res);
+  }
+
+  std::string res_str = "{\"result\": [";
+  for (const auto &row : res) {
+    std::string row_str = "{";
+    for (const auto &field : row) {
+      row_str += '"';
+      row_str += json_escape(field.name());
+      row_str += "\": ";
+      if (field.is_null()) {
+        row_str += "null";
+      } else {
+        row_str += '"';
+        row_str += json_escape(field.c_str());
+        row_str += '"';
+      }
+      row_str += ',';
+    }
+
+    if (!row[datetime_col].is_null()) {
+      ShiftInfo info = compute_shift_info(
+          parse_pg_timestamp(row[datetime_col].as<std::string>()), shifts);
+      if (info.day > 0) {
+        row_str += '"';
+        row_str += kShiftDayField;
+        row_str += "\": ";
+        row_str += std::to_string(info.day);
+        row_str += ", \"";
+        row_str += kShiftNameField;
+        row_str += "\": \"";
+        row_str += json_escape(info.name);
+        row_str += "\",";
+      }
+    }
+
+    row_str[row_str.length() - 1] = '}';
+    res_str += row_str;
+    res_str += ',';
+  }
+  res_str[res_str.length() - 1] = ']';
+  res_str += "}";
+  return res_str;
+}
+
 std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<ConnectionsManager> pool_ptr) {
   if (res.empty()) {
     return "{\"result\": []}";
   }
 
-  // Find 'datetime' or 'date' column index
-  int datetime_col = -1;
-  for (int i = 0; i < static_cast<int>(res.columns()); ++i) {
-    std::string col(res.column_name(i));
-    if (col == "datetime" || col == "date") {
-      datetime_col = i;
-      break;
-    }
-  }
-
+  int datetime_col = find_datetime_column(res);
   if (datetime_col == -1) {
     return serialize(res);
   }
 
   // Fetch all calendar segments once
   std::vector<CalendarSegment> calendar;
+  std::vector<CampShift> shifts;
+  auto con = std::move(pool_ptr->getConnection());
   try {
-    auto con = std::move(pool_ptr->getConnection());
     pqxx::result cal = con->execute(
         R"(SELECT chapter, start, "end" FROM "calendar" ORDER BY start)");
+    pqxx::result shift_rows = con->execute(
+        R"(SELECT name, start_date, end_date FROM "camp_dates" ORDER BY start_date)");
     pool_ptr->returnConnection(std::move(con));
 
     for (const auto &row : cal) {
@@ -176,8 +283,18 @@ std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<
       seg.end = parse_pg_timestamp(row["end"].as<std::string>());
       calendar.push_back(std::move(seg));
     }
+    for (const auto &row : shift_rows) {
+      CampShift shift;
+      shift.name = row["name"].as<std::string>();
+      shift.start = parse_pg_timestamp(row["start_date"].as<std::string>());
+      shift.end = parse_pg_timestamp(row["end_date"].as<std::string>());
+      shifts.push_back(std::move(shift));
+    }
   } catch (...) {
-    return serialize(res);
+    if (con) {
+      pool_ptr->returnConnection(std::move(con));
+    }
+    return serialize_with_shift_day(res, pool_ptr);
   }
 
   std::string res_str = "{\"result\": [";
@@ -205,6 +322,19 @@ std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<
         row_str += std::to_string(info.day);
         row_str += ", \"segment_chapter\": \"";
         row_str += json_escape(info.chapter);
+        row_str += "\",";
+      }
+      ShiftInfo shift_info = compute_shift_info(
+          parse_pg_timestamp(row[datetime_col].as<std::string>()), shifts);
+      if (shift_info.day > 0) {
+        row_str += '"';
+        row_str += kShiftDayField;
+        row_str += "\": ";
+        row_str += std::to_string(shift_info.day);
+        row_str += ", \"";
+        row_str += kShiftNameField;
+        row_str += "\": \"";
+        row_str += json_escape(shift_info.name);
         row_str += "\",";
       }
     }

@@ -17,6 +17,7 @@ namespace cp {
 std::string serialize(const pqxx::result &res);
 std::string serialize(const pqxx::row &res);
 std::string serialize(const std::vector<std::string> &vec);
+std::string serialize_with_shift_day(const pqxx::result &res, std::shared_ptr<class ConnectionsManager> pool_ptr);
 
 struct connection_options {
   std::string dbname{};
