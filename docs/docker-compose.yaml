@@ -12,6 +12,20 @@ services:
         labels:
           - "com.centurylinklabs.watchtower.enable=true"
 
+    letovo-registration-server:
+        image: ghcr.io/letovo-dev/letovo-registration-server:latest
+        container_name: letovo-registration-server
+        restart: unless-stopped
+        network_mode: "host"
+        environment:
+          SERVER_ADRESS: "127.0.0.1"
+          SERVER_PORT: "8082"
+        volumes:
+          - /mnt/server-media:/app/pages
+          - /mnt/server-configs:/app/configs
+        labels:
+          - "com.centurylinklabs.watchtower.enable=true"
+
     watchtower:
         image: containrrr/watchtower
         restart: unless-stopped
