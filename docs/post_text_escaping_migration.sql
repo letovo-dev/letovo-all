@@ -11,8 +11,8 @@ SET "text" = replace(
 WHERE "post_path" IS NULL
   AND "text" IS NOT NULL
   AND (
-    "text" LIKE '%' || chr(92) || 'n' || '%'
-    OR "text" LIKE '%' || chr(92) || '"' || '%'
+    strpos("text", chr(92) || 'n') > 0
+    OR strpos("text", chr(92) || '"') > 0
   );
 
 COMMIT;
