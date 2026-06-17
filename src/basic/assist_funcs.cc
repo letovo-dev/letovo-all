@@ -188,23 +188,20 @@ void create_mdx_from_template_file(
 }
 
 void fix_new_lines(std::string &content) {
-  size_t pos = 0;
+  std::string normalized;
+  normalized.reserve(content.size());
 
-  std::string from = "\n";
-  std::string to = "\\n";
-
-  while ((pos = content.find(from, pos)) != std::string::npos) {
-    content.replace(pos, from.length(), to);
-    pos += to.length();
+  for (size_t i = 0; i < content.size(); ++i) {
+    if (content[i] == '\r') {
+      if (i + 1 < content.size() && content[i + 1] == '\n') {
+        ++i;
+      }
+      normalized += '\n';
+    } else {
+      normalized += content[i];
+    }
   }
 
-  from = "\"";
-  to = "\\\"";
-
-  pos = 0;
-  while ((pos = content.find(from, pos)) != std::string::npos) {
-    content.replace(pos, from.length(), to);
-    pos += to.length();
-  }
+  content = normalized;
 }
 } // namespace assist
