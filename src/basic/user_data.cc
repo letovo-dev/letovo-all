@@ -1,4 +1,25 @@
 #include "user_data.h"
+#include "../market/transactions.h"
+
+namespace {
+
+std::string append_user_payments_fields(const std::string &user_serialized,
+                                        const std::string &payments_json) {
+  if (user_serialized.empty() || user_serialized.back() != '}') {
+    return user_serialized;
+  }
+  std::string body = user_serialized;
+  body.pop_back();
+  if (payments_json.size() >= 2 && payments_json.front() == '{' &&
+      payments_json.back() == '}') {
+    body += ',';
+    body.append(payments_json.begin() + 1, payments_json.end() - 1);
+  }
+  body += '}';
+  return body;
+}
+
+} // namespace
 
 namespace user {
 pqxx::result role(int role_id,
@@ -507,9 +528,13 @@ void full_user_info(
               .set_body("user not found")
               .done();
         }
+
+        std::string response_body = append_user_payments_fields(
+            cp::serialize(result),
+            transactions::last_incoming_outgoing_payments_json(username, pool_ptr));
         return req->create_response()
             .append_header("Content-Type", "application/json; charset=utf-8")
-            .set_body(cp::serialize(result))
+            .set_body(response_body)
             .done();
       });
 }
