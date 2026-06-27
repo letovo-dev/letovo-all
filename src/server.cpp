@@ -114,6 +114,8 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   auth::server::register_true(router, pool_ptr, logger_ptr);
   auth::server::is_admin(router, pool_ptr, logger_ptr);
 
+  user::server::all_avatars(router, pool_ptr, logger_ptr);
+  user::server::set_avatar(router, pool_ptr, logger_ptr);
   user::server::user_info(router, pool_ptr, logger_ptr);
   user::server::full_user_info(router, pool_ptr, logger_ptr);
   user::server::user_roles(router, pool_ptr, logger_ptr);
@@ -126,8 +128,6 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   user::server::set_users_department(router, pool_ptr, logger_ptr);
   user::server::all_departments(router, pool_ptr, logger_ptr);
   user::server::starter_role(router, pool_ptr, logger_ptr);
-  user::server::all_avatars(router, pool_ptr, logger_ptr);
-  user::server::set_avatar(router, pool_ptr, logger_ptr);
 
   transactions::server::prepare_transaction(router, pool_ptr, logger_ptr);
   transactions::server::transfer(router, pool_ptr, logger_ptr);
