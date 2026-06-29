@@ -1229,9 +1229,13 @@
     "response": {}
   },
   "/user/:username([a-zA-Z0-9\\-]+)": {
-    "explanation": "The method retrieves user information by its username, including details like ID, rights, join time, avatar picture, activity status, visits count, department ID, role name, registration date. It returns this data with a 200 status code and specific headers.",
+    "explanation": "This method retrieves user information by username. It requires a valid Bearer header or AuthSession cookie. The authenticated caller must be the same user as the requested username or an admin. Anonymous requests return 401, and authenticated callers who are neither the owner nor an admin return 403. On success it returns profile fields such as ID, rights, join time, avatar picture, activity status, visits count, department ID, role name, and registration date.",
     "request": {
       "function": "user_info",
+      "header_fields": [
+        "Bearer",
+        "AuthSession"
+      ],
       "method": "get"
     },
     "response": {
@@ -1433,9 +1437,13 @@
     }
   },
   "/user/full/:username([a-zA-Z0-9\\-]+)": {
-    "explanation": "This code represents a request to get full user information by username. The function being called is \"full_user_info\", using HTTP GET method to fetch details about specific users based on their username (in this case 'scv-7'). Upon successful execution, the response status code 200 indicates that the operation was completed successfully. The body of the response contains user-specific data such as ID, username, role, balance, registration date, avatar picture URL, activity status, visit count, paycheck amount, department details, and connection headers information like server name, date, content type, length of the response, and connection status.",
+    "explanation": "This method retrieves full user information by username. It requires a valid Bearer header or AuthSession cookie, and the authenticated caller must be the same user as the requested username or an admin. Anonymous requests return 401, and authenticated callers who are neither the owner nor an admin return 403. The successful response includes sensitive/private fields such as balance and paycheck data, so this endpoint is owner/admin only.",
     "request": {
       "function": "full_user_info",
+      "header_fields": [
+        "Bearer",
+        "AuthSession"
+      ],
       "method": "get"
     },
     "response": {
