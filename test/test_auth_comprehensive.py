@@ -356,16 +356,37 @@ def test_change_password_success():
         verify=False
     )
     token = reg_response.headers.get("Authorization")
+
+    second_login_response = requests.post(
+        f"{BASE_URL}/auth/login",
+        json=user_data,
+        verify=False
+    )
+    second_token = second_login_response.headers.get("Authorization")
+    assert second_login_response.status_code == 200
+    assert second_token is not None
     
     # Change password
     response = requests.put(
         f"{BASE_URL}/auth/change_password",
         headers={"Bearer": token},
-        json={"new_password": "new_password_123"},
+        json={
+            "current_password": user_data["password"],
+            "new_password": "new_password_123"
+        },
         verify=False
     )
     assert response.status_code == 200
     assert response.text == "ok"
+
+    for old_token in (token, second_token):
+        authed_response = requests.get(
+            f"{BASE_URL}/auth/amiauthed",
+            headers={"Bearer": old_token},
+            verify=False
+        )
+        assert authed_response.status_code == 200
+        assert authed_response.json()["status"] == "f"
     
     # Verify can login with new password
     login_response = requests.post(
@@ -399,11 +420,13 @@ def test_change_password_invalid_token():
     response = requests.put(
         f"{BASE_URL}/auth/change_password",
         headers={"Bearer": "invalid_token"},
-        json={"new_password": "new_password"},
+        json={
+            "current_password": "old_password",
+            "new_password": "new_password_123"
+        },
         verify=False
     )
-    # Server returns 200 even with invalid token (processes the request)
-    assert response.status_code == 200
+    assert response.status_code == 401
 
 
 # ============ Change Username Tests (PUT /auth/change_username) ============

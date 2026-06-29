@@ -1,6 +1,8 @@
 #include "./auth.h"
 #include "../market/transactions.h"
 
+#include <stdexcept>
+
 namespace {
 
 /** Appends payment fields to cp::serialize output without re-parsing it (serialize() can emit invalid JSON when values contain quotes). */
@@ -18,6 +20,48 @@ std::string append_login_payments_fields(const std::string &user_serialized,
   }
   body += '}';
   return body;
+}
+
+bool password_metadata_columns_exist(
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  cp::SafeCon con{pool_ptr};
+  std::vector<std::string> params = {};
+  pqxx::result result = con->execute_params(
+      "SELECT COUNT(*) AS count FROM information_schema.columns "
+      "WHERE table_schema = 'public' AND table_name = 'user' "
+      "AND column_name IN ('password_algo', 'password_salt', "
+      "'password_iterations');",
+      params);
+
+  return !result.empty() && result[0]["count"].as<int>() == 3;
+}
+
+bool sessions_table_exists(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  cp::SafeCon con{pool_ptr};
+  std::vector<std::string> params = {};
+  pqxx::result result = con->execute_params(
+      "SELECT to_regclass('public.user_sessions') IS NOT NULL AS exists;",
+      params);
+
+  return !result.empty() && result[0]["exists"].as<bool>();
+}
+
+bool auth_migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  return password_metadata_columns_exist(pool_ptr) &&
+         sessions_table_exists(pool_ptr);
+}
+
+bool revoke_all_sessions_for_user(
+    const std::string &username,
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  std::vector<std::string> params = {username};
+  cp::SafeCon con{pool_ptr};
+  pqxx::result result = con->execute_params(
+      "UPDATE public.user_sessions SET revoked_at = now() "
+      "WHERE username = ($1) AND revoked_at IS NULL RETURNING session_id;",
+      params, true);
+
+  return !result.empty();
 }
 
 } // namespace
@@ -45,25 +89,13 @@ void UsersCash::remove_user(std::string username) {
 
 std::string get_username(std::string token,
                          std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto decoded = hashing::string_from_hash(token);
-
-  if (users_cash.is_user(decoded)) {
-    return decoded;
-  }
-
-  cp::SafeCon con{pool_ptr};
-
-  std::vector<std::string> params = {decoded};
-
-  pqxx::result result = con->execute_params(
-      "SELECT * FROM \"user\" WHERE \"username\"=($1);", params);
-
-  if (result.empty()) {
-    users_cash.remove_user(decoded);
+  auto username = security::username_from_session(token, pool_ptr);
+  if (username.empty()) {
     return "";
   }
-  users_cash.add_user(decoded);
-  return decoded;
+
+  users_cash.add_user(username);
+  return username;
 }
 
 bool is_authed(std::string token,
@@ -85,10 +117,10 @@ bool is_authed_by_body(std::string req_body,
 
 bool is_admin(std::string token,
               std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  auto decoded = hashing::string_from_hash(token);
+  auto username = get_username(token, pool_ptr);
   std::cout << "User is not in admin cash, checking in database..."
             << std::endl;
-  return is_rights_by_username(decoded, pool_ptr, "admin");
+  return is_rights_by_username(username, pool_ptr, "admin");
 }
 
 bool is_user(std::string username,
@@ -154,36 +186,118 @@ bool is_active(std::string username,
 
 bool auth(std::string username, std::string password,
           std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  std::string passwordHash = std::to_string(std::hash<std::string>{}(password));
-  std::vector<std::string> params = {username, passwordHash};
-
-  cp::SafeCon con{pool_ptr};
-
-  pqxx::result result = con->execute_params(
-      "SELECT * FROM \"user\" WHERE \"username\"=($1) AND \"passwdhash\"=($2);",
-      params);
-
-
-  if (result.empty()) {
+  if (!password_matches(username, password, pool_ptr)) {
     return false;
   }
   users_cash.add_user(username);
   return true;
 }
 
-bool reg(std::string username, std::string password_hash, std::string userid,
+bool password_matches(std::string username, std::string password,
+                      std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  std::vector<std::string> params = {username};
+  bool has_password_metadata = password_metadata_columns_exist(pool_ptr);
+  cp::SafeCon con{pool_ptr};
+
+  pqxx::result result;
+  if (has_password_metadata) {
+    result = con->execute_params(
+        "SELECT passwdhash, COALESCE(password_algo, 'legacy_std_hash') AS "
+        "password_algo, COALESCE(password_salt, '') AS password_salt, "
+        "COALESCE(password_iterations, 0) AS password_iterations FROM \"user\" "
+        "WHERE \"username\"=($1);",
+        params);
+  } else {
+    result = con->execute_params(
+        "SELECT passwdhash, 'legacy_std_hash' AS password_algo, '' AS "
+        "password_salt, 0 AS password_iterations FROM \"user\" "
+        "WHERE \"username\"=($1);",
+        params);
+  }
+
+  if (result.empty()) {
+    return false;
+  }
+
+  const std::string password_hash = result[0]["passwdhash"].as<std::string>();
+  const std::string algo = result[0]["password_algo"].as<std::string>();
+  const std::string salt = result[0]["password_salt"].as<std::string>();
+  const int iterations = result[0]["password_iterations"].as<int>();
+
+  if (!security::verify_password(password, password_hash, algo, salt,
+                                 iterations)) {
+    return false;
+  }
+
+  if (algo != security::kPbkdf2Sha256) {
+    try {
+      set_password_hash(username, password, pool_ptr);
+    } catch (const std::exception &) {
+    }
+  }
+
+  return true;
+}
+
+bool set_password_hash(std::string username, std::string new_password,
+                       std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  if (!password_metadata_columns_exist(pool_ptr)) {
+    return false;
+  }
+
+  auto password_hash = security::hash_password(new_password);
+  std::vector<std::string> params = {
+      password_hash.hash, password_hash.salt, password_hash.algo,
+      std::to_string(password_hash.iterations), username};
+
+  cp::SafeCon con{pool_ptr};
+
+  pqxx::result result = con->execute_params(
+      "UPDATE \"user\" SET \"passwdhash\"=($1), \"password_salt\"=($2), "
+      "\"password_algo\"=($3), \"password_iterations\"=($4)::integer "
+      "WHERE \"username\"=($5) RETURNING username;",
+      params, true);
+
+  return !result.empty();
+}
+
+bool reg(std::string username, std::string password, std::string userid,
          std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  std::vector<std::string> params = {userid, username, password_hash};
+  if (!auth_migrations_ready(pool_ptr)) {
+    throw std::runtime_error("auth/session migrations are required");
+  }
+
+  {
+    std::vector<std::string> params = {username};
+    cp::SafeCon con{pool_ptr};
+    pqxx::result result = con->execute_params(
+        "SELECT 1 FROM \"user\" WHERE \"username\"=($1);", params);
+    if (!result.empty()) {
+      return false;
+    }
+  }
+
+  auto password_hash = security::hash_password(password);
+  std::vector<std::string> params = {userid,
+                                     username,
+                                     password_hash.hash,
+                                     password_hash.salt,
+                                     password_hash.algo,
+                                     std::to_string(password_hash.iterations)};
 
   cp::SafeCon con{pool_ptr};
   try {
-    con->execute_params("INSERT INTO \"user\" (userid, username, passwdhash, "
-                        "userrights, jointime) VALUES($1, $2, $3, '', now());",
-                        params, true);
+    pqxx::result result = con->execute_params(
+        "INSERT INTO \"user\" (userid, username, passwdhash, password_salt, "
+        "password_algo, password_iterations, userrights, jointime) "
+        "VALUES($1, $2, $3, $4, $5, ($6)::integer, '', now()) "
+        "RETURNING username;",
+        params, true);
+    return !result.empty();
   } catch (const pqxx::unique_violation &e) {
     return false;
   }
-  return true;
+  return false;
 }
 
 bool delete_user(std::string username,
@@ -195,6 +309,7 @@ bool delete_user(std::string username,
   con->execute_params("DELETE FROM \"user\" WHERE \"username\"=($1);", params,
                       true);
 
+  users_cash.remove_user(username);
 
   return true;
 }
@@ -215,13 +330,31 @@ bool add_userrights(std::string username, std::string rights,
 
 bool change_username(std::string username, std::string new_username,
                      std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  {
+    std::vector<std::string> params = {new_username};
+    cp::SafeCon con{pool_ptr};
+    pqxx::result result = con->execute_params(
+        "SELECT 1 FROM \"user\" WHERE \"username\"=($1);", params);
+    if (!result.empty()) {
+      return false;
+    }
+  }
+
   std::vector<std::string> params = {new_username, username};
 
   cp::SafeCon con{pool_ptr};
 
-  con->execute_params(
-      "UPDATE \"user\" SET \"username\"=($1) WHERE \"username\"=($2);", params,
-      true);
+  try {
+    pqxx::result result = con->execute_params(
+        "UPDATE \"user\" SET \"username\"=($1) WHERE \"username\"=($2) "
+        "RETURNING username;",
+        params, true);
+    if (result.empty()) {
+      return false;
+    }
+  } catch (const pqxx::unique_violation &e) {
+    return false;
+  }
 
   hashing::change_username(username, new_username);
 
@@ -234,18 +367,7 @@ bool change_username(std::string username, std::string new_username,
 
 bool change_password(std::string username, std::string new_password,
                      std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  std::string new_password_hash =
-      std::to_string(std::hash<std::string>{}(new_password));
-  std::vector<std::string> params = {new_password_hash, username};
-
-  cp::SafeCon con{pool_ptr};
-
-  con->execute_params(
-      "UPDATE \"user\" SET \"passwdhash\"=($1) WHERE \"username\"=($2);",
-      params, true);
-
-
-  return true;
+  return set_password_hash(username, new_password, pool_ptr);
 }
 
 bool register_true(std::string username,
@@ -315,35 +437,31 @@ void enable_auth(
             .connection_close()
             .done();
       } else {
+        if (!sessions_table_exists(pool_ptr)) {
+          logger_ptr->error([] {
+            return "auth session table is missing; cannot create login session";
+          });
+          return req
+              ->create_response(restinio::status_internal_server_error())
+              .done();
+        }
         auto user = user::full_user_info(loginHeader, pool_ptr);
         std::string login_body = append_login_payments_fields(
             cp::serialize(user),
             transactions::last_incoming_outgoing_payments_json(loginHeader,
                                                                pool_ptr));
-        auto token = hashing::hash_from_string(loginHeader);
-        auto responce = req->create_response()
-                            .set_body(login_body)
-                            .append_header("Authorization", token)
-                            .append_header("Content-Type",
-                                           "application/json; charset=utf-8");
-        std::string cookie =
-            req->header().has_field("Cookie")
-                ? auth::get_cookie(req->header().get_field("Cookie"))
-                : "";
         std::string useragent = req->header().has_field("User-Agent")
                                     ? req->header().get_field("User-Agent")
                                     : "";
-
-        if (cookie.empty()) {
-          cookie = "AuthCookie=" + loginHeader +
-                   "; Path=/api; HttpOnly; Secure; Max-Age=864000;";
-          auth::save_cookie(loginHeader, loginHeader, useragent, pool_ptr);
-          responce.append_header(restinio::http_field::set_cookie, cookie);
-        } else {
-          if (cookie != loginHeader) {
-            auth::save_cookie(cookie, loginHeader, useragent, pool_ptr);
-          }
-        }
+        auto token =
+            security::create_session(loginHeader, pool_ptr, useragent, endpoint);
+        auto responce = req->create_response()
+                            .set_body(login_body)
+                            .append_header("Authorization", token)
+                            .append_header(restinio::http_field::set_cookie,
+                                           security::auth_session_cookie(token))
+                            .append_header("Content-Type",
+                                           "application/json; charset=utf-8");
 
         return responce.done();
       }
@@ -386,12 +504,10 @@ void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
       // }
 
       try {
-        std::string passwordHash =
-            std::to_string(std::hash<std::string>{}(passwordHeader));
         std::string userid =
             std::to_string(std::hash<std::string>{}(loginHeader)).substr(0, 5);
 
-        if (!auth::reg(loginHeader, passwordHash, userid, pool_ptr)) {
+        if (!auth::reg(loginHeader, passwordHeader, userid, pool_ptr)) {
           logger_ptr->warn([endpoint, loginHeader] {
             return fmt::format("user {} already exists", loginHeader);
           });
@@ -401,7 +517,11 @@ void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
               .done();
         }
 
-        auto token = hashing::hash_from_string(loginHeader);
+        std::string useragent = req->header().has_field("User-Agent")
+                                    ? req->header().get_field("User-Agent")
+                                    : "";
+        auto token =
+            security::create_session(loginHeader, pool_ptr, useragent, endpoint);
         logger_ptr->info([endpoint, loginHeader] {
           return fmt::format("new user with ip {} username {}", endpoint,
                              loginHeader);
@@ -410,11 +530,19 @@ void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
         return req->create_response()
             .set_body(cp::serialize(user::user_info(loginHeader, pool_ptr)))
             .append_header("Authorization", token)
+            .append_header(restinio::http_field::set_cookie,
+                           security::auth_session_cookie(token))
             .done();
       } catch (const char *error_message) {
         logger_ptr->error([endpoint, error_message] {
           return fmt::format("error from {} {}", endpoint, error_message);
         });
+      } catch (const std::exception &e) {
+        logger_ptr->error([endpoint, e] {
+          return fmt::format("error from {} {}", endpoint, e.what());
+        });
+        return req->create_response(restinio::status_internal_server_error())
+            .done();
       }
     }
     return req
@@ -430,13 +558,7 @@ void am_i_authed(
   router.get()->http_get(
       R"(/auth/amiauthed)", [pool_ptr, logger_ptr](auto req, auto) {
         logger_ptr->trace([] { return "called /auth/amiauthed"; });
-        std::string token;
-        try {
-          token = req->header().get_field("Bearer");
-        } catch (const std::exception &e) {
-          logger_ptr->info([] { return "can't get token"; });
-          return req->create_response(restinio::status_unauthorized()).done();
-        }
+        std::string token = security::bearer_or_cookie_token(req->header());
 
         if (token.empty()) {
           logger_ptr->error([] { return "token is empty"; });
@@ -462,13 +584,7 @@ void am_i_admin(std::unique_ptr<restinio::router::express_router_t<>> &router,
   router.get()->http_get(
       R"(/auth/amiadmin)", [pool_ptr, logger_ptr](auto req, auto) {
         logger_ptr->trace([] { return "called /auth/amiadmin"; });
-        std::string token;
-        try {
-          token = req->header().get_field("Bearer");
-        } catch (const std::exception &e) {
-          logger_ptr->info([] { return "can't get token"; });
-          return req->create_response(restinio::status_unauthorized()).done();
-        }
+        std::string token = security::bearer_or_cookie_token(req->header());
 
         if (token.empty()) {
           logger_ptr->error([] { return "token is empty"; });
@@ -495,21 +611,15 @@ void am_i_uploader(
   router.get()->http_get(
       R"(/auth/amiuploader)", [pool_ptr, logger_ptr](auto req, auto) {
         logger_ptr->trace([] { return "called /auth/amiuploader"; });
-        std::string token;
-        try {
-          token = req->header().get_field("Bearer");
-        } catch (const std::exception &e) {
-          logger_ptr->info([] { return "can't get token"; });
-          return req->create_response(restinio::status_unauthorized()).done();
-        }
+        std::string token = security::bearer_or_cookie_token(req->header());
 
         if (token.empty()) {
           logger_ptr->error([] { return "token is empty"; });
           return req->create_response(restinio::status_unauthorized()).done();
         }
-        if (auth::is_rights_by_username(hashing::string_from_hash(token),
-                                        pool_ptr, "moder") ||
-            auth::is_admin(token, pool_ptr)) {
+        std::string username = auth::get_username(token, pool_ptr);
+        if (auth::is_rights_by_username(username, pool_ptr, "moder") ||
+            auth::is_rights_by_username(username, pool_ptr, "admin")) {
           return req->create_response(restinio::status_ok())
               .set_body("{\"status\": \"t\"}")
               .append_header("Content-Type", "application/json; charset=utf-8")
@@ -579,23 +689,18 @@ void enable_delete(
   router.get()->http_delete(R"(/auth/delete)", [pool_ptr, logger_ptr](auto req,
                                                                       auto) {
     logger_ptr->trace([] { return "called /auth/delete"; });
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
 
     if (token.empty()) {
       logger_ptr->error([] { return "token is empty"; });
       return req->create_response(restinio::status_unauthorized()).done();
     }
 
-    std::string username = hashing::string_from_hash(token);
+    std::string username = auth::get_username(token, pool_ptr);
 
-    if (auth::is_authed(token, pool_ptr)) {
+    if (!username.empty()) {
       if (auth::delete_user(username, pool_ptr)) {
+        security::revoke_session(token, pool_ptr);
         logger_ptr->info(
             [username] { return fmt::format("user {} deleted", username); });
         return req->create_response()
@@ -619,20 +724,14 @@ void add_userrights(
   router.get()->http_put(R"(/auth/add_userrights)", [pool_ptr, logger_ptr](
                                                         auto req, auto) {
     logger_ptr->trace([] { return "called /auth/add_userrights"; });
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
 
     if (token.empty()) {
       logger_ptr->error([] { return "token is empty"; });
       return req->create_response(restinio::status_unauthorized()).done();
     }
 
-    std::string username = hashing::string_from_hash(token);
+    std::string username = auth::get_username(token, pool_ptr);
 
     if (!auth::is_admin(token, pool_ptr)) {
       return req->create_response(restinio::status_unauthorized())
@@ -675,23 +774,16 @@ void change_username(
   router.get()->http_put(R"(/auth/change_username)", [pool_ptr, logger_ptr](
                                                          auto req, auto) {
     logger_ptr->trace([] { return "called /auth/change_username"; });
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->error([e] { return fmt::format("{}", e.what()); });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
 
     if (token.empty()) {
       return req->create_response(restinio::status_unauthorized()).done();
     }
 
-    if (!is_authed(token, pool_ptr)) {
+    std::string username = auth::get_username(token, pool_ptr);
+    if (username.empty()) {
       return req->create_response(restinio::status_unauthorized()).done();
     }
-
-    std::string username = hashing::string_from_hash(token);
 
     logger_ptr->info([username] {
       return fmt::format("user {} change username request", username);
@@ -703,10 +795,16 @@ void change_username(
     if (new_body.HasMember("new_username")) {
       std::string new_username = new_body["new_username"].GetString();
       if (!auth::change_username(username, new_username, pool_ptr)) {
-        return req->create_response(restinio::status_internal_server_error())
+        return req->create_response(restinio::status_conflict())
             .done();
       }
-      std::string new_token = hashing::hash_from_string(new_username);
+      security::revoke_session(token, pool_ptr);
+      std::string useragent = req->header().has_field("User-Agent")
+                                  ? req->header().get_field("User-Agent")
+                                  : "";
+      std::string endpoint = req->remote_endpoint().address().to_string();
+      std::string new_token =
+          security::create_session(new_username, pool_ptr, useragent, endpoint);
       logger_ptr->info([username, new_username] {
         return fmt::format("user {} changed username to {}", username,
                            new_username);
@@ -714,6 +812,8 @@ void change_username(
       return req->create_response()
           .set_body(cp::serialize(user::full_user_info(new_username, pool_ptr)))
           .append_header("Authorization", new_token)
+          .append_header(restinio::http_field::set_cookie,
+                         security::auth_session_cookie(new_token))
           .append_header("Content-Type", "application/json; charset=utf-8")
           .done();
     } else {
@@ -730,39 +830,39 @@ void change_password(
   router.get()->http_put("/auth/change_password", [pool_ptr,
                                                    logger_ptr](auto req, auto) {
     logger_ptr->trace([] { return "called /auth/change_password"; });
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
 
     if (token.empty()) {
       logger_ptr->error([] { return "token is empty"; });
       return req->create_response(restinio::status_unauthorized()).done();
     }
 
-    std::string username = hashing::string_from_hash(token);
+    std::string username = auth::get_username(token, pool_ptr);
+    if (username.empty()) {
+      return req->create_response(restinio::status_unauthorized()).done();
+    }
 
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
 
-    bool unlogin = false;
-
-    if (new_body.HasMember("unlogin")) {
-      unlogin = new_body["unlogin"].GetBool();
-    }
-
-    if (new_body.HasMember("new_password")) {
+    if (new_body.HasMember("current_password") &&
+        new_body.HasMember("new_password")) {
+      std::string current_password = new_body["current_password"].GetString();
       std::string new_password = new_body["new_password"].GetString();
 
+      if (new_password.size() < 12) {
+        return req->create_response(restinio::status_bad_request()).done();
+      }
+      if (!auth::password_matches(username, current_password, pool_ptr)) {
+        return req->create_response(restinio::status_unauthorized()).done();
+      }
       if (!auth::change_password(username, new_password, pool_ptr)) {
         return req->create_response(restinio::status_internal_server_error())
             .done();
       }
-      if (unlogin) {
-        hashing::defele_from_hash(token);
+      if (!revoke_all_sessions_for_user(username, pool_ptr)) {
+        return req->create_response(restinio::status_internal_server_error())
+            .done();
       }
 
       logger_ptr->info([username] {
@@ -770,12 +870,12 @@ void change_password(
       });
       return req->create_response()
           .set_body("ok")
+          .append_header(restinio::http_field::set_cookie,
+                         security::expired_auth_session_cookie())
           .append_header("Content-Type", "text/plain; charset=utf-8")
           .done();
     } else {
-      return req
-          ->create_response(restinio::status_non_authoritative_information())
-          .done();
+      return req->create_response(restinio::status_bad_request()).done();
     }
   });
 }
@@ -790,13 +890,7 @@ void add_new_user(
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
 
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
 
     if (token.empty()) {
       logger_ptr->error([] { return "token is empty"; });
@@ -829,20 +923,17 @@ void register_true(
   router.get()->http_put(
       "/auth/register_true", [pool_ptr, logger_ptr](auto req, auto) {
         logger_ptr->trace([] { return "called /auth/register_true"; });
-        std::string token;
-        try {
-          token = req->header().get_field("Bearer");
-        } catch (const std::exception &e) {
-          logger_ptr->info([] { return "can't get token"; });
-          return req->create_response(restinio::status_unauthorized()).done();
-        }
+        std::string token = security::bearer_or_cookie_token(req->header());
 
         if (token.empty()) {
           logger_ptr->error([] { return "token is empty"; });
           return req->create_response(restinio::status_unauthorized()).done();
         }
 
-        std::string username = hashing::string_from_hash(token);
+        std::string username = auth::get_username(token, pool_ptr);
+        if (username.empty()) {
+          return req->create_response(restinio::status_unauthorized()).done();
+        }
 
         if (auth::register_true(username, pool_ptr)) {
           return req->create_response()
