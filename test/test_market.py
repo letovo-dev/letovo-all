@@ -5,6 +5,7 @@ Covers all 4 transaction endpoints with various scenarios.
 import requests
 import pytest
 import time
+import os
 
 BASE_URL = "http://0.0.0.0:8080"
 
@@ -52,6 +53,30 @@ def receiver_user():
         "login": "scv",
         "password": None,
         "token": None
+    }
+
+
+@pytest.fixture(scope="module")
+def admin_user():
+    """Use explicitly provided admin credentials for privileged transaction tests"""
+    login = os.environ.get("LETOVO_ADMIN_LOGIN")
+    password = os.environ.get("LETOVO_ADMIN_PASSWORD")
+    if not login or not password:
+        pytest.skip("LETOVO_ADMIN_LOGIN/LETOVO_ADMIN_PASSWORD are required")
+
+    response = requests.post(
+        f"{BASE_URL}/auth/login",
+        json={"login": login, "password": password},
+        verify=False
+    )
+
+    assert response.status_code == 200, "Failed to login admin test user"
+    token = response.headers.get("Authorization")
+    assert token, "Failed to get admin token"
+
+    return {
+        "login": login,
+        "token": token
     }
 
 
@@ -178,6 +203,22 @@ def test_prepare_transaction_zero_amount(sender_user, receiver_user):
     )
     # Should succeed as 0 is valid
     assert response.status_code in [200, 409]
+
+
+def test_prepare_negative_transaction_as_admin(admin_user, sender_user):
+    """Admins can prepare negative transactions without receiver balance checks."""
+    response = requests.post(
+        f"{BASE_URL}/transactions/prepare",
+        headers={"Bearer": admin_user["token"]},
+        json={
+            "receiver": sender_user["login"],
+            "amount": -1000000000
+        },
+        verify=False
+    )
+
+    assert response.status_code == 200
+    assert response.text
 
 
 def test_prepare_transaction_nonexistent_receiver(sender_user):
