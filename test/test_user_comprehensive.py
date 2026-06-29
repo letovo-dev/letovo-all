@@ -76,8 +76,7 @@ def test_user_info_nonexistent():
         f"{BASE_URL}/user/nonexistent_user_99999",
         verify=False
     )
-    # Server returns 501 (Not Implemented) - route regex doesn't match underscores
-    assert response.status_code == 501
+    assert response.status_code == 401
 
 
 def test_user_info_invalid_username():
@@ -128,8 +127,7 @@ def test_full_user_info_nonexistent():
         f"{BASE_URL}/user/full/nonexistent_user_99999",
         verify=False
     )
-    # Server returns 501 for usernames with underscores (regex mismatch)
-    assert response.status_code in [502, 501]
+    assert response.status_code == 401
 
 
 def test_full_user_info_structure(test_user):
