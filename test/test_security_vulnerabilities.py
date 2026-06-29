@@ -201,6 +201,17 @@ def test_backend_defines_cookie_logout_route_and_startup_migration_check():
     assert "docs/security_sessions_migration.sql" in checks_cc
 
 
+def test_session_authentication_allows_inactive_portal_users():
+    security_cc = (ROOT / "src/basic/security.cc").read_text()
+    username_from_session = security_cc.split("std::string username_from_session", 1)[1]
+    username_from_session = username_from_session.split("bool revoke_session", 1)[0]
+
+    assert "JOIN public.\\\"user\\\" u ON u.username = s.username" in username_from_session
+    assert "s.revoked_at IS NULL" in username_from_session
+    assert "s.expires_at > now()" in username_from_session
+    assert "u.active = true" not in username_from_session
+
+
 def test_social_category_reads_allow_public_non_secret_categories():
     social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
     bycat_route = social_cc.split('R"(/social/bycat/:category([0-9\\-]+))"', 1)[1]

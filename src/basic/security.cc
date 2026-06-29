@@ -222,7 +222,7 @@ std::string username_from_session(
       "SELECT s.username FROM public.user_sessions s "
       "JOIN public.\"user\" u ON u.username = s.username "
       "WHERE s.session_id = ($1) AND s.revoked_at IS NULL "
-      "AND s.expires_at > now() AND u.active = true;",
+      "AND s.expires_at > now();",
       params);
   if (result.empty()) {
     return "";
