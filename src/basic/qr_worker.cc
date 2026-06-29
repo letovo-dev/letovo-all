@@ -103,13 +103,11 @@ void achivement_qr(
       [pool_ptr, logger_ptr](auto req, auto params) {
         logger_ptr->trace(
             [] { return "called /achivements/qr/:achivement_id"; });
-        std::string token;
+        std::string token = security::bearer_or_cookie_token(req->header());
         auto qrl = req->header().path();
 
         std::string achivement_id = url::get_last_url_arg(qrl);
-        try {
-          token = req->header().get_field("Bearer");
-        } catch (const std::exception &e) {
+        if(token.empty()) {
           logger_ptr->info([] { return "can't get token"; });
           return req->create_response(restinio::status_unauthorized()).done();
         }
@@ -144,13 +142,11 @@ void page_qr(std::unique_ptr<restinio::router::express_router_t<>> &router,
                                                              auto req,
                                                              auto params) {
     logger_ptr->trace([] { return "called /post/qr/:post_id"; });
-    std::string token;
+    std::string token = security::bearer_or_cookie_token(req->header());
     auto qrl = req->header().path();
 
     std::string post_id = url::get_last_url_arg(qrl);
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
+    if(token.empty()) {
       logger_ptr->info([] { return "can't get token"; });
       return req->create_response(restinio::status_unauthorized()).done();
     }

@@ -201,6 +201,59 @@ def test_backend_defines_cookie_logout_route_and_startup_migration_check():
     assert "docs/security_sessions_migration.sql" in checks_cc
 
 
+def test_session_authentication_allows_inactive_portal_users():
+    security_cc = (ROOT / "src/basic/security.cc").read_text()
+    username_from_session = security_cc.split("std::string username_from_session", 1)[1]
+    username_from_session = username_from_session.split("bool revoke_session", 1)[0]
+
+    assert "JOIN public.\\\"user\\\" u ON u.username = s.username" in username_from_session
+    assert "s.revoked_at IS NULL" in username_from_session
+    assert "s.expires_at > now()" in username_from_session
+    assert "u.active = true" not in username_from_session
+
+
+def test_social_news_saved_and_titles_accept_http_only_auth_session_cookie():
+    social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
+
+    news_route = social_cc.split('R"(/social/news:search(.*))"', 1)[1]
+    news_route = news_route.split("const auto qp = restinio::parse_query", 1)[0]
+    titles_route = social_cc.split('"/social/titles"', 1)[1]
+    titles_route = titles_route.split("const bool can_read_secret", 1)[0]
+    saved_route = social_cc.split('"/social/saved"', 1)[1]
+    saved_route = saved_route.split("const bool can_read_secret", 1)[0]
+
+    for route in (news_route, titles_route, saved_route):
+        assert "security::bearer_or_cookie_token(req->header())" in route
+        assert "get_field(\"Bearer\")" not in route
+
+
+def test_social_like_dislike_accept_http_only_auth_session_cookie():
+    social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
+    routes = {
+        "add_like": social_cc.split('http_post("/social/like"', 1)[1].split('void add_dislike', 1)[0],
+        "add_dislike": social_cc.split('http_post("/social/dislike"', 1)[1].split('void delete_like', 1)[0],
+        "delete_like": social_cc.split('http_delete("/social/like"', 1)[1].split('void delete_dislike', 1)[0],
+        "delete_dislike": social_cc.split('http_delete("/social/dislike"', 1)[1].split('void add_comment', 1)[0],
+    }
+
+    for route in routes.values():
+        assert "security::bearer_or_cookie_token(req->header())" in route
+        assert "get_field(\"Bearer\")" not in route
+        assert "status_unauthorized" in route
+
+
+def test_backend_routes_use_cookie_aware_auth_helper_instead_of_legacy_bearer_only():
+    offenders = []
+    for path in (ROOT / "src").rglob("*.cc"):
+        if path.as_posix().endswith("/src/basic/security.cc"):
+            continue
+        text = path.read_text()
+        if 'get_field("Bearer")' in text:
+            offenders.append(str(path.relative_to(ROOT)))
+
+    assert offenders == []
+
+
 def test_social_category_reads_allow_public_non_secret_categories():
     social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
     bycat_route = social_cc.split('R"(/social/bycat/:category([0-9\\-]+))"', 1)[1]
