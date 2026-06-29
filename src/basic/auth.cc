@@ -36,19 +36,23 @@ bool password_metadata_columns_exist(
   return !result.empty() && result[0]["count"].as<int>() == 3;
 }
 
-bool sessions_table_exists(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+bool user_sessions_columns_exist(
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   cp::SafeCon con{pool_ptr};
   std::vector<std::string> params = {};
   pqxx::result result = con->execute_params(
-      "SELECT to_regclass('public.user_sessions') IS NOT NULL AS exists;",
+      "SELECT COUNT(*) AS count FROM information_schema.columns "
+      "WHERE table_schema = 'public' AND table_name = 'user_sessions' "
+      "AND column_name IN ('session_id', 'username', 'expires_at', "
+      "'revoked_at', 'useragent', 'ip_address');",
       params);
 
-  return !result.empty() && result[0]["exists"].as<bool>();
+  return !result.empty() && result[0]["count"].as<int>() == 6;
 }
 
 bool auth_migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   return password_metadata_columns_exist(pool_ptr) &&
-         sessions_table_exists(pool_ptr);
+         user_sessions_columns_exist(pool_ptr);
 }
 
 bool revoke_all_sessions_for_user(
@@ -437,9 +441,10 @@ void enable_auth(
             .connection_close()
             .done();
       } else {
-        if (!sessions_table_exists(pool_ptr)) {
+        if (!user_sessions_columns_exist(pool_ptr)) {
           logger_ptr->error([] {
-            return "auth session table is missing; cannot create login session";
+            return "auth session table is missing or incomplete; cannot create "
+                   "login session";
           });
           return req
               ->create_response(restinio::status_internal_server_error())
@@ -517,22 +522,66 @@ void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
               .done();
         }
 
-        std::string useragent = req->header().has_field("User-Agent")
-                                    ? req->header().get_field("User-Agent")
-                                    : "";
-        auto token =
-            security::create_session(loginHeader, pool_ptr, useragent, endpoint);
-        logger_ptr->info([endpoint, loginHeader] {
-          return fmt::format("new user with ip {} username {}", endpoint,
-                             loginHeader);
-        });
+        auto delete_created_user = [&pool_ptr, &logger_ptr, endpoint,
+                                    loginHeader](const std::string &reason) {
+          try {
+            auth::delete_user(loginHeader, pool_ptr);
+          } catch (const std::exception &cleanup_error) {
+            const std::string cleanup_message = cleanup_error.what();
+            logger_ptr->error(
+                [endpoint, loginHeader, reason, cleanup_message] {
+                  return fmt::format(
+                      "failed to clean up user {} after {} from {}: {}",
+                      loginHeader, reason, endpoint, cleanup_message);
+                });
+          } catch (...) {
+            logger_ptr->error([endpoint, loginHeader, reason] {
+              return fmt::format(
+                  "failed to clean up user {} after {} from {}",
+                  loginHeader, reason, endpoint);
+            });
+          }
+        };
 
-        return req->create_response()
-            .set_body(cp::serialize(user::user_info(loginHeader, pool_ptr)))
-            .append_header("Authorization", token)
-            .append_header(restinio::http_field::set_cookie,
-                           security::auth_session_cookie(token))
-            .done();
+        try {
+          std::string useragent = req->header().has_field("User-Agent")
+                                      ? req->header().get_field("User-Agent")
+                                      : "";
+          auto token = security::create_session(loginHeader, pool_ptr,
+                                                useragent, endpoint);
+          auto response_body = cp::serialize(user::user_info(loginHeader,
+                                                             pool_ptr));
+          logger_ptr->info([endpoint, loginHeader] {
+            return fmt::format("new user with ip {} username {}", endpoint,
+                               loginHeader);
+          });
+
+          return req->create_response()
+              .set_body(response_body)
+              .append_header("Authorization", token)
+              .append_header(restinio::http_field::set_cookie,
+                             security::auth_session_cookie(token))
+              .done();
+        } catch (const std::exception &e) {
+          const std::string error_message = e.what();
+          delete_created_user("registration session setup failure");
+          logger_ptr->error([endpoint, loginHeader, error_message] {
+            return fmt::format(
+                "registration session setup failed for user {} from {}: {}",
+                loginHeader, endpoint, error_message);
+          });
+          return req->create_response(restinio::status_internal_server_error())
+              .done();
+        } catch (...) {
+          delete_created_user("unknown registration session setup failure");
+          logger_ptr->error([endpoint, loginHeader] {
+            return fmt::format(
+                "registration session setup failed for user {} from {}",
+                loginHeader, endpoint);
+          });
+          return req->create_response(restinio::status_internal_server_error())
+              .done();
+        }
       } catch (const char *error_message) {
         logger_ptr->error([endpoint, error_message] {
           return fmt::format("error from {} {}", endpoint, error_message);
