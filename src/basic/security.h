@@ -3,6 +3,7 @@
 #include "pqxx_cp.h"
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <restinio/all.hpp>
 #include <string>
 
@@ -21,6 +22,7 @@ struct PasswordHash {
 };
 
 std::string random_hex(std::size_t bytes);
+std::string sha256_hex(const std::string &value);
 
 PasswordHash hash_password(const std::string &password);
 PasswordHash hash_password(const std::string &password,
@@ -50,6 +52,11 @@ bool is_same_user_or_admin(const std::string &requester_username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool can_read_secret_posts(const std::string &username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+std::string create_post_reveal_token(
+    int post_id, const std::string &created_by,
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+std::optional<int> post_id_from_reveal_token(
+    const std::string &token, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
 std::string auth_session_cookie(const std::string &session_id,
                                 int ttl_seconds = kDefaultSessionTtlSeconds);

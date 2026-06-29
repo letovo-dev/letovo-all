@@ -118,6 +118,8 @@ std::string random_hex(std::size_t bytes) {
   return bytes_to_hex(buffer.data(), buffer.size());
 }
 
+std::string sha256_hex(const std::string &value) { return ::sha256_hex(value); }
+
 PasswordHash hash_password(const std::string &password) {
   return hash_password(password, kPbkdf2Sha256, random_hex(kPasswordSaltBytes),
                        kDefaultPasswordIterations);
@@ -262,6 +264,50 @@ bool can_read_secret_posts(const std::string &username,
                       "COALESCE(r.write_posts, false) = true OR "
                       "COALESCE(r.moder, false) = true OR "
                       "COALESCE(u.userrights, '') = 'admin'");
+}
+
+std::string create_post_reveal_token(
+    int post_id, const std::string &created_by,
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  if (post_id <= 0 || created_by.empty()) {
+    throw std::invalid_argument("post reveal token requires post id and actor");
+  }
+
+  std::string raw_token = random_hex(32);
+  std::vector<std::string> params = {sha256_hex(raw_token),
+                                     std::to_string(post_id), created_by};
+  cp::SafeCon con{pool_ptr};
+  pqxx::result result = con->execute_params(
+      "INSERT INTO public.post_reveal_tokens(token_hash, post_id, created_by) "
+      "SELECT ($1), p.post_id, ($3) FROM public.posts p "
+      "WHERE p.post_id = ($2) "
+      "RETURNING token_hash;",
+      params, true);
+  if (result.empty()) {
+    throw std::runtime_error("post not found");
+  }
+  return raw_token;
+}
+
+std::optional<int> post_id_from_reveal_token(
+    const std::string &token, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  if (token.empty()) {
+    return std::nullopt;
+  }
+
+  std::vector<std::string> params = {sha256_hex(token)};
+  cp::SafeCon con{pool_ptr};
+  pqxx::result result = con->execute_params(
+      "UPDATE public.post_reveal_tokens "
+      "SET used_at = COALESCE(used_at, now()) "
+      "WHERE token_hash = ($1) "
+      "AND (expires_at IS NULL OR expires_at > now()) "
+      "RETURNING post_id;",
+      params, true);
+  if (result.empty()) {
+    return std::nullopt;
+  }
+  return result[0]["post_id"].as<int>();
 }
 
 std::string auth_session_cookie(const std::string &session_id,

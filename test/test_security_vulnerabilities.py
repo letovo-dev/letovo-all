@@ -148,8 +148,8 @@ def test_secret_category_requires_editorial_rights(security_user):
     assert response.status_code == 403
 
 
-def test_reveal_secret_requires_editorial_rights(security_user):
-    # Precondition: post 1 exists and can exercise the reveal-secret authorization path.
+def test_reveal_secret_rejects_guessable_post_id(security_user):
+    # Public reveal is allowed only through an admin-generated opaque reveal token.
     response = requests.get(
         f"{BASE_URL}/post/reveal_secret/1",
         headers={"Bearer": security_user["token"]},
@@ -158,7 +158,7 @@ def test_reveal_secret_requires_editorial_rights(security_user):
     )
 
     _skip_if_fixture_is_absent(response, "post 1")
-    assert response.status_code == 403
+    assert response.status_code == 400
 
 
 def test_login_sets_hardened_cookie(security_user):
