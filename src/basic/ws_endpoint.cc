@@ -17,10 +17,8 @@ namespace ws::server {
 namespace {
 
 std::string extract_token(const restinio::request_handle_t& req) {
-    try {
-        auto t = req->header().get_field("Bearer");
-        if (!t.empty()) return std::string(t);
-    } catch (const std::exception&) {}
+    std::string token = security::bearer_or_cookie_token(req->header());
+    if (!token.empty()) return token;
 
     auto qp = restinio::parse_query(req->header().query());
     if (qp.has("token")) {
@@ -185,9 +183,10 @@ void list_active_sessions(
 
     router.get()->http_get("/ws/sessions/active",
         [pool_ptr, logger_ptr, bus_ptr](auto req, auto) {
-            std::string token;
-            try { token = req->header().get_field("Bearer"); }
-            catch (...) { return req->create_response(restinio::status_unauthorized()).done(); }
+            std::string token = security::bearer_or_cookie_token(req->header());
+            if(token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
             if (auth::get_username(token, pool_ptr).empty()) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }

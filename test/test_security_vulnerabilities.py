@@ -242,6 +242,18 @@ def test_social_like_dislike_accept_http_only_auth_session_cookie():
         assert "status_unauthorized" in route
 
 
+def test_backend_routes_use_cookie_aware_auth_helper_instead_of_legacy_bearer_only():
+    offenders = []
+    for path in (ROOT / "src").rglob("*.cc"):
+        if path.as_posix().endswith("/src/basic/security.cc"):
+            continue
+        text = path.read_text()
+        if 'get_field("Bearer")' in text:
+            offenders.append(str(path.relative_to(ROOT)))
+
+    assert offenders == []
+
+
 def test_social_category_reads_allow_public_non_secret_categories():
     social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
     bycat_route = social_cc.split('R"(/social/bycat/:category([0-9\\-]+))"', 1)[1]

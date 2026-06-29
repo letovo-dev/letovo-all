@@ -628,13 +628,10 @@ void add_user_role(
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
 
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
+            if(token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
 
     if (token.empty()) {
       logger_ptr->info([] { return "token is empty"; });
@@ -700,13 +697,10 @@ void create_role(
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
 
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
+            if(token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
 
     if (token.empty()) {
       logger_ptr->info([] { return "token is empty"; });
@@ -819,13 +813,10 @@ void set_users_department(
     logger_ptr->trace([] { return "called /user/set_department"; });
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
+            if(token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
 
     if (token.empty()) {
       logger_ptr->info([] { return "token is empty"; });
@@ -934,13 +925,10 @@ void all_avatars(
   router.get()->http_get("/user/all_avatars", [logger_ptr, pool_ptr](auto req,
                                                                      auto) {
     logger_ptr->trace([] { return "called /user/all_avatars"; });
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
+            if(token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
     return req->create_response()
         .append_header("Content-Type", "application/json; charset=utf-8")
         .set_body(
@@ -958,13 +946,10 @@ void set_avatar(std::unique_ptr<restinio::router::express_router_t<>> &router,
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
 
-    std::string token;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
-      logger_ptr->info([] { return "can't get token"; });
-      return req->create_response(restinio::status_unauthorized()).done();
-    }
+    std::string token = security::bearer_or_cookie_token(req->header());
+            if(token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
 
     if (token.empty()) {
       logger_ptr->info([] { return "token is empty"; });
