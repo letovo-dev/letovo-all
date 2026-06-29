@@ -88,16 +88,30 @@ std::vector<std::string> get_all_files(std::string path) {
 
 bool is_secret(std::string file_name, std::string token,
                std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-  if (auth::is_admin(token, pool_ptr)) {
+  (void)token;
+  if (file_name.empty()) {
     return false;
   }
-  if (file_name[0] != '/') {
-    file_name = '/' + file_name;
+  std::string file_name_with_slash = file_name;
+  std::string file_name_without_slash = file_name;
+  if (file_name[0] == '/') {
+    file_name_without_slash = file_name.substr(1);
+  } else {
+    file_name_with_slash = '/' + file_name;
   }
   cp::SafeCon con{pool_ptr};
-  std::vector<std::string> params = {file_name};
+  std::vector<std::string> params = {file_name_with_slash, file_name_without_slash};
   pqxx::result res = con->execute_params(
-      "SELECT p.is_secret from \"posts\" p where p.post_path = ($1);", params);
+      "SELECT EXISTS ("
+      "SELECT 1 FROM \"posts\" p "
+      "WHERE p.post_path IN ($1, $2) AND p.is_secret = true "
+      "UNION "
+      "SELECT 1 FROM \"post_media\" pm "
+      "JOIN \"posts\" p ON p.post_id::text = pm.post_id "
+      "WHERE pm.media IN ($1, $2) "
+      "AND (p.is_secret = true OR COALESCE(pm.is_secret, false) = true)"
+      ") AS is_secret;",
+      params);
 
 
   if (res.empty())
@@ -116,9 +130,8 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
     FileStatus status = FileStatus::AVALUABLE;
     std::string token;
     std::string content_type;
-    try {
-      token = req->header().get_field("Bearer");
-    } catch (const std::exception &e) {
+    token = security::bearer_or_cookie_token(req->header());
+    if (token.empty()) {
       status = FileStatus::UNAUTHORIZED;
     }
     auto user = auth::get_username(token, pool_ptr);
@@ -146,12 +159,14 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
       if (relative_filename.find("..") != std::string::npos ||
           relative_filename[0] == '/') {
         status = FileStatus::HACKING;
-      } else if (status != FileStatus::SHARED &&
-                 media::is_secret(relative_filename, token, pool_ptr)) {
-        status = FileStatus::SECRET;
-      }
-      if (status == FileStatus::SECRET && auth::is_admin(token, pool_ptr)) {
-        status = FileStatus::AVALUABLE;
+      } else if (media::is_secret(relative_filename, token, pool_ptr)) {
+        if (user.empty()) {
+          status = FileStatus::UNAUTHORIZED;
+        } else if (security::can_read_secret_posts(user, pool_ptr)) {
+          status = FileStatus::AVALUABLE;
+        } else {
+          status = FileStatus::SECRET;
+        }
       }
     }
     logger_ptr->info([status, file_path, relative_filename] {

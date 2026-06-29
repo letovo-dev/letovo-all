@@ -222,7 +222,11 @@
     },
     "/social/bycat/:category([0-9\\-]+)": {
         "request": {
-            "method": "get"
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ],
+            "auth": "Valid session required. Category 5 and secret posts require editorial/admin rights; non-editorial users only receive non-secret posts."
         },
         "response": {}
     },
@@ -496,7 +500,11 @@
     },
     "/post/reveal_secret/:id(\\d+)": {
         "request": {
-            "method": "get"
+            "method": "get",
+            "header_fields": [
+                "Bearer"
+            ],
+            "auth": "Valid session and editorial/admin rights required."
         },
         "response": {}
     },

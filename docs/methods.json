@@ -153,7 +153,11 @@
         "method": "GET"
     },
     "/social/bycat/:category([0-9\\-]+)": {
-        "method": "get"
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ],
+        "auth": "Valid session required. Category 5 and secret posts require editorial/admin rights; non-editorial users only receive non-secret posts."
     },
     "/achivements/user/departments/:username([a-zA-Z0-9\\-]+)": {
         "function": "user_achivements_by_department",
@@ -352,7 +356,11 @@
         ]
     },
     "/post/reveal_secret/:id(\\d+)": {
-        "method": "get"
+        "method": "get",
+        "header_fields": [
+            "Bearer"
+        ],
+        "auth": "Valid session and editorial/admin rights required."
     },
     "/authors_list": {
         "method": "get",

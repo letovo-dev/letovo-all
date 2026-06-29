@@ -769,9 +769,13 @@
     }
   },
   "/social/bycat/:category([0-9\\-]+)": {
-    "explanation": "This code represents a route configuration for a web server. Specifically, it's configured to handle HTTP GET requests for URLs that follow a specific format (related to some category ID). When such a request comes in, the server responds with a 200 OK status, providing the body of the response as structured data. This includes details about posts, like their title, author, text content, etc., specifically filtering by the requested category.",
+    "explanation": "This route handles authenticated HTTP GET requests for a category ID. It returns posts from the requested category, filters secret posts for non-editorial users, and requires editorial/admin rights for category 5.",
     "request": {
-      "method": "get"
+      "method": "get",
+      "header_fields": [
+        "Bearer"
+      ],
+      "auth": "Valid session required. Category 5 and secret posts require editorial/admin rights; non-editorial users only receive non-secret posts."
     },
     "response": {
       "body": {
