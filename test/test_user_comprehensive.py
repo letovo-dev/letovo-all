@@ -53,10 +53,11 @@ def known_user():
 
 # ============ User Info Tests (GET /user/:username) ============
 
-def test_user_info_existing(known_user):
+def test_user_info_existing(known_user, test_user):
     """Test retrieving info for existing user"""
     response = requests.get(
         f"{BASE_URL}/user/{known_user['username']}",
+        headers={"Bearer": test_user["token"]},
         verify=False
     )
     assert response.status_code == 200
@@ -93,6 +94,7 @@ def test_user_info_own_user(test_user):
     """Test retrieving own user info"""
     response = requests.get(
         f"{BASE_URL}/user/{test_user['login']}",
+        headers={"Bearer": test_user["token"]},
         verify=False
     )
     assert response.status_code == 200
@@ -102,10 +104,11 @@ def test_user_info_own_user(test_user):
 
 # ============ Full User Info Tests (GET /user/full/:username) ============
 
-def test_full_user_info_existing(known_user):
+def test_full_user_info_existing(known_user, test_user):
     """Test retrieving full info for existing user"""
     response = requests.get(
         f"{BASE_URL}/user/full/{known_user['username']}",
+        headers={"Bearer": test_user["token"]},
         verify=False
     )
     assert response.status_code == 200
@@ -133,6 +136,7 @@ def test_full_user_info_structure(test_user):
     """Test full user info returns expected structure"""
     response = requests.get(
         f"{BASE_URL}/user/full/{test_user['login']}",
+        headers={"Bearer": test_user["token"]},
         verify=False
     )
     assert response.status_code == 200

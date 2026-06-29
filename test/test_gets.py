@@ -86,9 +86,13 @@ def test_get_post_by_author():
     assert isinstance(data["result"], list)
 
 
-def test_get_user_info():
+def test_get_user_info(auth_token):
     username = TEST_USER
-    response = requests.get(f"{BASE_URL}/user/{username}", verify=False)
+    response = requests.get(
+        f"{BASE_URL}/user/{username}",
+        headers={"Bearer": auth_token},
+        verify=False
+    )
     assert response.status_code == 200
     data = response.json()
     assert "result" in data

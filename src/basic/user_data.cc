@@ -1,4 +1,5 @@
 #include "user_data.h"
+#include "security.h"
 #include "../market/transactions.h"
 
 namespace {
@@ -489,6 +490,15 @@ void user_info(std::unique_ptr<restinio::router::express_router_t<>> &router,
           return req->create_response(restinio::status_bad_request()).done();
         }
 
+        std::string token = security::bearer_or_cookie_token(req->header());
+        std::string actor = auth::get_username(token, pool_ptr);
+        if (actor.empty()) {
+          return req->create_response(restinio::status_unauthorized()).done();
+        }
+        if (!security::is_same_user_or_admin(actor, username, pool_ptr)) {
+          return req->create_response(restinio::status_forbidden()).done();
+        }
+
         pqxx::result result = user::user_info(username, pool_ptr);
 
         if (result.empty()) {
@@ -518,6 +528,15 @@ void full_user_info(
 
         if (username == "user" || username.empty()) {
           return req->create_response(restinio::status_bad_request()).done();
+        }
+
+        std::string token = security::bearer_or_cookie_token(req->header());
+        std::string actor = auth::get_username(token, pool_ptr);
+        if (actor.empty()) {
+          return req->create_response(restinio::status_unauthorized()).done();
+        }
+        if (!security::is_same_user_or_admin(actor, username, pool_ptr)) {
+          return req->create_response(restinio::status_forbidden()).done();
         }
 
         pqxx::result result = user::full_user_info(username, pool_ptr);
