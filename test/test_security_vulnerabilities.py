@@ -227,6 +227,21 @@ def test_social_news_saved_and_titles_accept_http_only_auth_session_cookie():
         assert "get_field(\"Bearer\")" not in route
 
 
+def test_social_like_dislike_accept_http_only_auth_session_cookie():
+    social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
+    routes = {
+        "add_like": social_cc.split('http_post("/social/like"', 1)[1].split('void add_dislike', 1)[0],
+        "add_dislike": social_cc.split('http_post("/social/dislike"', 1)[1].split('void delete_like', 1)[0],
+        "delete_like": social_cc.split('http_delete("/social/like"', 1)[1].split('void delete_dislike', 1)[0],
+        "delete_dislike": social_cc.split('http_delete("/social/dislike"', 1)[1].split('void add_comment', 1)[0],
+    }
+
+    for route in routes.values():
+        assert "security::bearer_or_cookie_token(req->header())" in route
+        assert "get_field(\"Bearer\")" not in route
+        assert "status_unauthorized" in route
+
+
 def test_social_category_reads_allow_public_non_secret_categories():
     social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
     bycat_route = social_cc.split('R"(/social/bycat/:category([0-9\\-]+))"', 1)[1]
