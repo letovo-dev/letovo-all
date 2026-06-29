@@ -212,6 +212,15 @@ def test_session_authentication_allows_inactive_portal_users():
     assert "u.active = true" not in username_from_session
 
 
+def test_social_news_accepts_http_only_auth_session_cookie():
+    social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
+    news_route = social_cc.split('R"(/social/news:search(.*))"', 1)[1]
+    news_route = news_route.split("const auto qp = restinio::parse_query", 1)[0]
+
+    assert "security::bearer_or_cookie_token(req->header())" in news_route
+    assert "get_field(\"Bearer\")" not in news_route
+
+
 def test_social_category_reads_allow_public_non_secret_categories():
     social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
     bycat_route = social_cc.split('R"(/social/bycat/:category([0-9\\-]+))"', 1)[1]
