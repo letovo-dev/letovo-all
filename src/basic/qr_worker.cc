@@ -1,4 +1,6 @@
 #include "qr_worker.h"
+#include "../letovo-soc-net/page_server.h"
+#include "security.h"
 
 namespace qr {
 bool SavePng(const char *filename, int width, int height,
@@ -160,14 +162,18 @@ void page_qr(std::unique_ptr<restinio::router::express_router_t<>> &router,
           ->create_response(restinio::status_non_authoritative_information())
           .done();
     }
-    std::string data =
-        fmt::format("https://{}/api/post/reveal_secret/{}",
-                    Config::giveMe().server_config.adress, post_id);
-    std::string filename_str = fmt::format("post_{}.png", post_id);
-    if (!qr::file_exists(filename_str)) {
-      const char *filename = filename_str.c_str();
-      qr::GenerateQRCode(data.c_str(), filename);
+    std::string username = auth::get_username(token, pool_ptr);
+    std::string reveal_token;
+    try {
+      reveal_token = security::create_post_reveal_token(std::stoi(post_id), username, pool_ptr);
+    } catch (const std::exception &e) {
+      logger_ptr->error([e] { return fmt::format("Error: {}", e.what()); });
+      return req->create_response(restinio::status_internal_server_error()).done();
     }
+    std::string data = page::reveal_secret_url(reveal_token);
+    std::string filename_str = fmt::format("post_{}_{}.png", post_id, reveal_token.substr(0, 16));
+    const char *filename = filename_str.c_str();
+    qr::GenerateQRCode(data.c_str(), filename);
 
     return req->create_response()
         .append_header(restinio::http_field::content_type, "image/png")

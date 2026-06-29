@@ -31,9 +31,21 @@ void check_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   }
 }
 
+void check_auth_migrations(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  if (!auth::migrations_ready(pool_ptr)) {
+    pre_run_checks::print(
+        "auth/session migration is missing or incomplete; apply "
+        "docs/security_sessions_migration.sql before starting this binary",
+        91);
+    throw std::runtime_error("auth/session migrations are required");
+  }
+  pre_run_checks::print("Auth/session migrations are present", 32);
+}
+
 void do_checks(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   std::cout << std::endl << "performing pre-run checks" << std::endl;
   check_departments(pool_ptr);
+  check_auth_migrations(pool_ptr);
   pre_run_checks::print("All checks passed", 32);
 }
 } // namespace pre_run_checks

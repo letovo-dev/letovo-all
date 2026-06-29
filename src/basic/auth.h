@@ -3,6 +3,7 @@
 #include "hash.h"
 #include "pqxx_cp.h"
 #include "rapidjson/document.h"
+#include "security.h"
 #include "url_parser.h"
 #include "user_data.h"
 #include <jwt-cpp/jwt.h>
@@ -43,7 +44,11 @@ bool is_authed_by_body(std::string req_body,
                        std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool auth(std::string token, std::string password,
           std::shared_ptr<cp::ConnectionsManager> pool_ptr);
-bool reg(std::string username, std::string password_hash, std::string userid,
+bool password_matches(std::string username, std::string password,
+                      std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+bool set_password_hash(std::string username, std::string new_password,
+                       std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+bool reg(std::string username, std::string password, std::string userid,
          std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool delete_user(std::string username,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr);
@@ -59,6 +64,7 @@ void save_cookie(const std::string &cookie, const std::string username,
                  const std::string useragent,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 std::string get_cookie(const std::string &header);
+bool migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 } // namespace auth
 namespace auth::server {
 void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
@@ -67,6 +73,9 @@ void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
 void enable_auth(std::unique_ptr<restinio::router::express_router_t<>> &router,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                  std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+void logout(std::unique_ptr<restinio::router::express_router_t<>> &router,
+            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
+            std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 void enable_delete(
     std::unique_ptr<restinio::router::express_router_t<>> &router,
     std::shared_ptr<cp::ConnectionsManager> pool_ptr,

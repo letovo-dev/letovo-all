@@ -1,4 +1,5 @@
 #pragma once
+#include "auth.h"
 #include "pqxx_cp.h"
 #include "user_data.h"
 #include <pqxx/pqxx>
@@ -7,6 +8,8 @@ namespace pre_run_checks {
 void print(std::string message, int color);
 
 void check_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+void check_auth_migrations(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
 void do_checks(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 } // namespace pre_run_checks

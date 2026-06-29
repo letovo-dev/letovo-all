@@ -1,6 +1,7 @@
 {
   "build_files": [
     "basic/auth.cc",
+    "basic/security.cc",
     "basic/utils.cc",
     "basic/pqxx_cp.cc",
     "basic/hash.cc",
