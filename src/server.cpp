@@ -102,6 +102,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
 
   auth::server::enable_reg(router, pool_ptr, logger_ptr);
   auth::server::enable_auth(router, pool_ptr, logger_ptr);
+  auth::server::logout(router, pool_ptr, logger_ptr);
   auth::server::add_userrights(router, pool_ptr, logger_ptr);
   auth::server::am_i_authed(router, pool_ptr, logger_ptr);
   auth::server::am_i_admin(router, pool_ptr, logger_ptr);

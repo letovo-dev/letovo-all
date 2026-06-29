@@ -64,6 +64,7 @@ void save_cookie(const std::string &cookie, const std::string username,
                  const std::string useragent,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 std::string get_cookie(const std::string &header);
+bool migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 } // namespace auth
 namespace auth::server {
 void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
@@ -72,6 +73,9 @@ void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
 void enable_auth(std::unique_ptr<restinio::router::express_router_t<>> &router,
                  std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                  std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+void logout(std::unique_ptr<restinio::router::express_router_t<>> &router,
+            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
+            std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 void enable_delete(
     std::unique_ptr<restinio::router::express_router_t<>> &router,
     std::shared_ptr<cp::ConnectionsManager> pool_ptr,

@@ -539,6 +539,22 @@
     },
     "response": {}
   },
+  "/auth/logout": {
+    "explanation": "Revokes the current opaque AuthSession and returns an expired AuthSession cookie so browsers can clear the HttpOnly cookie. The endpoint is safe to call even when the request has no active session.",
+    "request": {
+      "function": "logout",
+      "header_fields": [
+        "Bearer"
+      ],
+      "method": "put"
+    },
+    "response": {
+      "headers": [
+        "Set-Cookie"
+      ],
+      "text": "ok"
+    }
+  },
   "/auth/reg": {
     "explanation": "This method allows for registration by enabling the ability to create new accounts. It accepts a POST request containing three fields: login (a string), password (a string), and temp_token (a string). After receiving these details, it processes them to facilitate account registration without delving into specific implementation or process details.",
     "request": {

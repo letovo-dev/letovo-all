@@ -50,9 +50,24 @@ bool user_sessions_columns_exist(
   return !result.empty() && result[0]["count"].as<int>() == 6;
 }
 
+bool post_reveal_tokens_columns_exist(
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  cp::SafeCon con{pool_ptr};
+  std::vector<std::string> params = {};
+  pqxx::result result = con->execute_params(
+      "SELECT COUNT(*) AS count FROM information_schema.columns "
+      "WHERE table_schema = 'public' AND table_name = 'post_reveal_tokens' "
+      "AND column_name IN ('token_hash', 'post_id', 'created_by', "
+      "'created_at', 'used_at', 'expires_at');",
+      params);
+
+  return !result.empty() && result[0]["count"].as<int>() == 6;
+}
+
 bool auth_migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   return password_metadata_columns_exist(pool_ptr) &&
-         user_sessions_columns_exist(pool_ptr);
+         user_sessions_columns_exist(pool_ptr) &&
+         post_reveal_tokens_columns_exist(pool_ptr);
 }
 
 bool revoke_all_sessions_for_user(
@@ -414,6 +429,10 @@ std::string get_cookie(const std::string &header) {
   }
   return "";
 }
+
+bool migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  return auth_migrations_ready(pool_ptr);
+}
 } // namespace auth
 
 namespace auth::server {
@@ -729,6 +748,25 @@ void is_user(std::unique_ptr<restinio::router::express_router_t<>> &router,
               .done();
         }
       });
+}
+
+void logout(std::unique_ptr<restinio::router::express_router_t<>> &router,
+            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
+            std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+  router.get()->http_put("/auth/logout", [pool_ptr, logger_ptr](auto req, auto) {
+    logger_ptr->trace([] { return "called /auth/logout"; });
+    const std::string token = security::bearer_or_cookie_token(req->header());
+    if (!token.empty()) {
+      security::revoke_session(token, pool_ptr);
+    }
+
+    return req->create_response()
+        .set_body("ok")
+        .append_header(restinio::http_field::set_cookie,
+                       security::expired_auth_session_cookie())
+        .append_header("Content-Type", "text/plain; charset=utf-8")
+        .done();
+  });
 }
 
 void enable_delete(

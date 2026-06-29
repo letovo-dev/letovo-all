@@ -1,5 +1,6 @@
 import os
 from http.cookies import SimpleCookie
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -7,6 +8,7 @@ import requests
 
 
 BASE_URL = os.environ.get("LETOVO_API_BASE_URL", "http://0.0.0.0:8080")
+ROOT = Path(__file__).resolve().parents[1]
 REQUEST_TIMEOUT = float(os.environ.get("LETOVO_TEST_TIMEOUT", "5"))
 MISSING_FIXTURE_STATUS_CODES = {204, 404, 410}
 EXPECTED_CLEANUP_STATUS_CODES = {200, 204, 404, 410}
@@ -181,3 +183,19 @@ def test_login_sets_hardened_cookie(security_user):
     assert auth_session_cookie["httponly"]
     assert auth_session_cookie["secure"]
     assert auth_session_cookie["samesite"] == "Strict"
+
+
+def test_backend_defines_cookie_logout_route_and_startup_migration_check():
+    auth_cc = (ROOT / "src/basic/auth.cc").read_text()
+    auth_h = (ROOT / "src/basic/auth.h").read_text()
+    checks_cc = (ROOT / "src/basic/checks.cc").read_text()
+    server_cc = (ROOT / "src/server.cpp").read_text()
+
+    assert 'http_put("/auth/logout"' in auth_cc
+    assert "security::revoke_session(token, pool_ptr)" in auth_cc
+    assert "security::expired_auth_session_cookie()" in auth_cc
+    assert "void logout(" in auth_h
+    assert "auth::server::logout(router, pool_ptr, logger_ptr)" in server_cc
+    assert "check_auth_migrations(pool_ptr)" in checks_cc
+    assert "auth::migrations_ready(pool_ptr)" in checks_cc
+    assert "docs/security_sessions_migration.sql" in checks_cc
