@@ -199,3 +199,14 @@ def test_backend_defines_cookie_logout_route_and_startup_migration_check():
     assert "check_auth_migrations(pool_ptr)" in checks_cc
     assert "auth::migrations_ready(pool_ptr)" in checks_cc
     assert "docs/security_sessions_migration.sql" in checks_cc
+
+
+def test_social_category_reads_allow_public_non_secret_categories():
+    social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
+    bycat_route = social_cc.split('R"(/social/bycat/:category([0-9\\-]+))"', 1)[1]
+    bycat_route = bycat_route.split("pqxx::result result;", 1)[0]
+
+    assert "post_media.post_id = p.post_id::text" in social_cc
+    assert "const bool can_read_secret = !actor.empty() && security::can_read_secret_posts(actor, pool_ptr);" in bycat_route
+    assert "if (actor.empty())" not in bycat_route
+    assert 'if (category == "5" && !can_read_secret)' in bycat_route
