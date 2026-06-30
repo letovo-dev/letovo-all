@@ -19,7 +19,8 @@ def api_check_admin(token: str):
         return True
     if not token:
         return False
-    r = requests.get("https://letovocorp.ru/api/auth/amiadmin", headers={"Bearer": token}, verify=False)
+    auth_url = config.get("auth_check_url", "https://letovocorp.ru/letovo-api/auth/amiuploader")
+    r = requests.get(auth_url, headers={"Bearer": token}, verify=False)
     return json.loads(r.text)["status"] == 't'
 
 @app.route('/', methods=['POST'])
@@ -38,7 +39,7 @@ def upload_file():
         file_path = os.path.join(ROOT_PATH, config["paths"]["other"])
     token = flask.request.headers.get('Bearer', None)
     if not api_check_admin(token):
-        return f"You are not admin, your token: {token}", 403
+        return "Forbidden", 403
     
     file.save(os.path.join(file_path, file.filename))
 
@@ -54,11 +55,11 @@ def upload_avatar():
     file_path = os.path.join(ROOT_PATH, config["ava_path"])
     token = flask.request.headers.get('Bearer', None)
     if not api_check_admin(token):
-        return f"You are not admin, your token: {token}", 403
+        return "Forbidden", 403
     file.filename.replace(" ", "_")
     file.filename = str(datetime.now().timestamp()).replace('.', '_') + "_" + file.filename
     file.save(os.path.join(file_path, file.filename))
     return '{"file": "/' + str(os.path.join(config["ava_path"], file.filename)) + '"}'
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8880, debug=True, threaded=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=8880, debug=False, threaded=True, use_reloader=False)

@@ -21,5 +21,6 @@
         "txt": "other",
         "md": "posts"
     },
-    "check_admin": true
+    "check_admin": true,
+    "auth_check_url": "https://letovocorp.ru/letovo-api/auth/amiuploader"
 }
