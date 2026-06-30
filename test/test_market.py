@@ -6,6 +6,7 @@ import requests
 import pytest
 import time
 import os
+import uuid
 
 BASE_URL = "http://0.0.0.0:8080"
 
@@ -203,6 +204,54 @@ def test_prepare_transaction_zero_amount(sender_user, receiver_user):
     )
     # Should succeed as 0 is valid
     assert response.status_code in [200, 409]
+
+
+def test_non_admin_cookie_auth_transfer_flow():
+    """Non-admin users can prepare and send transfers using AuthSession only."""
+    sender = f"transfer_sender_{uuid.uuid4().hex[:12]}"
+    receiver = f"transfer_receiver_{uuid.uuid4().hex[:12]}"
+    password = "test"
+
+    for login in (sender, receiver):
+        response = requests.post(
+            f"{BASE_URL}/auth/reg",
+            json={"login": login, "password": password},
+            verify=False,
+        )
+        assert response.status_code == 200, response.text
+
+    admin_response = requests.get(
+        f"{BASE_URL}/auth/isadmin/{sender}",
+        verify=False,
+    )
+    assert admin_response.status_code == 200
+    assert admin_response.json()["status"] == "f"
+
+    login_response = requests.post(
+        f"{BASE_URL}/auth/login",
+        json={"login": sender, "password": password},
+        verify=False,
+    )
+    assert login_response.status_code == 200
+    auth_session = login_response.headers.get("Authorization")
+    assert auth_session
+    cookie_header = {"Cookie": f"AuthSession={auth_session}"}
+
+    prepare_response = requests.post(
+        f"{BASE_URL}/transactions/prepare",
+        headers=cookie_header,
+        json={"receiver": receiver, "amount": 0},
+        verify=False,
+    )
+    assert prepare_response.status_code == 200, prepare_response.text
+
+    send_response = requests.post(
+        f"{BASE_URL}/transactions/send",
+        headers=cookie_header,
+        json={"tr_id": prepare_response.text},
+        verify=False,
+    )
+    assert send_response.status_code == 200, send_response.text
 
 
 def test_prepare_negative_transaction_as_admin(admin_user, sender_user):
