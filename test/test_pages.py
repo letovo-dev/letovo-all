@@ -1,5 +1,6 @@
 import pytest
 import requests
+import os
 
 
 BASE_URL = "http://0.0.0.0:8080"
@@ -22,6 +23,58 @@ def auth_token():
         token = data.get("token", "")
     assert token, "Failed to get auth token"
     return token
+
+
+@pytest.fixture(scope="module")
+def admin_token():
+    login = os.environ.get("LETOVO_ADMIN_LOGIN")
+    password = os.environ.get("LETOVO_ADMIN_PASSWORD")
+    if not login or not password:
+        pytest.skip("LETOVO_ADMIN_LOGIN/LETOVO_ADMIN_PASSWORD are required")
+
+    response = requests.post(
+        f"{BASE_URL}/auth/login",
+        json={"login": login, "password": password},
+        verify=False
+    )
+    assert response.status_code == 200, "Failed to login admin test user"
+    token = response.headers.get("Authorization")
+    assert token, "Failed to get admin token"
+    return token
+
+
+def _create_test_post(auth_token, title="issue 54 test post"):
+    response = requests.post(
+        f"{BASE_URL}/post/add_page_content",
+        json={
+            "is_secret": False,
+            "is_published": True,
+            "likes": 0,
+            "title": title,
+            "author": TEST_USER,
+            "text": "issue 54 regression",
+            "token": auth_token,
+        },
+        verify=False
+    )
+    assert response.status_code == 200
+    return response.json()["result"][0]["post_id"]
+
+
+def _create_test_article(admin_token, title="issue 54 article"):
+    response = requests.post(
+        f"{BASE_URL}/post/add_page",
+        json={
+            "post_path": f"/media/{title.replace(' ', '_')}.md",
+            "category_name": "Issue54",
+            "title": title,
+            "is_secret": "f",
+        },
+        headers={"Bearer": admin_token},
+        verify=False
+    )
+    assert response.status_code == 200
+    return response.json()["result"][0]["post_id"]
 
 
 @pytest.mark.order1
@@ -95,3 +148,90 @@ def test_update_likes(auth_token):
     response = requests.get(url, verify=False)
     assert response.status_code == 200
     assert response.json()["result"][0]["likes"] == "101"
+
+
+def test_delete_post_accepts_string_post_id(auth_token):
+    page_id = _create_test_post(auth_token, "issue 54 delete string id")
+
+    response = requests.delete(
+        f"{BASE_URL}/post/delete",
+        json={"post_id": str(page_id)},
+        headers={"Bearer": auth_token},
+        verify=False
+    )
+
+    assert response.status_code == 200
+    assert response.text == "ok"
+
+
+def test_delete_post_accepts_numeric_post_id(auth_token):
+    page_id = _create_test_post(auth_token, "issue 54 delete numeric id")
+
+    response = requests.delete(
+        f"{BASE_URL}/post/delete",
+        json={"post_id": int(page_id)},
+        headers={"Bearer": auth_token},
+        verify=False
+    )
+
+    assert response.status_code == 200
+    assert response.text == "ok"
+
+
+def test_delete_article_allows_admin_when_author_is_empty(admin_token):
+    page_id = _create_test_article(admin_token, "issue 54 delete authorless article")
+
+    response = requests.delete(
+        f"{BASE_URL}/post/delete",
+        json={"post_id": str(page_id)},
+        headers={"Bearer": admin_token},
+        verify=False
+    )
+
+    assert response.status_code == 200
+    assert response.text == "ok"
+
+
+def test_delete_post_rejects_malformed_post_id_without_upstream_close(auth_token):
+    response = requests.delete(
+        f"{BASE_URL}/post/delete",
+        json={"post_id": "not-a-number"},
+        headers={"Bearer": auth_token},
+        verify=False
+    )
+
+    assert response.status_code == 400
+
+
+def test_update_article_payload_returns_controlled_response(admin_token):
+    page_id = _create_test_article(admin_token)
+
+    response = requests.put(
+        f"{BASE_URL}/post/update",
+        json={
+            "post_id": str(page_id),
+            "is_secret": "f",
+            "likes": 0,
+            "dislikes": "0",
+            "saved_count": 0,
+            "title": "issue 54 article updated",
+            "text": "",
+            "category_name": "Issue54Updated",
+            "post_path": "/media/issue_54_article_updated.md",
+        },
+        headers={"Bearer": admin_token},
+        verify=False
+    )
+
+    assert response.status_code == 200
+
+
+def test_update_post_rejects_malformed_post_id_without_upstream_close(admin_token):
+    response = requests.put(
+        f"{BASE_URL}/post/update",
+        json={"post_id": "not-a-number"},
+        headers={"Bearer": admin_token},
+        verify=False
+    )
+
+    assert response.status_code == 400
