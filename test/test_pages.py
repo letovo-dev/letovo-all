@@ -178,6 +178,20 @@ def test_delete_post_accepts_numeric_post_id(auth_token):
     assert response.text == "ok"
 
 
+def test_delete_article_allows_admin_when_author_is_empty(admin_token):
+    page_id = _create_test_article(admin_token, "issue 54 delete authorless article")
+
+    response = requests.delete(
+        f"{BASE_URL}/post/delete",
+        json={"post_id": str(page_id)},
+        headers={"Bearer": admin_token},
+        verify=False
+    )
+
+    assert response.status_code == 200
+    assert response.text == "ok"
+
+
 def test_delete_post_rejects_malformed_post_id_without_upstream_close(auth_token):
     response = requests.delete(
         f"{BASE_URL}/post/delete",

@@ -583,7 +583,10 @@ namespace page::server {
 
                 std::string post_author = row_string_or_empty(post[0], "author");
                 std::string username = auth::get_username(token, pool_ptr);
-                if (!authors::check_if_avaluable_author(username, post_author, pool_ptr)) {
+                bool can_delete = post_author.empty()
+                    ? auth::is_admin(token, pool_ptr)
+                    : authors::check_if_avaluable_author(username, post_author, pool_ptr);
+                if (!can_delete) {
                     logger_ptr->info([]{return "not admin";});
                     return req->create_response(restinio::status_unauthorized()).set_body("not your post - do not touch it!").done();
                 }
