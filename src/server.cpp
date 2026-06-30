@@ -131,7 +131,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   user::server::starter_role(router, pool_ptr, logger_ptr);
 
   transactions::server::prepare_transaction(router, pool_ptr, logger_ptr);
-  transactions::server::transfer(router, pool_ptr, logger_ptr);
+  transactions::server::transfer(router, pool_ptr, logger_ptr, bus_ptr);
   transactions::server::get_balance(router, pool_ptr, logger_ptr);
   transactions::server::get_transactions(router, pool_ptr, logger_ptr);
 

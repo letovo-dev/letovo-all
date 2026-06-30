@@ -34,6 +34,58 @@ def ws_url_with_token():
     return f"{WS_URL}?token={TOKEN}"
 
 
+def _login_user(login: str, password: str) -> str:
+    r = requests.post(
+        f"{HTTP_URL}/auth/login",
+        json={"login": login, "password": password},
+        verify=False,
+    )
+    assert r.status_code == 200, f"login failed for {login}: {r.status_code} {r.text}"
+    token = r.headers.get("Authorization")
+    assert token
+    return token
+
+
+def _balance(token: str) -> int:
+    r = requests.get(
+        f"{HTTP_URL}/transactions/balance",
+        headers={"Bearer": token},
+        verify=False,
+    )
+    assert r.status_code == 200, r.text
+    return int(r.text)
+
+
+def _prepare_transfer(sender_token: str, receiver: str, amount: int) -> str:
+    r = requests.post(
+        f"{HTTP_URL}/transactions/prepare",
+        headers={"Bearer": sender_token},
+        json={"receiver": receiver, "amount": amount},
+        verify=False,
+    )
+    assert r.status_code == 200, f"prepare failed: {r.status_code} {r.text}"
+    assert r.text
+    return r.text
+
+
+def _send_transfer(sender_token: str, tr_id: str) -> None:
+    r = requests.post(
+        f"{HTTP_URL}/transactions/send",
+        headers={"Bearer": sender_token},
+        json={"tr_id": tr_id},
+        verify=False,
+    )
+    assert r.status_code == 200, f"send failed: {r.status_code} {r.text}"
+    assert r.text == "ok"
+
+
+async def _next_balance_event(conn):
+    while True:
+        msg = json.loads(await asyncio.wait_for(conn.recv(), timeout=5))
+        if msg.get("type") == "transaction.balance.updated":
+            return msg
+
+
 # ---- handshake -----------------------------------------------------------
 
 def test_ws_handshake_unauthorized():
@@ -214,3 +266,48 @@ def test_ws_admin_endpoint_forbidden_for_non_admin():
     r = requests.get(f"{HTTP_URL}/ws/sessions/active",
                      headers=auth_headers(), verify=False)
     assert r.status_code == 403
+
+
+# ---- balance updates -----------------------------------------------------
+
+def test_ws_balance_updates_after_successful_transfer():
+    """Both participants receive updated balance events after /transactions/send."""
+
+    async def go():
+        sender_token = TOKEN
+        receiver_login = "test"
+        receiver_token = _login_user(receiver_login, "test")
+
+        sender_before = _balance(sender_token)
+        receiver_before = _balance(receiver_token)
+        amount = 1
+
+        if sender_before < amount:
+            pytest.skip("sender has insufficient balance for websocket transfer test")
+
+        async with websockets.connect(f"{WS_URL}?token={sender_token}") as sender_conn, \
+                   websockets.connect(f"{WS_URL}?token={receiver_token}") as receiver_conn:
+            await asyncio.wait_for(sender_conn.recv(), timeout=5)
+            await asyncio.wait_for(receiver_conn.recv(), timeout=5)
+
+            tr_id = _prepare_transfer(sender_token, receiver_login, amount)
+            _send_transfer(sender_token, tr_id)
+
+            sender_evt = await _next_balance_event(sender_conn)
+            receiver_evt = await _next_balance_event(receiver_conn)
+
+        assert sender_evt["topic"] == f"inbox:{USERNAME}"
+        assert sender_evt["data"]["direction"] == "outgoing"
+        assert sender_evt["data"]["delta"] == -amount
+        assert sender_evt["data"]["counterparty"] == receiver_login
+        assert sender_evt["data"]["balance"] == sender_before - amount
+        assert isinstance(sender_evt["data"]["transaction_id"], int)
+
+        assert receiver_evt["topic"] == f"inbox:{receiver_login}"
+        assert receiver_evt["data"]["direction"] == "incoming"
+        assert receiver_evt["data"]["delta"] == amount
+        assert receiver_evt["data"]["counterparty"] == USERNAME
+        assert receiver_evt["data"]["balance"] == receiver_before + amount
+        assert receiver_evt["data"]["transaction_id"] == sender_evt["data"]["transaction_id"]
+
+    asyncio.run(go())
