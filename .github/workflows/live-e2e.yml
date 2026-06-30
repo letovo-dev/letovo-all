@@ -1,0 +1,65 @@
+name: live deployment e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Public test deployment URL
+        required: false
+        default: https://ya.sergeiscv.ru
+      wait_timeout_seconds:
+        description: Max time to wait for watchtower/nginx to serve the deployment
+        required: false
+        default: "600"
+      require_auth:
+        description: Require authenticated browser/API checks with LETOVO_E2E_* secrets
+        required: false
+        default: "false"
+  workflow_run:
+    workflows: ["build and verify"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+env:
+  PLAYWRIGHT_VERSION: "1.55.1"
+  LIVE_E2E_BASE_URL: ${{ inputs.base_url || 'https://ya.sergeiscv.ru' }}
+  LIVE_E2E_WAIT_TIMEOUT_SECONDS: ${{ inputs.wait_timeout_seconds || '600' }}
+  LIVE_E2E_REQUIRE_AUTH: ${{ inputs.require_auth || 'false' }}
+
+jobs:
+  live-e2e:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright runtime
+        run: |
+          set -euo pipefail
+          export PLAYWRIGHT_PACKAGE_DIR="$RUNNER_TEMP/letovo-live-e2e"
+          mkdir -p "$PLAYWRIGHT_PACKAGE_DIR"
+          cd "$PLAYWRIGHT_PACKAGE_DIR"
+          npm init -y
+          npm install "playwright@${PLAYWRIGHT_VERSION}"
+          "$PLAYWRIGHT_PACKAGE_DIR/node_modules/.bin/playwright" install --with-deps chromium
+          echo "PLAYWRIGHT_PACKAGE_DIR=$PLAYWRIGHT_PACKAGE_DIR" >> "$GITHUB_ENV"
+
+      - name: Run live browser smoke
+        env:
+          LETOVO_E2E_USERNAME: ${{ secrets.LETOVO_E2E_USERNAME }}
+          LETOVO_E2E_PASSWORD: ${{ secrets.LETOVO_E2E_PASSWORD }}
+        run: node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs

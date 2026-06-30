@@ -24,25 +24,38 @@ services:
           - /mnt/server-media:/app/pages
           - /mnt/server-configs:/app/configs
         labels:
-          - "com.centurylinklabs.watchtower.enable=true"
+          - "com.centurylinklabs.watchtower.enable=false"
 
     watchtower:
         image: containrrr/watchtower
         restart: unless-stopped
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
-        command: --interval 300 --cleanup --include-restarting --label-enable --registry-auth
+          - /home/sergei-scv/.docker/config.json:/config.json:ro
+        command: --interval 60 --cleanup --include-restarting --label-enable
 
     letovo-front:
-        image: letovo-front:latest
+        image: ghcr.io/letovo-dev/letovo-frontend:latest
         container_name: letovo-front
         restart: unless-stopped
         depends_on:
           - letovo-server
         ports:
-          - "3000:3000"
+          - "127.0.0.1:3000:3000"
         env_file:
-          - /home/zahar/letovo/front-env
+          - /mnt/letovo-front.env
+        init: true
+        cap_drop:
+          - ALL
+        security_opt:
+          - no-new-privileges:true
+        labels:
+          - "com.centurylinklabs.watchtower.enable=true"
+        logging:
+          driver: json-file
+          options:
+            max-size: "100m"
+            max-file: "10"
 
     letovo-flask-uploader:
         image: flask-uploader:latest
