@@ -15,6 +15,7 @@
 #include "../basic/auth.h"
 #include "../basic/url_parser.h"
 #include "../basic/comment.h"
+#include "../basic/ws_event_bus.h"
 #include "transaction_rules.h"
 #include <vector>
 #include <cstdlib>
@@ -34,6 +35,16 @@ namespace transactions {
         NegativeNumber,
         NotReciver,
     };
+
+    struct TransferResult {
+        TransactionStatus status = TransactionStatus::Error;
+        std::string sender;
+        std::string receiver;
+        int amount = 0;
+        int transaction_id = 0;
+        int sender_balance = 0;
+        int receiver_balance = 0;
+    };
     
     class RegisteredTransaction {
         public:
@@ -50,6 +61,8 @@ namespace transactions {
     
     TransactionStatus transfer(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
+    TransferResult transfer_with_result(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
     int get_balance(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     pqxx::result get_transactions(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
@@ -62,7 +75,7 @@ namespace transactions {
 } // namespace transactions
 
 namespace transactions::server {
-    void transfer(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+    void transfer(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr, std::shared_ptr<ws::EventBus> bus_ptr);
 
     void get_balance(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 

@@ -65,53 +65,93 @@ namespace transactions {
     }
 
 
-    TransactionStatus transfer(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+    TransferResult transfer_with_result(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        TransferResult result;
         auto transaction = registered_transactions.get_transaction(tr_id);
         if(transaction == nullptr) {
-            return TransactionStatus::WrongId;
+            result.status = TransactionStatus::WrongId;
+            return result;
         }
         int amount = std::stoi(transaction->amount);
+        result.sender = transaction->sender;
+        result.receiver = transaction->receiver;
+        result.amount = amount;
+
         int balance = get_balance(transaction->sender, pool_ptr);
         bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);
         if (!can_transfer_amount(balance, amount, sender_is_admin)) {
-            return TransactionStatus::NoMoney;
+            result.status = TransactionStatus::NoMoney;
+            return result;
         }
 
         auto con = std::move(pool_ptr->getConnection());
-        std::vector<cp::Request> sql_transactions = {
-
-            cp::Request("UPDATE \"user\" SET balance=balance-($1) WHERE username=($2);", {transaction->amount, transaction->sender}, true),
-            cp::Request("UPDATE \"user\" SET balance=balance+($1) WHERE username=($2);", {transaction->amount, transaction->receiver}, true),
-            cp::Request(
-                "INSERT INTO \"transactions\" (sender, receiver, amount) VALUES($1, $2, $3);",
-                {
-                    transaction->sender,
-                    transaction->receiver,
-                    transaction->amount
-                },
-                true
-            ),
-            cp::Request(
-                "SELECT transactionid FROM \"transactions\" WHERE sender=$1 AND receiver=$2 AND amount=$3 ORDER BY transactionid DESC LIMIT 1;",
-                {
-                    transaction->sender,
-                    transaction->receiver,
-                    transaction->amount
-                }
-            )
+        std::vector<std::string> params = {
+            transaction->amount,
+            transaction->sender,
+            transaction->receiver
         };
-        
-        auto r = con -> execute_many(sql_transactions);
+        pqxx::result r;
 
-        pool_ptr->returnConnection(std::move(con));
-        registered_transactions.remove_transaction(tr_id);
-
-        if(r.empty()) {
-            return TransactionStatus::Error;
+        if (transaction->sender == transaction->receiver) {
+            r = con->execute_params(
+                R"(WITH inserted_transaction AS (
+                       INSERT INTO "transactions" (sender, receiver, amount)
+                       VALUES ($2, $3, $1::integer)
+                       RETURNING transactionid
+                   )
+                   SELECT
+                       (SELECT balance FROM "user" WHERE username = $2) AS sender_balance,
+                       (SELECT balance FROM "user" WHERE username = $2) AS receiver_balance,
+                       (SELECT transactionid FROM inserted_transaction) AS transaction_id)",
+                params,
+                true);
+        } else {
+            r = con->execute_params(
+                R"(WITH updated_sender AS (
+                       UPDATE "user"
+                       SET balance = balance - $1::integer
+                       WHERE username = $2
+                       RETURNING balance
+                   ),
+                   updated_receiver AS (
+                       UPDATE "user"
+                       SET balance = balance + $1::integer
+                       WHERE username = $3
+                       RETURNING balance
+                   ),
+                   inserted_transaction AS (
+                       INSERT INTO "transactions" (sender, receiver, amount)
+                       VALUES ($2, $3, $1::integer)
+                       RETURNING transactionid
+                   )
+                   SELECT
+                       (SELECT balance FROM updated_sender) AS sender_balance,
+                       (SELECT balance FROM updated_receiver) AS receiver_balance,
+                       (SELECT transactionid FROM inserted_transaction) AS transaction_id)",
+                params,
+                true);
         }
 
+        pool_ptr->returnConnection(std::move(con));
 
-        return TransactionStatus::Success;
+        if(r.empty() ||
+           r[0]["sender_balance"].is_null() ||
+           r[0]["receiver_balance"].is_null() ||
+           r[0]["transaction_id"].is_null()) {
+            result.status = TransactionStatus::Error;
+            return result;
+        }
+
+        result.sender_balance = r[0]["sender_balance"].as<int>();
+        result.receiver_balance = r[0]["receiver_balance"].as<int>();
+        result.transaction_id = r[0]["transaction_id"].as<int>();
+        registered_transactions.remove_transaction(tr_id);
+        result.status = TransactionStatus::Success;
+        return result;
+    }
+
+    TransactionStatus transfer(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        return transfer_with_result(std::move(tr_id), std::move(pool_ptr)).status;
     }
 
     pqxx::result get_transactions(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
@@ -188,6 +228,63 @@ namespace transactions {
 } // namespace transactions
 
 namespace transactions::server {
+    static void publish_balance_update(
+        const std::shared_ptr<ws::EventBus>& bus_ptr,
+        const std::string& username,
+        int balance,
+        int delta,
+        const std::string& counterparty,
+        const std::string& direction,
+        int transaction_id) {
+        if (!bus_ptr) {
+            return;
+        }
+
+        const std::string topic = "inbox:" + username;
+        rapidjson::Document data(rapidjson::kObjectType);
+        auto& allocator = data.GetAllocator();
+        data.AddMember("balance", balance, allocator);
+        data.AddMember("delta", delta, allocator);
+        data.AddMember("counterparty", rapidjson::Value(counterparty.c_str(), allocator), allocator);
+        data.AddMember("direction", rapidjson::Value(direction.c_str(), allocator), allocator);
+        data.AddMember("transaction_id", transaction_id, allocator);
+
+        bus_ptr->publish(topic, ws::make_envelope("transaction.balance.updated", topic, data));
+    }
+
+    static void publish_transfer_result(
+        const std::shared_ptr<ws::EventBus>& bus_ptr,
+        const transactions::TransferResult& result) {
+        if (result.sender == result.receiver) {
+            publish_balance_update(
+                bus_ptr,
+                result.sender,
+                result.sender_balance,
+                0,
+                result.receiver,
+                "self",
+                result.transaction_id);
+            return;
+        }
+
+        publish_balance_update(
+            bus_ptr,
+            result.sender,
+            result.sender_balance,
+            -result.amount,
+            result.receiver,
+            "outgoing",
+            result.transaction_id);
+        publish_balance_update(
+            bus_ptr,
+            result.receiver,
+            result.receiver_balance,
+            result.amount,
+            result.sender,
+            "incoming",
+            result.transaction_id);
+    }
+
     void prepare_transaction(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         router.get()->http_post("/transactions/prepare", [pool_ptr, logger_ptr](auto req, auto) {
             logger_ptr->trace([]{return "called /transactions/prepare";});
@@ -262,8 +359,8 @@ namespace transactions::server {
     }
 
 
-    void transfer(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_post("/transactions/send", [pool_ptr, logger_ptr](auto req, auto) {
+    void transfer(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr, std::shared_ptr<ws::EventBus> bus_ptr) {
+        router.get()->http_post("/transactions/send", [pool_ptr, logger_ptr, bus_ptr](auto req, auto) {
             logger_ptr->trace([]{return "called /transactions/send";});
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
@@ -285,9 +382,11 @@ namespace transactions::server {
             if (new_body.HasMember("tr_id")) {
                 std::string tr_id = new_body["tr_id"].GetString();
                 logger_ptr->info([token, tr_id] { return fmt::format("token = {}, tr_id = {}", token, tr_id); });
-                switch (transactions::transfer(tr_id, pool_ptr))
+                auto result = transactions::transfer_with_result(tr_id, pool_ptr);
+                switch (result.status)
                 {
                 case TransactionStatus::Success:
+                    publish_transfer_result(bus_ptr, result);
                     return req->create_response()
                         .append_header("Content-Type", "text/plain; charset=utf-8")
                         .set_body("ok")
