@@ -1,0 +1,26 @@
+{
+    "admins": [],
+    "media_url": "http://localhost/api/media/get/",
+    "ava_path": "images/admin_avatars",
+    "paths": {
+        "images": "images/uploaded",
+        "videos": "videos/uploaded",
+        "posts": "posts/",
+        "other": "docs"
+    },
+    "supported": {
+        "jpg": "images",
+        "jpeg": "images",
+        "png": "images",
+        "gif": "images",
+        "webp": "images",
+        "mp4": "videos",
+        "webm": "videos",
+        "ogg": "videos",
+        "pdf": "other",
+        "txt": "other",
+        "md": "posts"
+    },
+    "check_admin": true,
+    "auth_check_url": "https://letovocorp.ru/letovo-api/auth/amiuploader"
+}

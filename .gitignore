@@ -35,6 +35,7 @@
 *
 !/**/
 !*.*
+!frontend
 */CMakeFiles/*
 *.cmake
 */Makefile
