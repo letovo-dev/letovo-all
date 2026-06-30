@@ -1,9 +1,6 @@
 import psycopg2 as postgres
 import csv
 import requests
-import urllib3
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 ADMIN_TOKEN = input("Enter admin token: ")
 
@@ -84,25 +81,23 @@ def elder_users():
                 print(f"Department '{dep_name}' not found for user '{name}'. Skipping.")
                 continue
             res = requests.post(
-                "https://letovocorp.ru/api/auth/reg", 
+                "https://letovocorp.ru/letovo-api/auth/reg",
                 json={
                     "login": name,
                     "password": password
-                },
-                verify=False
+                }
             )
             if res.status_code != 200:
                 print(f"Failed to create user {name} with login {name}: {res.text}")
                 continue
             print(f"User {name} created, adding role {role}")
             requests.post(
-                "https://letovocorp.ru/api/user/add_role",
+                "https://letovocorp.ru/letovo-api/user/add_role",
                 json={
                     "username": name,
                     "role_id": elder_offset + departments[dep_name]
                 },
-                headers={"Bearer": f"{ADMIN_TOKEN}"},
-                verify=False
+                headers={"Bearer": f"{ADMIN_TOKEN}"}
             )
             cur.execute(
                 "update \"user\" set userrights = 'admin' where username = %s",
@@ -127,25 +122,23 @@ def children_users():
                 print(f"Department '{dep_name}' not found for user '{name}'. Skipping.")
                 continue
             res = requests.post(
-                "https://letovocorp.ru/api/auth/reg", 
+                "https://letovocorp.ru/letovo-api/auth/reg",
                 json={
                     "login": login,
                     "password": password
-                },
-                verify=False
+                }
             )
             if res.status_code != 200:
                 print(f"Failed to create user {name} with login {login}: {res.text}")
                 continue
             print(f"User {name} created with login {login}, adding to department {dep_name}")
             requests.post(
-                "https://letovocorp.ru/api/user/add_role",
+                "https://letovocorp.ru/letovo-api/user/add_role",
                 json={
                     "username": login,
                     "role_id": dep_id
                 },
-                headers={"Bearer": f"{ADMIN_TOKEN}"},
-                verify=False
+                headers={"Bearer": f"{ADMIN_TOKEN}"}
             )
 
 def publishers():
@@ -157,12 +150,11 @@ def publishers():
                 continue
             name, password, login = row[0], row[1], row[2]
             requests.post(
-                "https://letovocorp.ru/api/auth/reg", 
+                "https://letovocorp.ru/letovo-api/auth/reg",
                 json={
                     "login": login,
                     "password": password
-                },
-                verify=False
+                }
             )
             print(f"Publisher {name} created with login {login}")
 
@@ -223,4 +215,3 @@ def publisher_avatars():
 
 if __name__ == "__main__":
     elder_users()
-

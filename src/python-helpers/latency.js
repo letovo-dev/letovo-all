@@ -6,9 +6,9 @@ const fs = require('fs');
 const { stringify } = require('querystring');
 
 const TARGET_URLS = [
-  'https://letovocorp.ru/api/auth/login',
-  'https://letovocorp.ru/api/auth/isactive/scv',
-  'https://letovocorp.ru/api/media/get/images/uploaded/virtual_1.png'
+  'https://letovocorp.ru/letovo-api/auth/login',
+  'https://letovocorp.ru/letovo-api/auth/isactive/scv',
+  'https://letovocorp.ru/letovo-api/media/get/images/uploaded/virtual_1.png'
 ];
 
 const METHODS = ['POST', 'GET', 'GET']

@@ -2,9 +2,6 @@ import pandas as pd
 import psycopg2 as postgres
 import csv
 import requests
-import urllib3
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 ADMIN_TOKEN = input("Enter admin token: ")
 
@@ -46,8 +43,7 @@ ROLES = {
 def get_pswd_hash(pswd):
     r = requests.post(
         "http://localhost:8080/token_getter",
-        json={"token": pswd},
-        verify=False,
+        json={"token": pswd}
     )
     return r.text
 
