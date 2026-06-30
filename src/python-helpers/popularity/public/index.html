@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="30"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endpoint Statistics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #ddd;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+    }
+    h1, h2 {
+      margin: 10px 0;
+      color: #fff;
+    }
+    #panel {
+      margin-bottom: 20px;
+    }
+    .button {
+      margin-right: 10px;
+      padding: 8px 16px;
+      background: #2e2e2e;
+      color: #ccc;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .button:hover {
+      background: #444;
+    }
+    .chart-container {
+      width: 900px;
+      height: 600px;
+      margin: 50px auto;
+    }
+    canvas {
+      background: #2a2a2a;
+      border-radius: 4px;
+    }
+    #allTImeMax {
+      color: #ffab00;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Статистика эндпоинтов</h1>
+  <p>Монитор запущен: <span id="startTime">...</span></p>
+  <div id="panel">
+    <a href="/latency" class="button">Latency</a>
+    <a href="http://10.8.0.1:8010/monitorix" class="button" target="_blank">Monitorix</a>
+  </div>
+  <h2>Максимум запросов минуту: <span id="allTImeMax"></span></h2>
+
+  <div class="chart-container">
+    <h2>Топ-5</h2>
+    <canvas id="topChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>Распределение (без учета получения медиа)</h2>
+    <canvas id="pieChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h2>Динамика</h2>
+    <canvas id="lineChart"></canvas>
+  </div>
+
+  <script>
+    async function fetchJSON(u) { let r = await fetch(u); return r.json(); }
+    async function render() {
+      let s = await fetchJSON('/statistics/stats');
+      let h = await fetchJSON('/statistics/history');
+      document.getElementById('allTImeMax').textContent = s.allTImeMax;
+
+      const opts = { responsive: true, maintainAspectRatio: false };
+      new Chart(document.getElementById('topChart').getContext('2d'), { type: 'bar', data: { labels: s.top.map(e => e.name), datasets: [{ label: 'Count', data: s.top.map(e => e.count) }] }, options: opts });
+      new Chart(document.getElementById('pieChart').getContext('2d'), { type: 'pie', data: { labels: s.distribution.map(e => e.name), datasets: [{ data: s.distribution.map(e => e.count) }] }, options: opts });
+      new Chart(document.getElementById('lineChart').getContext('2d'), { type: 'line', data: { labels: h.map(x => new Date(x.time).toLocaleTimeString()), datasets: [{ label: 'Total', data: h.map(x => x.total) }] }, options: opts });
+    }
+    fetchJSON('/statistics/start-time').then(data => {
+      document.getElementById('startTime').textContent = new Date(data.startTime).toLocaleString();
+    });
+    render(); setInterval(render, 120000);
+  </script>
+</body>
+</html>

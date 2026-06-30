@@ -1,12 +1,6 @@
-[submodule "src/market"]
-	path = src/market
-	url = git@github.com:letovo-dev/market.git
-[submodule "src/letovo-soc-net"]
-	path = src/letovo-soc-net
-	url = git@github.com:letovo-dev/letovo-soc-net.git
-[submodule "src/python-helpers"]
-	path = src/python-helpers
-	url = git@github.com:letovo-dev/python-helpers.git
 [submodule "certs"]
 	path = certs
 	url = git@github.com:letovo-dev/certs.git
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:letovo-dev/letovo-all-frontend.git

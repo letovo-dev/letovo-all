@@ -1,0 +1,38 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-latency-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the Docker image for latency bot
+        run: docker build --file dockerfile.latency_bot --tag latency-bot:latest .
+      - name: Save Docker image to TAR
+        run: docker save latency-bot:latest -o latency-bot.tar
+      - name: Upload latency bot image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: latency-image-tar
+          path: latency-bot.tar
+          retention-days: 5
+
+  build-flask-uploader:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the Docker image for flask uploader
+        run: docker build --file dockerfile.uploader --tag flask-uploader:latest .
+      - name: Save Docker image to TAR
+        run: docker save flask-uploader:latest -o flask-uploader.tar
+      - name: Upload flask uploader image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: uploader-image-tar
+          path: flask-uploader.tar
+          retention-days: 5

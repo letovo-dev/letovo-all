@@ -1,0 +1,1 @@
+docker build -f dockerfile.latency_bot -t latency_bot:latest .
