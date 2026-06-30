@@ -20,7 +20,7 @@ def api_check_admin(token: str):
     if not token:
         return False
     auth_url = config.get("auth_check_url", "https://letovocorp.ru/letovo-api/auth/amiuploader")
-    r = requests.get(auth_url, headers={"Bearer": token}, verify=False)
+    r = requests.get(auth_url, headers={"Bearer": token})
     return json.loads(r.text)["status"] == 't'
 
 @app.route('/', methods=['POST'])
@@ -33,17 +33,15 @@ def upload_file():
     file.filename.replace(" ", "_")
     extention = file.filename.split('.')[-1].lower()
     file.filename = hashlib.md5(file.filename.encode() + str(datetime.now()).encode()).hexdigest() + "." + extention
-    if extention in config["supported"]:
-        file_path = os.path.join(ROOT_PATH, config["paths"][config["supported"][extention]])
-    else: 
-        file_path = os.path.join(ROOT_PATH, config["paths"]["other"])
+    upload_category = config["supported"].get(extention, "other")
+    file_path = os.path.join(ROOT_PATH, config["paths"][upload_category])
     token = flask.request.headers.get('Bearer', None)
     if not api_check_admin(token):
         return "Forbidden", 403
     
     file.save(os.path.join(file_path, file.filename))
 
-    return '{"file": "/' + str(os.path.join(config["paths"][config["supported"][extention]], file.filename)) + '"}'
+    return '{"file": "/' + str(os.path.join(config["paths"][upload_category], file.filename)) + '"}'
 
 @app.route('/avatar', methods=['POST'])
 def upload_avatar():
