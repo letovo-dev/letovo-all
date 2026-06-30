@@ -1,7 +1,89 @@
 #include "page_server.h"
 #include "../basic/security.h"
 
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
+#include <optional>
+
 namespace {
+
+    bool parse_int_string(const char* value, int& out) {
+        if (value == nullptr || value[0] == '\0') {
+            return false;
+        }
+
+        char* end = nullptr;
+        errno = 0;
+        long parsed = std::strtol(value, &end, 10);
+        if (errno != 0 || end == value || *end != '\0') {
+            return false;
+        }
+        if (parsed < std::numeric_limits<int>::min() || parsed > std::numeric_limits<int>::max()) {
+            return false;
+        }
+
+        out = static_cast<int>(parsed);
+        return true;
+    }
+
+    std::optional<int> json_int_value(const rapidjson::Value& value) {
+        if (value.IsInt()) {
+            return value.GetInt();
+        }
+        if (value.IsString()) {
+            int parsed = 0;
+            if (parse_int_string(value.GetString(), parsed)) {
+                return parsed;
+            }
+        }
+        return std::nullopt;
+    }
+
+    std::optional<int> json_int_member(const rapidjson::Document& body, const char* key) {
+        if (!body.HasMember(key)) {
+            return std::nullopt;
+        }
+        return json_int_value(body[key]);
+    }
+
+    std::optional<bool> json_bool_value(const rapidjson::Value& value) {
+        if (value.IsBool()) {
+            return value.GetBool();
+        }
+        if (value.IsString()) {
+            std::string str = value.GetString();
+            if (str == "t" || str == "true" || str == "1") {
+                return true;
+            }
+            if (str == "f" || str == "false" || str == "0") {
+                return false;
+            }
+        }
+        return std::nullopt;
+    }
+
+    std::optional<std::string> json_string_member(const rapidjson::Document& body, const char* key) {
+        if (!body.HasMember(key)) {
+            return std::nullopt;
+        }
+        if (!body[key].IsString()) {
+            return std::nullopt;
+        }
+        return std::string(body[key].GetString());
+    }
+
+    std::string row_string_or_empty(const pqxx::row& row, const char* key) {
+        return row[key].is_null() ? "" : row[key].as<std::string>();
+    }
+
+    int row_int_or_zero(const pqxx::row& row, const char* key) {
+        return row[key].is_null() ? 0 : row[key].as<int>();
+    }
+
+    bool row_bool_or_false(const pqxx::row& row, const char* key) {
+        return !row[key].is_null() && row[key].as<bool>();
+    }
 
     void normalize_article_categories(std::unique_ptr<cp::AsyncConnection>& con) {
         con->execute(R"SQL(
@@ -484,20 +566,39 @@ namespace page::server {
             // TODO: can delete if author
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
-            if (!new_body.HasMember("post_id")) {
-                return req->create_response(restinio::status_non_authoritative_information()).done();
-            }
-            std::string post_author = page::get_page_content(new_body["post_id"].GetInt(), pool_ptr)[0]["author"].as<std::string>();
-            if (!authors::check_if_avaluable_author(auth::get_username(token, pool_ptr), post_author, pool_ptr)) {
-                logger_ptr->info([]{return "not admin";});
-                return req->create_response(restinio::status_unauthorized()).set_body("not your post - do not touch it!").done();
+            if (new_body.HasParseError() || !new_body.IsObject()) {
+                return req->create_response(restinio::status_bad_request()).done();
             }
 
-            page::delete_post(new_body["post_id"].GetInt(), pool_ptr, logger_ptr);
-            return req->create_response(restinio::status_ok())
-                .append_header("Content-Type", "text/plain; charset=utf-8")
-                .set_body("ok")
-                .done();
+            auto post_id = json_int_member(new_body, "post_id");
+            if (!post_id.has_value() || *post_id <= 0) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            try {
+                pqxx::result post = page::get_page_content(*post_id, pool_ptr);
+                if (post.empty()) {
+                    return req->create_response(restinio::status_not_found()).done();
+                }
+
+                std::string post_author = row_string_or_empty(post[0], "author");
+                std::string username = auth::get_username(token, pool_ptr);
+                if (!authors::check_if_avaluable_author(username, post_author, pool_ptr)) {
+                    logger_ptr->info([]{return "not admin";});
+                    return req->create_response(restinio::status_unauthorized()).set_body("not your post - do not touch it!").done();
+                }
+
+                page::delete_post(*post_id, pool_ptr, logger_ptr);
+                return req->create_response(restinio::status_ok())
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("ok")
+                    .done();
+            } catch (const std::exception& e) {
+                logger_ptr->error([post_id, e] {
+                    return fmt::format("error deleting post {}: {}", *post_id, e.what());
+                });
+                return req->create_response(restinio::status_internal_server_error()).done();
+            }
         });
     }   
     
@@ -517,63 +618,111 @@ namespace page::server {
             }
             rapidjson::Document new_body;
             new_body.Parse(req->body().c_str());
-            auto old_post = page::get_page_content(stoi(new_body["post_id"].GetString()), pool_ptr);
-            logger_ptr->info( [post_id = new_body["post_id"].GetString()]{return fmt::format("update post with id {}", post_id);});
-            std::string text, title, author;
-            if(new_body.HasMember("text")) {
-                text = new_body["text"].GetString();
-                assist::fix_new_lines(text);
-            } else {
-                text = old_post[0]["text"].as<std::string>();
+            if (new_body.HasParseError() || !new_body.IsObject()) {
+                return req->create_response(restinio::status_bad_request()).done();
             }
-            if(new_body.HasMember("title")) {
-                title = new_body["title"].GetString();
-                assist::fix_new_lines(title);
-            } else {
-                title = old_post[0]["title"].as<std::string>();
+
+            auto post_id = json_int_member(new_body, "post_id");
+            if (!post_id.has_value() || *post_id <= 0) {
+                return req->create_response(restinio::status_bad_request()).done();
             }
-            if(new_body.HasMember("author") && authors::check_if_avaluable_author(auth::get_username(token, pool_ptr), new_body["author"].GetString(), pool_ptr)) {
-                author = new_body["author"].GetString();
-                assist::fix_new_lines(author);
-            } else {
-                author = old_post[0]["author"].as<std::string>();
-            }
+
             try {
-                // std::string text = new_body.HasMember("text") ? new_body["text"].GetString() : old_post[0]["text"].as<std::string>();
-                // assist::fix_new_lines(text);
+                auto old_post = page::get_page_content(*post_id, pool_ptr);
+                if (old_post.empty()) {
+                    return req->create_response(restinio::status_not_found()).done();
+                }
+
+                logger_ptr->info([post_id] { return fmt::format("update post with id {}", *post_id); });
+
+                std::string text, title, author;
+                auto request_text = json_string_member(new_body, "text");
+                if(new_body.HasMember("text")) {
+                    if (!request_text.has_value()) {
+                        return req->create_response(restinio::status_bad_request()).done();
+                    }
+                    text = *request_text;
+                    assist::fix_new_lines(text);
+                } else {
+                    text = row_string_or_empty(old_post[0], "text");
+                }
+                auto request_title = json_string_member(new_body, "title");
+                if(new_body.HasMember("title")) {
+                    if (!request_title.has_value()) {
+                        return req->create_response(restinio::status_bad_request()).done();
+                    }
+                    title = *request_title;
+                    assist::fix_new_lines(title);
+                } else {
+                    title = row_string_or_empty(old_post[0], "title");
+                }
+                auto request_author = json_string_member(new_body, "author");
+                if(new_body.HasMember("author")) {
+                    if (!request_author.has_value()) {
+                        return req->create_response(restinio::status_bad_request()).done();
+                    }
+                    if (authors::check_if_avaluable_author(auth::get_username(token, pool_ptr), *request_author, pool_ptr)) {
+                        author = *request_author;
+                        assist::fix_new_lines(author);
+                    } else {
+                        author = row_string_or_empty(old_post[0], "author");
+                    }
+                } else {
+                    author = row_string_or_empty(old_post[0], "author");
+                }
+
+                auto is_secret = new_body.HasMember("is_secret") ? json_bool_value(new_body["is_secret"]) : std::optional<bool>(row_bool_or_false(old_post[0], "is_secret"));
+                auto likes = new_body.HasMember("likes") ? json_int_value(new_body["likes"]) : std::optional<int>(row_int_or_zero(old_post[0], "likes"));
+                auto dislikes = new_body.HasMember("dislikes") ? json_int_value(new_body["dislikes"]) : std::optional<int>(row_int_or_zero(old_post[0], "dislikes"));
+                auto saved_count = new_body.HasMember("saved_count") ? json_int_value(new_body["saved_count"]) : std::optional<int>(row_int_or_zero(old_post[0], "saved_count"));
+                if (!is_secret.has_value() || !likes.has_value() || !dislikes.has_value() || !saved_count.has_value()) {
+                    return req->create_response(restinio::status_bad_request()).done();
+                }
+
+                auto category_name = json_string_member(new_body, "category_name");
+                auto post_path = json_string_member(new_body, "post_path");
+                if ((new_body.HasMember("category_name") && !category_name.has_value()) ||
+                    (new_body.HasMember("post_path") && !post_path.has_value())) {
+                    return req->create_response(restinio::status_bad_request()).done();
+                }
+
                 page::update_post(
-                    new_body.HasMember("post_id") ? stoi(new_body["post_id"].GetString()) : old_post[0]["post_id"].as<int>(),
-                    new_body.HasMember("is_secret") ? new_body["is_secret"].GetString()[0] == 't' : old_post[0]["is_secret"].as<bool>(),
-                    new_body.HasMember("likes") ? stoi(new_body["likes"].GetString()) : old_post[0]["likes"].as<int>(),
-                    new_body.HasMember("dislikes") ? stoi(new_body["dislikes"].GetString()) : old_post[0]["dislikes"].as<int>(),
-                    new_body.HasMember("saved_count") ? stoi(new_body["saved_count"].GetString()) : old_post[0]["saved_count"].as<int>(),
+                    *post_id,
+                    *is_secret,
+                    *likes,
+                    *dislikes,
+                    *saved_count,
                     title,
                     author,
                     text,
-                    new_body.HasMember("category_name") && new_body["category_name"].IsString() ? new_body["category_name"].GetString() : old_post[0]["category_name"].as<std::string>(),
-                    new_body.HasMember("post_path") && new_body["post_path"].IsString() ? new_body["post_path"].GetString() : (old_post[0]["post_path"].is_null() ? "" : old_post[0]["post_path"].as<std::string>()),
+                    category_name.has_value() ? *category_name : row_string_or_empty(old_post[0], "category_name"),
+                    post_path.has_value() ? *post_path : row_string_or_empty(old_post[0], "post_path"),
                     pool_ptr, logger_ptr
                 );
+
+                std::vector<std::string> media_paths;
+                page::med_to_vec(new_body, media_paths);
+                if (!media_paths.empty()) {
+                    page::add_media(*post_id, media_paths, pool_ptr, logger_ptr);
+                }
+
+                std::string username = auth::get_username(token, pool_ptr);
+                return req->create_response(restinio::status_ok())
+                    .append_header("Content-Type", "application/json; charset=utf-8")
+                    .set_body(cp::serialize_with_shift_day(
+                        social::get_post(
+                            std::to_string(*post_id),
+                            username,
+                            security::can_read_secret_posts(username, pool_ptr),
+                            pool_ptr),
+                        pool_ptr))
+                    .done();
             } catch (const std::exception& e) {
-                logger_ptr->error( [e]{return fmt::format("error updating post: {}", e.what());});
+                logger_ptr->error([post_id, e] {
+                    return fmt::format("error updating post {}: {}", *post_id, e.what());
+                });
                 return req->create_response(restinio::status_internal_server_error()).done();
             }
-            std::vector<std::string> media_paths;
-            page::med_to_vec(new_body, media_paths);
-            if (!media_paths.empty()) {
-                page::add_media(stoi(new_body["post_id"].GetString()), media_paths, pool_ptr, logger_ptr);
-            }
-
-            return req->create_response(restinio::status_ok())
-                .append_header("Content-Type", "application/json; charset=utf-8")
-                .set_body(cp::serialize_with_shift_day(
-                    social::get_post(
-                        new_body["post_id"].GetString(),
-                        auth::get_username(token, pool_ptr),
-                        security::can_read_secret_posts(auth::get_username(token, pool_ptr), pool_ptr),
-                        pool_ptr),
-                    pool_ptr))
-                .done();
         });
     }
 
