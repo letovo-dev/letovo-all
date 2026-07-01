@@ -263,6 +263,52 @@ def test_update_authorless_article_from_md_editor_payload_returns_updated_row(ad
     assert result[0]["post_path"] == "/media/issue_77_article_updated.md"
 
 
+def test_update_authorless_article_accepts_nullable_md_editor_payload(admin_token):
+    page_id = _create_test_article(admin_token, "issue 77 nullable author article")
+
+    response = requests.put(
+        f"{BASE_URL}/post/update",
+        json={
+            "post_id": str(page_id),
+            "is_secret": "f",
+            "likes": "0",
+            "dislikes": "0",
+            "saved_count": "0",
+            "title": "issue 77 nullable article updated",
+            "author": None,
+            "parent_id": None,
+            "date": "2026-07-01 15:40:32",
+            "text": "",
+            "category_name": "Issue77NullableUpdated",
+            "post_path": "/media/issue_77_nullable_article_updated.md",
+        },
+        headers={"Bearer": admin_token},
+        verify=False
+    )
+
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert len(result) == 1
+    assert result[0]["post_id"] == str(page_id)
+    assert result[0]["title"] == "issue 77 nullable article updated"
+    assert result[0]["category_name"] == "Issue77NullableUpdated"
+    assert result[0]["post_path"] == "/media/issue_77_nullable_article_updated.md"
+    assert result[0]["author"] == ""
+
+
+def test_get_authorless_article_returns_controlled_response(admin_token):
+    page_id = _create_test_article(admin_token, "issue 77 get authorless article")
+
+    response = requests.get(f"{BASE_URL}/post/{page_id}", verify=False)
+
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert len(result) == 1
+    assert result[0]["post_id"] == str(page_id)
+    assert result[0]["title"] == "issue 77 get authorless article"
+    assert result[0]["author"] is None
+
+
 def test_update_post_rejects_malformed_post_id_without_upstream_close(admin_token):
     response = requests.put(
         f"{BASE_URL}/post/update",

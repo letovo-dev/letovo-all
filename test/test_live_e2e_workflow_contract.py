@@ -82,6 +82,9 @@ def test_live_e2e_uses_condition_polling_and_browser_level_checks():
     assert "async function checkMoneyTransfer" in script
     assert "async function uploadSmokeFile" in script
     assert "async function createSmokePost" in script
+    assert "async function editSmokeArticle" in script
+    assert "author: null" in script
+    assert "Article update returned HTTP" in script
     assert "LIVE_E2E_REQUIRE_EXTENDED === 'true'" in script
     assert "LIVE_E2E_REQUIRE_EXTENDED=true requires LIVE_E2E_REQUIRE_AUTH=true" in script
 
