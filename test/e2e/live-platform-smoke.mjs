@@ -65,7 +65,15 @@ async function fetchAuthenticated(page, path, options = {}) {
 
 async function loginAs(page, login, loginPassword) {
   await page.context().clearCookies();
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+  await page.context().clearCookies();
   await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#form_login').waitFor({ state: 'visible' });
+  await page.locator('#form_password').waitFor({ state: 'visible' });
   await page.locator('#form_login').fill(login);
   await page.locator('#form_password').fill(loginPassword);
 
@@ -77,6 +85,17 @@ async function loginAs(page, login, loginPassword) {
   assert(loginResponse.status() === 200, `Login API returned HTTP ${loginResponse.status()}`);
 
   await page.waitForURL(/\/(user|registration)(\/|$)/, { timeout: 20_000 });
+}
+
+async function apiLoginAs(context, login, loginPassword) {
+  const loginResponse = await context.request.post(`${baseUrl}/letovo-api/auth/login`, {
+    data: { login, password: loginPassword },
+    headers: { 'Content-Type': 'application/json' },
+  });
+  assert(
+    loginResponse.status() === 200,
+    `API login returned HTTP ${loginResponse.status()}: ${await loginResponse.text()}`,
+  );
 }
 
 async function assertAuthenticatedSession(page) {
@@ -293,9 +312,18 @@ async function checkAuthenticatedBrowserFlow(page) {
   const mediaPath = await uploadSmokeFile(page);
   await createSmokePost(page, mediaPath);
 
-  await loginAs(page, secondaryUsername, secondaryPassword);
-  await assertAuthenticatedSession(page);
-  await assertAdminSession(page);
+  const secondaryBrowser = page.context().browser();
+  assert(secondaryBrowser, 'Could not create isolated browser context for secondary e2e login');
+  const secondaryContext = await secondaryBrowser.newContext({ viewport: { width: 1366, height: 900 } });
+  const secondaryPage = await secondaryContext.newPage();
+  try {
+    await apiLoginAs(secondaryContext, secondaryUsername, secondaryPassword);
+    await secondaryPage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    await assertAuthenticatedSession(secondaryPage);
+    await assertAdminSession(secondaryPage);
+  } finally {
+    await secondaryContext.close();
+  }
 }
 
 async function main() {
