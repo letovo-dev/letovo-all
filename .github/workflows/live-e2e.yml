@@ -15,6 +15,10 @@ on:
         description: Require authenticated browser/API checks with LETOVO_E2E_* secrets
         required: false
         default: "false"
+      require_extended:
+        description: Require mutating transfer/upload/post checks with secondary e2e secrets
+        required: false
+        default: "false"
   workflow_run:
     workflows: ["build and verify"]
     types: [completed]
@@ -27,6 +31,7 @@ env:
   LIVE_E2E_BASE_URL: ${{ inputs.base_url || 'https://ya.sergeiscv.ru' }}
   LIVE_E2E_WAIT_TIMEOUT_SECONDS: ${{ inputs.wait_timeout_seconds || '600' }}
   LIVE_E2E_REQUIRE_AUTH: ${{ inputs.require_auth || 'false' }}
+  LIVE_E2E_REQUIRE_EXTENDED: ${{ inputs.require_extended || 'false' }}
 
 jobs:
   live-e2e:
@@ -62,4 +67,6 @@ jobs:
         env:
           LETOVO_E2E_USERNAME: ${{ secrets.LETOVO_E2E_USERNAME }}
           LETOVO_E2E_PASSWORD: ${{ secrets.LETOVO_E2E_PASSWORD }}
+          LETOVO_E2E_SECONDARY_USERNAME: ${{ secrets.LETOVO_E2E_SECONDARY_USERNAME }}
+          LETOVO_E2E_SECONDARY_PASSWORD: ${{ secrets.LETOVO_E2E_SECONDARY_PASSWORD }}
         run: node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs
