@@ -10,6 +10,8 @@ const waitTimeoutMs = Number(process.env.LIVE_E2E_WAIT_TIMEOUT_SECONDS || 600) *
 const pollIntervalMs = 10_000;
 const requireAuth = process.env.LIVE_E2E_REQUIRE_AUTH === 'true';
 const requireExtended = process.env.LIVE_E2E_REQUIRE_EXTENDED === 'true';
+const expectedBackendSha = process.env.LIVE_E2E_EXPECTED_BACKEND_SHA || '';
+const expectedFrontendSha = process.env.LIVE_E2E_EXPECTED_FRONTEND_SHA || '';
 const username = process.env.LETOVO_E2E_USERNAME || '';
 const password = process.env.LETOVO_E2E_PASSWORD || '';
 const secondaryUsername = process.env.LETOVO_E2E_SECONDARY_USERNAME || '';
@@ -36,6 +38,20 @@ async function fetchText(path) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function assertDeploymentMetadata(path, expectedSha, description) {
+  if (!expectedSha) {
+    return;
+  }
+
+  const response = await fetchText(path);
+  assert(response.status === 200, `${description} metadata returned HTTP ${response.status}`);
+  const metadata = parseJsonResponse(response, `${description} metadata`);
+  assert(
+    metadata.sha === expectedSha,
+    `${description} metadata sha ${metadata.sha || '<empty>'} does not match ${expectedSha}`,
+  );
 }
 
 function parseJsonResponse(response, description) {
@@ -77,12 +93,16 @@ async function loginAs(page, login, loginPassword) {
   await page.locator('#form_login').fill(login);
   await page.locator('#form_password').fill(loginPassword);
 
-  const loginResponsePromise = page.waitForResponse(response =>
-    response.url().includes('/letovo-api/auth/login'),
-  );
+  const loginResponsePromise = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith('/auth/login');
+  }, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Войти' }).click();
   const loginResponse = await loginResponsePromise;
-  assert(loginResponse.status() === 200, `Login API returned HTTP ${loginResponse.status()}`);
+  assert(
+    loginResponse.status() === 200,
+    `Login API ${loginResponse.url()} returned HTTP ${loginResponse.status()}`,
+  );
 
   await page.waitForURL(/\/(user|registration)(\/|$)/, { timeout: 20_000 });
 }
@@ -229,6 +249,17 @@ async function probeDeployment() {
   assert(
     api.status === 501,
     `Expected /letovo-api/auth/login GET to return 501, got ${api.status}`,
+  );
+
+  await assertDeploymentMetadata(
+    '/letovo-api/deployment/metadata',
+    expectedBackendSha,
+    'Backend deployment',
+  );
+  await assertDeploymentMetadata(
+    '/api/deployment/metadata',
+    expectedFrontendSha,
+    'Frontend deployment',
   );
 
   return true;

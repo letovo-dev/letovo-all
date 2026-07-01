@@ -18,6 +18,10 @@ env:
     market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc
     letovo-soc-net/page_server.cc letovo-soc-net/authors.cc letovo-soc-net/chat.cc
     letovo-soc-net/chat_ws.cc
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-server
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-all-frontend
+  REGISTRATION_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-registration-server
+  LIVE_E2E_BASE_URL: ${{ vars.LIVE_E2E_BASE_URL || 'https://ya.sergeiscv.ru' }}
 
 jobs:
   backend-pr:
@@ -47,6 +51,7 @@ jobs:
             MAIN_FILE=server.cpp
             TEST_FILE=test.cpp
             BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ github.sha }}
           tags: letovo-server:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -64,12 +69,92 @@ jobs:
             MAIN_FILE=registration_server.cpp
             TEST_FILE=test.cpp
             BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ github.sha }}
           tags: letovo-registration-server:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Inspect registration backend image
         run: docker image inspect letovo-registration-server:${{ github.sha }} >/dev/null
+
+  publish-pr-candidate:
+    if: github.event_name == 'pull_request'
+    needs: [backend-pr, frontend-verify]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Refuse forked pull requests
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "Live deployment e2e publishes immutable PR images, so forked PRs are not supported."
+          exit 1
+
+      - name: Checkout code with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
+          persist-credentials: false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push PR backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          push: true
+          build-args: |
+            MAIN_FILE=server.cpp
+            TEST_FILE=test.cpp
+            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ github.sha }}
+          tags: ${{ env.BACKEND_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push PR registration backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          push: true
+          build-args: |
+            MAIN_FILE=registration_server.cpp
+            TEST_FILE=test.cpp
+            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ github.sha }}
+          tags: ${{ env.REGISTRATION_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push PR frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/dockerfile
+          push: true
+          build-args: |
+            LETOVO_BUILD_SHA=${{ github.sha }}
+            NEXT_PUBLIC_BASE_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api
+            NEXT_PUBLIC_BASE_URL_UPLOAD=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/upload/
+            NEXT_PUBLIC_BASE_URL_MEDIA=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/media/get
+            NEXT_PUBLIC_UPLOAD_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/upload/
+            NEXT_PUBLIC_BASE_URL_CLEAR=${{ env.LIVE_E2E_BASE_URL }}
+          tags: ${{ env.FRONTEND_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   publish-main:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -107,6 +192,7 @@ jobs:
             MAIN_FILE=server.cpp
             TEST_FILE=test.cpp
             BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ github.sha }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/letovo-server:latest
             ghcr.io/${{ github.repository_owner }}/letovo-server:${{ github.sha }}
@@ -122,9 +208,24 @@ jobs:
             MAIN_FILE=registration_server.cpp
             TEST_FILE=test.cpp
             BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ github.sha }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/letovo-registration-server:latest
             ghcr.io/${{ github.repository_owner }}/letovo-registration-server:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/dockerfile
+          push: true
+          build-args: |
+            LETOVO_BUILD_SHA=${{ github.sha }}
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -162,3 +263,139 @@ jobs:
             echo "Found forbidden frontend route or host in built bundle"
             exit 1
           fi
+
+  live-deployment-e2e:
+    if: github.event_name == 'pull_request'
+    needs: [publish-pr-candidate]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: live-deployment-e2e
+      cancel-in-progress: false
+    env:
+      PLAYWRIGHT_VERSION: "1.55.1"
+      LIVE_E2E_WAIT_TIMEOUT_SECONDS: ${{ vars.LIVE_E2E_WAIT_TIMEOUT_SECONDS || '600' }}
+      LIVE_E2E_REQUIRE_AUTH: "true"
+      LIVE_E2E_REQUIRE_EXTENDED: ${{ vars.LIVE_E2E_REQUIRE_EXTENDED || 'false' }}
+      LIVE_E2E_EXPECTED_BACKEND_SHA: ${{ github.sha }}
+      LIVE_E2E_EXPECTED_FRONTEND_SHA: ${{ github.sha }}
+      LETOVO_E2E_DEPLOY_HOST: ${{ vars.LETOVO_E2E_DEPLOY_HOST || 'ya.sergeiscv.ru' }}
+      LETOVO_E2E_DEPLOY_USER: ${{ secrets.LETOVO_E2E_DEPLOY_USER }}
+      LETOVO_E2E_DEPLOY_SSH_KEY: ${{ secrets.LETOVO_E2E_DEPLOY_SSH_KEY }}
+      LETOVO_E2E_DEPLOY_COMPOSE: ${{ vars.LETOVO_E2E_DEPLOY_COMPOSE || '/mnt/docker-compose.yaml' }}
+      LETOVO_E2E_DEPLOY_PROJECT: ${{ vars.LETOVO_E2E_DEPLOY_PROJECT || 'mnt' }}
+    steps:
+      - name: Set PR candidate image names
+        run: |
+          set -euo pipefail
+          tag="pr-${{ github.event.pull_request.number }}-${{ github.sha }}"
+          {
+            echo "BACKEND_CANDIDATE_IMAGE=${BACKEND_IMAGE}:${tag}"
+            echo "REGISTRATION_CANDIDATE_IMAGE=${REGISTRATION_IMAGE}:${tag}"
+            echo "FRONTEND_CANDIDATE_IMAGE=${FRONTEND_IMAGE}:${tag}"
+          } >> "$GITHUB_ENV"
+
+      - name: Validate live e2e deployment secrets
+        run: |
+          set -euo pipefail
+          test -n "$LETOVO_E2E_DEPLOY_USER" || { echo "LETOVO_E2E_DEPLOY_USER secret is required"; exit 1; }
+          test -n "$LETOVO_E2E_DEPLOY_SSH_KEY" || { echo "LETOVO_E2E_DEPLOY_SSH_KEY secret is required"; exit 1; }
+          test -n "$BACKEND_CANDIDATE_IMAGE" || { echo "backend candidate image is required"; exit 1; }
+          test -n "$REGISTRATION_CANDIDATE_IMAGE" || { echo "registration candidate image is required"; exit 1; }
+          test -n "$FRONTEND_CANDIDATE_IMAGE" || { echo "frontend candidate image is required"; exit 1; }
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure deployment SSH
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$LETOVO_E2E_DEPLOY_SSH_KEY" > ~/.ssh/live-e2e
+          chmod 600 ~/.ssh/live-e2e
+          ssh-keyscan -H "$LETOVO_E2E_DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy PR candidate images to live e2e
+        run: |
+          set -euo pipefail
+          remote="${LETOVO_E2E_DEPLOY_USER}@${LETOVO_E2E_DEPLOY_HOST}"
+          ssh -i ~/.ssh/live-e2e "$remote" \
+            "BACKEND_IMAGE='$BACKEND_CANDIDATE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_CANDIDATE_IMAGE' FRONTEND_IMAGE='$FRONTEND_CANDIDATE_IMAGE' COMPOSE_FILE='$LETOVO_E2E_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_E2E_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          test -f "$COMPOSE_FILE"
+          state_dir="/tmp/letovo-live-e2e-${RUN_ID}"
+          mkdir -p "$state_dir"
+          restore="$state_dir/restore.env"
+          candidate="$state_dir/docker-compose.yaml"
+
+          docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
+          docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
+          docker inspect -f 'letovo-front={{.Config.Image}}' letovo-front >> "$restore"
+
+          sed \
+            -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
+            -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${REGISTRATION_IMAGE}#" \
+            -e "s#image: ghcr.io/letovo-dev/letovo.*frontend:.*#image: ${FRONTEND_IMAGE}#" \
+            "$COMPOSE_FILE" > "$candidate"
+
+          docker compose -p "$PROJECT_NAME" -f "$candidate" pull letovo-server letovo-registration-server letovo-front
+          docker compose -p "$PROJECT_NAME" -f "$candidate" up -d letovo-server letovo-registration-server letovo-front
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$BACKEND_IMAGE"
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$REGISTRATION_IMAGE"
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$FRONTEND_IMAGE"
+          REMOTE
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright runtime
+        run: |
+          set -euo pipefail
+          export PLAYWRIGHT_PACKAGE_DIR="$RUNNER_TEMP/letovo-live-e2e"
+          mkdir -p "$PLAYWRIGHT_PACKAGE_DIR"
+          cd "$PLAYWRIGHT_PACKAGE_DIR"
+          npm init -y
+          npm install "playwright@${PLAYWRIGHT_VERSION}"
+          "$PLAYWRIGHT_PACKAGE_DIR/node_modules/.bin/playwright" install --with-deps chromium
+          echo "PLAYWRIGHT_PACKAGE_DIR=$PLAYWRIGHT_PACKAGE_DIR" >> "$GITHUB_ENV"
+
+      - name: Run live browser smoke
+        env:
+          LETOVO_E2E_USERNAME: ${{ secrets.LETOVO_E2E_USERNAME }}
+          LETOVO_E2E_PASSWORD: ${{ secrets.LETOVO_E2E_PASSWORD }}
+          LETOVO_E2E_SECONDARY_USERNAME: ${{ secrets.LETOVO_E2E_SECONDARY_USERNAME }}
+          LETOVO_E2E_SECONDARY_PASSWORD: ${{ secrets.LETOVO_E2E_SECONDARY_PASSWORD }}
+        run: node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs
+
+      - name: Restore live deployment images
+        if: always()
+        run: |
+          set -euo pipefail
+          test -f ~/.ssh/live-e2e || exit 0
+          remote="${LETOVO_E2E_DEPLOY_USER}@${LETOVO_E2E_DEPLOY_HOST}"
+          ssh -i ~/.ssh/live-e2e "$remote" \
+            "COMPOSE_FILE='$LETOVO_E2E_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_E2E_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          state_dir="/tmp/letovo-live-e2e-${RUN_ID}"
+          restore="$state_dir/restore.env"
+          test -f "$restore" || exit 0
+
+          backend_image="$(awk -F= '$1 == "letovo-server" { print $2 }' "$restore" | tail -n 1)"
+          registration_image="$(awk -F= '$1 == "letovo-registration-server" { print $2 }' "$restore" | tail -n 1)"
+          frontend_image="$(awk -F= '$1 == "letovo-front" { print $2 }' "$restore" | tail -n 1)"
+          test -n "$backend_image"
+          test -n "$registration_image"
+          test -n "$frontend_image"
+
+          candidate="$state_dir/docker-compose.restore.yaml"
+          sed \
+            -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${backend_image}#" \
+            -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${registration_image}#" \
+            -e "s#image: ghcr.io/letovo-dev/letovo.*frontend:.*#image: ${frontend_image}#" \
+            "$COMPOSE_FILE" > "$candidate"
+
+          docker compose -p "$PROJECT_NAME" -f "$candidate" pull letovo-server letovo-registration-server letovo-front || true
+          docker compose -p "$PROJECT_NAME" -f "$candidate" up -d letovo-server letovo-registration-server letovo-front
+          rm -rf "$state_dir"
+          REMOTE

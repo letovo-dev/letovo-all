@@ -35,7 +35,7 @@ services:
         command: --interval 60 --cleanup --include-restarting --label-enable
 
     letovo-front:
-        image: ghcr.io/letovo-dev/letovo-frontend:latest
+        image: ghcr.io/letovo-dev/letovo-all-frontend:latest
         container_name: letovo-front
         restart: unless-stopped
         depends_on:

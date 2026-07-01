@@ -19,6 +19,10 @@ on:
         description: Require mutating transfer/upload/post checks with secondary e2e secrets
         required: false
         default: "false"
+      expected_sha:
+        description: Optional backend/frontend deployment SHA to require before smoke checks pass
+        required: false
+        default: ""
   workflow_run:
     workflows: ["build and verify"]
     types: [completed]
@@ -32,6 +36,8 @@ env:
   LIVE_E2E_WAIT_TIMEOUT_SECONDS: ${{ inputs.wait_timeout_seconds || '600' }}
   LIVE_E2E_REQUIRE_AUTH: ${{ inputs.require_auth || 'false' }}
   LIVE_E2E_REQUIRE_EXTENDED: ${{ inputs.require_extended || 'false' }}
+  LIVE_E2E_EXPECTED_BACKEND_SHA: ${{ inputs.expected_sha || github.event.workflow_run.head_sha || '' }}
+  LIVE_E2E_EXPECTED_FRONTEND_SHA: ${{ inputs.expected_sha || github.event.workflow_run.head_sha || '' }}
 
 jobs:
   live-e2e:

@@ -54,6 +54,9 @@ RUN apt update && apt install -y \
 
 WORKDIR /app
 
+ARG LETOVO_BUILD_SHA=unknown
+ENV LETOVO_BUILD_SHA=${LETOVO_BUILD_SHA}
+
 COPY --from=builder /app/build/server_starter .
 
 EXPOSE 8080
