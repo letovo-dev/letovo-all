@@ -20,6 +20,8 @@ def test_live_e2e_workflow_runs_after_deployable_images_are_published():
     assert "github.event.workflow_run.conclusion == 'success'" in workflow
     assert "LIVE_E2E_BASE_URL" in workflow
     assert "LIVE_E2E_WAIT_TIMEOUT_SECONDS" in workflow
+    assert "LETOVO_E2E_SECONDARY_USERNAME" in workflow
+    assert "LETOVO_E2E_SECONDARY_PASSWORD" in workflow
     assert "node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs" in workflow
 
 
@@ -32,6 +34,11 @@ def test_live_e2e_uses_condition_polling_and_browser_level_checks():
     assert "page.locator('#form_login')" in script
     assert "page.locator('#form_password')" in script
     assert "page.getByRole('button', { name: 'Войти' })" in script
+    assert "JSON.parse(response.text)" in script
+    assert "sessionJson.status === 't'" in script
+    assert "async function checkMoneyTransfer" in script
+    assert "async function uploadSmokeFile" in script
+    assert "async function createSmokePost" in script
 
 
 def test_checked_in_compose_matches_watchtower_frontend_image_contract():

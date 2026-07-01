@@ -11,6 +11,8 @@ const pollIntervalMs = 10_000;
 const requireAuth = process.env.LIVE_E2E_REQUIRE_AUTH === 'true';
 const username = process.env.LETOVO_E2E_USERNAME || '';
 const password = process.env.LETOVO_E2E_PASSWORD || '';
+const secondaryUsername = process.env.LETOVO_E2E_SECONDARY_USERNAME || '';
+const secondaryPassword = process.env.LETOVO_E2E_SECONDARY_PASSWORD || '';
 
 function assert(condition, message) {
   if (!condition) {
@@ -33,6 +35,164 @@ async function fetchText(path) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+function parseJsonResponse(response, description) {
+  try {
+    return JSON.parse(response.text);
+  } catch (error) {
+    throw new Error(`${description} returned invalid JSON: ${response.text}`);
+  }
+}
+
+async function fetchAuthenticated(page, path, options = {}) {
+  return page.evaluate(
+    async ({ path: requestPath, options: requestOptions }) => {
+      const response = await fetch(requestPath, {
+        credentials: 'include',
+        ...requestOptions,
+        headers: {
+          ...(requestOptions.headers || {}),
+        },
+      });
+      const text = await response.text();
+      return { status: response.status, text };
+    },
+    { path, options },
+  );
+}
+
+async function loginAs(page, login, loginPassword) {
+  await page.context().clearCookies();
+  await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#form_login').fill(login);
+  await page.locator('#form_password').fill(loginPassword);
+
+  const loginResponsePromise = page.waitForResponse(response =>
+    response.url().includes('/letovo-api/auth/login'),
+  );
+  await page.getByRole('button', { name: 'Войти' }).click();
+  const loginResponse = await loginResponsePromise;
+  assert(loginResponse.status() === 200, `Login API returned HTTP ${loginResponse.status()}`);
+
+  await page.waitForURL(/\/(user|registration)(\/|$)/, { timeout: 20_000 });
+}
+
+async function assertAuthenticatedSession(page) {
+  const session = await fetchAuthenticated(page, '/letovo-api/auth/amiauthed/');
+  assert(session.status === 200, `Session API returned HTTP ${session.status}`);
+  const sessionJson = parseJsonResponse(session, 'Session API');
+  assert(
+    sessionJson.status === 't',
+    `Session API did not confirm authenticated state: ${session.text}`,
+  );
+}
+
+async function assertAdminSession(page) {
+  const admin = await fetchAuthenticated(page, '/letovo-api/auth/amiadmin/');
+  assert(admin.status === 200, `Admin API returned HTTP ${admin.status}`);
+  const adminJson = parseJsonResponse(admin, 'Admin API');
+  assert(adminJson.status === 't', `Configured e2e account is not admin: ${admin.text}`);
+}
+
+async function assertUploaderSession(page) {
+  const uploader = await fetchAuthenticated(page, '/letovo-api/auth/amiuploader/');
+  assert(uploader.status === 200, `Uploader API returned HTTP ${uploader.status}`);
+  const uploaderJson = parseJsonResponse(uploader, 'Uploader API');
+  assert(uploaderJson.status === 't', `Configured e2e account cannot upload: ${uploader.text}`);
+}
+
+async function getAuthSessionCookieValue(page) {
+  const cookies = await page.context().cookies(baseUrl);
+  const authCookie = cookies.find(cookie => cookie.name === 'AuthSession');
+  assert(authCookie?.value, 'Authenticated browser context is missing AuthSession cookie');
+  return authCookie.value;
+}
+
+async function checkMoneyTransfer(page, receiver) {
+  const prepare = await fetchAuthenticated(page, '/letovo-api/transactions/prepare', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ receiver, amount: 0 }),
+  });
+  assert(
+    prepare.status === 200,
+    `Transfer prepare returned HTTP ${prepare.status}: ${prepare.text}`,
+  );
+  assert(prepare.text.length > 0, 'Transfer prepare returned an empty transaction id');
+
+  const send = await fetchAuthenticated(page, '/letovo-api/transactions/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tr_id: prepare.text }),
+  });
+  assert(send.status === 200, `Transfer send returned HTTP ${send.status}: ${send.text}`);
+  assert(send.text === 'ok', `Transfer send returned unexpected body: ${send.text}`);
+}
+
+async function uploadSmokeFile(page) {
+  const authSession = await getAuthSessionCookieValue(page);
+  const upload = await page.evaluate(
+    async ({ authSession: bearer }) => {
+      const formData = new FormData();
+      formData.append(
+        'file',
+        new Blob(['letovo live e2e upload smoke\n'], { type: 'text/plain' }),
+        `live-e2e-${Date.now()}.txt`,
+      );
+      const response = await fetch('/upload/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { Bearer: bearer },
+        body: formData,
+      });
+      const text = await response.text();
+      return { status: response.status, text };
+    },
+    { authSession },
+  );
+
+  assert(upload.status === 200, `Upload API returned HTTP ${upload.status}: ${upload.text}`);
+  const uploadJson = parseJsonResponse(upload, 'Upload API');
+  assert(
+    typeof uploadJson.file === 'string' && uploadJson.file.length > 0,
+    `Upload API returned no file path: ${upload.text}`,
+  );
+  return uploadJson.file;
+}
+
+async function createSmokePost(page, mediaPath) {
+  const marker = `live-e2e-${Date.now()}`;
+  const create = await fetchAuthenticated(page, '/letovo-api/post/add_page', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: `Live e2e smoke ${marker}`,
+      text: `Automated live e2e post creation smoke ${marker}`,
+      media: [mediaPath],
+    }),
+  });
+
+  assert(create.status === 200, `Post create returned HTTP ${create.status}: ${create.text}`);
+  const createJson = parseJsonResponse(create, 'Post create API');
+  assert(
+    Array.isArray(createJson.result),
+    `Post create response did not include result array: ${create.text}`,
+  );
+  assert(
+    createJson.result.length > 0,
+    `Post create response returned an empty result: ${create.text}`,
+  );
+  const postId = Number(createJson.result[0].post_id);
+  assert(Number.isInteger(postId), `Post create response returned no post_id: ${create.text}`);
+
+  const remove = await fetchAuthenticated(page, '/letovo-api/post/delete', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ post_id: postId }),
+  });
+  assert(remove.status === 200, `Post cleanup returned HTTP ${remove.status}: ${remove.text}`);
+  assert(remove.text === 'ok', `Post cleanup returned unexpected body: ${remove.text}`);
 }
 
 async function probeDeployment() {
@@ -109,26 +269,23 @@ async function checkAuthenticatedBrowserFlow(page) {
     return;
   }
 
-  await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' });
-  await page.locator('#form_login').fill(username);
-  await page.locator('#form_password').fill(password);
+  await loginAs(page, username, password);
+  await assertAuthenticatedSession(page);
 
-  const loginResponsePromise = page.waitForResponse(response =>
-    response.url().includes('/letovo-api/auth/login'),
-  );
-  await page.getByRole('button', { name: 'Войти' }).click();
-  const loginResponse = await loginResponsePromise;
-  assert(loginResponse.status() === 200, `Login API returned HTTP ${loginResponse.status()}`);
+  if (!secondaryUsername || !secondaryPassword) {
+    console.log('Skipping extended authenticated flow because LETOVO_E2E_SECONDARY_* secrets are not configured.');
+    return;
+  }
 
-  await page.waitForURL(/\/(user|registration)(\/|$)/, { timeout: 20_000 });
-  const session = await page.evaluate(async () => {
-    const response = await fetch('/letovo-api/auth/amiauthed/', { credentials: 'include' });
-    const text = await response.text();
-    return { status: response.status, text };
-  });
+  await assertAdminSession(page);
+  await assertUploaderSession(page);
+  await checkMoneyTransfer(page, secondaryUsername);
+  const mediaPath = await uploadSmokeFile(page);
+  await createSmokePost(page, mediaPath);
 
-  assert(session.status === 200, `Session API returned HTTP ${session.status}`);
-  assert(session.text.includes('"status":"t"'), 'Session API did not confirm authenticated state');
+  await loginAs(page, secondaryUsername, secondaryPassword);
+  await assertAuthenticatedSession(page);
+  await assertAdminSession(page);
 }
 
 async function main() {
