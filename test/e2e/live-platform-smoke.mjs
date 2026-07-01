@@ -235,6 +235,95 @@ async function createSmokePost(page, mediaPath) {
   assert(remove.text === 'ok', `Post cleanup returned unexpected body: ${remove.text}`);
 }
 
+async function editSmokeArticle(page) {
+  const marker = `live-e2e-article-${Date.now()}`;
+  const categoryName = 'Медиа';
+  let postId = undefined;
+
+  try {
+    const create = await fetchAuthenticated(page, '/letovo-api/post/add_page', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        post_path: `/media/${marker}.md`,
+        category_name: categoryName,
+        title: `Live e2e article ${marker}`,
+        is_secret: 'f',
+      }),
+    });
+
+    assert(create.status === 200, `Article create returned HTTP ${create.status}: ${create.text}`);
+    const createJson = parseJsonResponse(create, 'Article create API');
+    assert(
+      Array.isArray(createJson.result) && createJson.result.length > 0,
+      `Article create response did not include a result row: ${create.text}`,
+    );
+    postId = Number(createJson.result[0].post_id);
+    assert(Number.isInteger(postId), `Article create response returned no post_id: ${create.text}`);
+
+    const updatedTitle = `Live e2e article updated ${marker}`;
+    const updatedPath = `/media/${marker}-updated.md`;
+    const update = await fetchAuthenticated(page, '/letovo-api/post/update', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        post_id: String(postId),
+        is_secret: 'f',
+        likes: '0',
+        dislikes: '0',
+        saved_count: '0',
+        title: updatedTitle,
+        author: null,
+        parent_id: null,
+        text: '',
+        category_name: categoryName,
+        post_path: updatedPath,
+      }),
+    });
+
+    assert(update.status === 200, `Article update returned HTTP ${update.status}: ${update.text}`);
+    const updateJson = parseJsonResponse(update, 'Article update API');
+    assert(
+      Array.isArray(updateJson.result) && updateJson.result.length > 0,
+      `Article update response did not include a result row: ${update.text}`,
+    );
+    assert(
+      updateJson.result[0].title === updatedTitle,
+      `Article update returned unexpected title: ${update.text}`,
+    );
+    assert(
+      updateJson.result[0].post_path === updatedPath,
+      `Article update returned unexpected post_path: ${update.text}`,
+    );
+    assert(
+      updateJson.result[0].category_name === categoryName,
+      `Article update returned unexpected category_name: ${update.text}`,
+    );
+
+    const read = await fetchText(`/letovo-api/post/${postId}`);
+    assert(read.status === 200, `Article read returned HTTP ${read.status}: ${read.text}`);
+    const readJson = parseJsonResponse(read, 'Article read API');
+    assert(
+      Array.isArray(readJson.result) && readJson.result.length > 0,
+      `Article read response did not include a result row: ${read.text}`,
+    );
+    assert(
+      readJson.result[0].title === updatedTitle,
+      `Article read returned unexpected title: ${read.text}`,
+    );
+  } finally {
+    if (postId !== undefined) {
+      const remove = await fetchAuthenticated(page, '/letovo-api/post/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: postId }),
+      });
+      assert(remove.status === 200, `Article cleanup returned HTTP ${remove.status}: ${remove.text}`);
+      assert(remove.text === 'ok', `Article cleanup returned unexpected body: ${remove.text}`);
+    }
+  }
+}
+
 async function probeDeployment() {
   const root = await fetchText('/');
   assert(root.status === 200, `Expected / to return 200, got ${root.status}`);
@@ -340,6 +429,7 @@ async function checkAuthenticatedBrowserFlow(page) {
   await assertAdminSession(page);
   await assertUploaderSession(page);
   await checkMoneyTransfer(page, secondaryUsername);
+  await editSmokeArticle(page);
   const mediaPath = await uploadSmokeFile(page);
   await createSmokePost(page, mediaPath);
 
