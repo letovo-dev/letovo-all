@@ -224,6 +224,43 @@ def test_update_article_payload_returns_controlled_response(admin_token):
     )
 
     assert response.status_code == 200
+    result = response.json()["result"]
+    assert len(result) == 1
+    assert result[0]["post_id"] == str(page_id)
+    assert result[0]["title"] == "issue 54 article updated"
+    assert result[0]["category_name"] == "Issue54Updated"
+    assert result[0]["post_path"] == "/media/issue_54_article_updated.md"
+
+
+def test_update_authorless_article_from_md_editor_payload_returns_updated_row(admin_token):
+    page_id = _create_test_article(admin_token, "issue 77 authorless article")
+
+    response = requests.put(
+        f"{BASE_URL}/post/update",
+        json={
+            "post_id": str(page_id),
+            "is_secret": "f",
+            "likes": "0",
+            "dislikes": "0",
+            "saved_count": "0",
+            "title": "issue 77 article updated",
+            "author": "",
+            "text": "",
+            "category_name": "Issue77Updated",
+            "post_path": "/media/issue_77_article_updated.md",
+        },
+        headers={"Bearer": admin_token},
+        verify=False
+    )
+
+    assert response.status_code == 200
+    result = response.json()["result"]
+    assert len(result) == 1
+    assert result[0]["post_id"] == str(page_id)
+    assert result[0]["title"] == "issue 77 article updated"
+    assert result[0]["author"] == ""
+    assert result[0]["category_name"] == "Issue77Updated"
+    assert result[0]["post_path"] == "/media/issue_77_article_updated.md"
 
 
 def test_update_post_rejects_malformed_post_id_without_upstream_close(admin_token):

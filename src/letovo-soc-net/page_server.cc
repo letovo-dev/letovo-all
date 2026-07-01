@@ -702,23 +702,42 @@ namespace page::server {
                     post_path.has_value() ? *post_path : row_string_or_empty(old_post[0], "post_path"),
                     pool_ptr, logger_ptr
                 );
+                logger_ptr->info([post_id] { return fmt::format("post {} database row updated", *post_id); });
 
                 std::vector<std::string> media_paths;
                 page::med_to_vec(new_body, media_paths);
                 if (!media_paths.empty()) {
                     page::add_media(*post_id, media_paths, pool_ptr, logger_ptr);
+                    logger_ptr->info([post_id] { return fmt::format("post {} media updated", *post_id); });
                 }
 
-                std::string username = auth::get_username(token, pool_ptr);
+                pqxx::result updated_post = page::get_page_content(*post_id, pool_ptr);
+                if (updated_post.empty()) {
+                    logger_ptr->error([post_id] {
+                        return fmt::format("post {} disappeared after update", *post_id);
+                    });
+                    return req->create_response(restinio::status_internal_server_error()).done();
+                }
+
+                pqxx::result response_post = updated_post;
+                if (row_string_or_empty(updated_post[0], "post_path").empty()) {
+                    std::string username = auth::get_username(token, pool_ptr);
+                    response_post = social::get_post(
+                        std::to_string(*post_id),
+                        username,
+                        security::can_read_secret_posts(username, pool_ptr),
+                        pool_ptr);
+                    if (response_post.empty()) {
+                        logger_ptr->error([post_id] {
+                            return fmt::format("post {} social response is empty after update", *post_id);
+                        });
+                        response_post = updated_post;
+                    }
+                }
+
                 return req->create_response(restinio::status_ok())
                     .append_header("Content-Type", "application/json; charset=utf-8")
-                    .set_body(cp::serialize_with_shift_day(
-                        social::get_post(
-                            std::to_string(*post_id),
-                            username,
-                            security::can_read_secret_posts(username, pool_ptr),
-                            pool_ptr),
-                        pool_ptr))
+                    .set_body(cp::serialize_with_shift_day(response_post, pool_ptr))
                     .done();
             } catch (const std::exception& e) {
                 logger_ptr->error([post_id, e] {
