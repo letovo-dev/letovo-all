@@ -22,6 +22,8 @@ def test_live_e2e_workflow_runs_after_deployable_images_are_published():
     assert "LIVE_E2E_WAIT_TIMEOUT_SECONDS" in workflow
     assert "LETOVO_E2E_SECONDARY_USERNAME" in workflow
     assert "LETOVO_E2E_SECONDARY_PASSWORD" in workflow
+    assert "LIVE_E2E_REQUIRE_EXTENDED" in workflow
+    assert "inputs.require_extended || 'false'" in workflow
     assert "node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs" in workflow
 
 
@@ -39,6 +41,8 @@ def test_live_e2e_uses_condition_polling_and_browser_level_checks():
     assert "async function checkMoneyTransfer" in script
     assert "async function uploadSmokeFile" in script
     assert "async function createSmokePost" in script
+    assert "LIVE_E2E_REQUIRE_EXTENDED === 'true'" in script
+    assert "LIVE_E2E_REQUIRE_EXTENDED=true requires LIVE_E2E_REQUIRE_AUTH=true" in script
 
 
 def test_checked_in_compose_matches_watchtower_frontend_image_contract():

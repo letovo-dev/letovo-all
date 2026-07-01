@@ -9,6 +9,7 @@ const baseUrl = (process.env.LIVE_E2E_BASE_URL || 'https://ya.sergeiscv.ru').rep
 const waitTimeoutMs = Number(process.env.LIVE_E2E_WAIT_TIMEOUT_SECONDS || 600) * 1000;
 const pollIntervalMs = 10_000;
 const requireAuth = process.env.LIVE_E2E_REQUIRE_AUTH === 'true';
+const requireExtended = process.env.LIVE_E2E_REQUIRE_EXTENDED === 'true';
 const username = process.env.LETOVO_E2E_USERNAME || '';
 const password = process.env.LETOVO_E2E_PASSWORD || '';
 const secondaryUsername = process.env.LETOVO_E2E_SECONDARY_USERNAME || '';
@@ -272,10 +273,19 @@ async function checkAuthenticatedBrowserFlow(page) {
   await loginAs(page, username, password);
   await assertAuthenticatedSession(page);
 
-  if (!secondaryUsername || !secondaryPassword) {
-    console.log('Skipping extended authenticated flow because LETOVO_E2E_SECONDARY_* secrets are not configured.');
+  if (!requireExtended) {
+    console.log('Skipping extended authenticated flow because LIVE_E2E_REQUIRE_EXTENDED is not true.');
     return;
   }
+
+  assert(
+    requireAuth,
+    'LIVE_E2E_REQUIRE_EXTENDED=true requires LIVE_E2E_REQUIRE_AUTH=true',
+  );
+  assert(
+    secondaryUsername && secondaryPassword,
+    'LIVE_E2E_REQUIRE_EXTENDED=true requires LETOVO_E2E_SECONDARY_USERNAME and LETOVO_E2E_SECONDARY_PASSWORD',
+  );
 
   await assertAdminSession(page);
   await assertUploaderSession(page);
