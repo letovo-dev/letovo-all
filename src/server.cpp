@@ -1,7 +1,9 @@
 #include "rapidjson/document.h"
+#include <cstdlib>
 #include <iostream>
 #include <restinio/all.hpp>
 #include <restinio/tls.hpp>
+#include <string>
 
 // do i need this?
 #include <fmt/format.h>
@@ -34,6 +36,20 @@ using namespace restinio;
 
 namespace rr = restinio::router;
 using router_t = rr::express_router_t<>;
+
+void deployment_metadata(std::unique_ptr<restinio::router::express_router_t<>> &router) {
+  router.get()->http_get("/deployment/metadata", [](auto req, auto) {
+    const char *sha = std::getenv("LETOVO_BUILD_SHA");
+    std::string body = fmt::format(
+        R"({{"sha":"{}"}})",
+        sha && sha[0] ? sha : "unknown");
+    return req->create_response()
+        .set_body(body)
+        .append_header(restinio::http_field::content_type,
+                       "application/json; charset=utf-8")
+        .done();
+  });
+}
 
 void hi(std::unique_ptr<restinio::router::express_router_t<>> &router,
         std::shared_ptr<cp::ConnectionsManager> &pool_ptr,
@@ -83,6 +99,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
        std::shared_ptr<ws::TopicAuthorizer> authorizer_ptr) {
   auto router = std::make_unique<router::express_router_t<>>();
 
+  deployment_metadata(router);
   hi(router, pool_ptr, logger_ptr);
 
   page::server::get_page_content(router, pool_ptr, logger_ptr);
