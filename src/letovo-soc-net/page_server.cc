@@ -67,22 +67,48 @@ namespace {
         if (!body.HasMember(key)) {
             return std::nullopt;
         }
+        if (body[key].IsNull()) {
+            return std::nullopt;
+        }
         if (!body[key].IsString()) {
             return std::nullopt;
         }
         return std::string(body[key].GetString());
     }
 
+    bool json_string_member_has_invalid_type(const rapidjson::Document& body, const char* key) {
+        return body.HasMember(key) && !body[key].IsString() && !body[key].IsNull();
+    }
+
     std::string row_string_or_empty(const pqxx::row& row, const char* key) {
-        return row[key].is_null() ? "" : row[key].as<std::string>();
+        for (const auto& field : row) {
+            if (std::string(field.name()) == key) {
+                return field.is_null() ? "" : field.as<std::string>();
+            }
+        }
+        return "";
     }
 
     int row_int_or_zero(const pqxx::row& row, const char* key) {
-        return row[key].is_null() ? 0 : row[key].as<int>();
+        for (const auto& field : row) {
+            if (std::string(field.name()) == key) {
+                return field.is_null() ? 0 : field.as<int>();
+            }
+        }
+        return 0;
+    }
+
+    bool row_bool_or_default(const pqxx::row& row, const char* key, bool default_value) {
+        for (const auto& field : row) {
+            if (std::string(field.name()) == key) {
+                return field.is_null() ? default_value : field.as<bool>();
+            }
+        }
+        return default_value;
     }
 
     bool row_bool_or_false(const pqxx::row& row, const char* key) {
-        return !row[key].is_null() && row[key].as<bool>();
+        return row_bool_or_default(row, key, false);
     }
 
     void normalize_article_categories(std::unique_ptr<cp::AsyncConnection>& con) {
@@ -288,7 +314,7 @@ namespace page::server {
                 return req->create_response(restinio::status_bad_gateway()).done();
             }
 
-            if (result[0]["is_secret"].as<bool>() == true || result[0]["is_published"].as<bool>() == false) {
+            if (row_bool_or_false(result[0], "is_secret") || !row_bool_or_default(result[0], "is_published", true)) {
                 logger_ptr->info( [endpoint]{return fmt::format("page request from {} is secret", endpoint);});
                 return req->create_response(restinio::status_not_found()).done();
             }
@@ -661,10 +687,10 @@ namespace page::server {
                 }
                 auto request_author = json_string_member(new_body, "author");
                 if(new_body.HasMember("author")) {
-                    if (!request_author.has_value()) {
+                    if (json_string_member_has_invalid_type(new_body, "author")) {
                         return req->create_response(restinio::status_bad_request()).done();
                     }
-                    if (authors::check_if_avaluable_author(auth::get_username(token, pool_ptr), *request_author, pool_ptr)) {
+                    if (request_author.has_value() && authors::check_if_avaluable_author(auth::get_username(token, pool_ptr), *request_author, pool_ptr)) {
                         author = *request_author;
                         assist::fix_new_lines(author);
                     } else {
@@ -684,8 +710,8 @@ namespace page::server {
 
                 auto category_name = json_string_member(new_body, "category_name");
                 auto post_path = json_string_member(new_body, "post_path");
-                if ((new_body.HasMember("category_name") && !category_name.has_value()) ||
-                    (new_body.HasMember("post_path") && !post_path.has_value())) {
+                if (json_string_member_has_invalid_type(new_body, "category_name") ||
+                    json_string_member_has_invalid_type(new_body, "post_path")) {
                     return req->create_response(restinio::status_bad_request()).done();
                 }
 
