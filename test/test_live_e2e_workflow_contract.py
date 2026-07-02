@@ -1,9 +1,11 @@
+import re
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "live-e2e.yml"
 BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "docker-image.yml"
+PRODUCTION_RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "production-release.yml"
 LIVE_SCRIPT = ROOT / "test" / "e2e" / "live-platform-smoke.mjs"
 COMPOSE = ROOT / "docs" / "docker-compose.yaml"
 BACKEND_DOCKERFILE = ROOT / "src" / "Dockerfile"
@@ -14,6 +16,18 @@ FRONTEND_METADATA_ROUTE = ROOT / "frontend" / "src" / "app" / "api" / "deploymen
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _backend_build_files(workflow: str) -> list[str]:
+    match = re.search(r"BACKEND_BUILD_FILES: >-\n((?:    .+\n)+)", workflow)
+    assert match
+    return match.group(1).split()
+
+
+def _workflow_env(workflow: str) -> str:
+    match = re.search(r"\nenv:\n((?:  .+\n)+)\njobs:", workflow)
+    assert match
+    return match.group(1)
 
 
 def test_live_e2e_workflow_runs_after_deployable_images_are_published():
@@ -60,6 +74,52 @@ def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     assert "Deploy PR candidate images to live e2e" in workflow
     assert "docker compose -p \"$PROJECT_NAME\" -f \"$candidate\" up -d letovo-server letovo-registration-server letovo-front" in workflow
     assert "Restore live deployment images" in workflow
+
+
+def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
+    workflow = _read(PRODUCTION_RELEASE_WORKFLOW)
+
+    assert "workflow_dispatch:" in workflow
+    assert "target_ref:" not in workflow
+    assert "ref: main" in workflow
+    assert "default: https://letovocorp.ru" in workflow
+    assert "environment: production" in workflow
+    assert "concurrency:" in workflow
+    assert "cancel-in-progress: false" in workflow
+    assert "/srv/letovo/compose/docker-compose.yaml" in workflow
+    assert "LETOVO_PROD_DEPLOY_PROJECT || 'compose'" in workflow
+    assert "BACKEND_RELEASE_IMAGE=${BACKEND_IMAGE}:${release_sha}" in workflow
+    assert "REGISTRATION_RELEASE_IMAGE=${REGISTRATION_IMAGE}:${release_sha}" in workflow
+    assert "FRONTEND_RELEASE_IMAGE=${FRONTEND_IMAGE}:${release_sha}" in workflow
+    assert "INPUT_BASE_URL: ${{ inputs.base_url }}" in workflow
+    assert "base_url=\"${INPUT_BASE_URL%/}\"" in workflow
+    assert "base_url=\"${{ inputs.base_url }}\"" not in workflow
+    assert "base_url must be https://letovocorp.ru for production releases" in workflow
+    assert "NEXT_PUBLIC_BASE_URL=${{ steps.release.outputs.base_url }}/letovo-api" in workflow
+    assert "ya\\.sergeiscv\\.ru|/undefined/auth|/letovo-api/letovo-api" in workflow
+    assert "Build and push production backend image" in workflow
+    assert "Build and push production registration image" in workflow
+    assert "Build and push production frontend image" in workflow
+    assert "LETOVO_PROD_DEPLOY_HOST" in workflow
+    assert "LETOVO_PROD_DEPLOY_USER" in workflow
+    assert "LETOVO_PROD_DEPLOY_SSH_KEY" in workflow
+    workflow_env = _workflow_env(workflow)
+    assert "LETOVO_PROD_DEPLOY_USER" not in workflow_env
+    assert "LETOVO_PROD_DEPLOY_SSH_KEY" not in workflow_env
+    assert "Transfer production images to host" in workflow
+    assert "docker save \"${images[@]}\" | gzip -1 | ssh" in workflow
+    assert "gzip -dc | docker load" in workflow
+    assert "docker compose -p \"$PROJECT_NAME\" -f \"$COMPOSE_FILE\" pull" not in workflow
+    assert "docker image inspect \"$BACKEND_IMAGE\" >/dev/null" in workflow
+    assert "cp \"$candidate\" \"$COMPOSE_FILE\"" in workflow
+    assert "Run production live e2e" in workflow
+    assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
+    assert "LIVE_E2E_EXPECTED_BACKEND_SHA=$release_sha" in workflow
+    assert "Roll back production images on failure" in workflow
+
+
+def test_production_release_backend_build_files_match_main_ci():
+    assert _backend_build_files(_read(PRODUCTION_RELEASE_WORKFLOW)) == _backend_build_files(_read(BUILD_WORKFLOW))
 
 
 def test_live_e2e_uses_condition_polling_and_browser_level_checks():

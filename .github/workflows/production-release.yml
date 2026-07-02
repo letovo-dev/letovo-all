@@ -1,0 +1,323 @@
+name: production release
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Public production URL for post-deploy e2e
+        required: true
+        default: https://letovocorp.ru
+      wait_timeout_seconds:
+        description: Max time to wait for production to serve the release
+        required: false
+        default: "600"
+      require_extended:
+        description: Run mutating authenticated e2e checks after deployment
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+env:
+  BACKEND_BUILD_FILES: >-
+    basic/auth.cc basic/security.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc
+    basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc
+    basic/media.cc basic/media_cash.cc basic/qr_worker.cc basic/ws_topic_authorizer.cc
+    basic/ws_event_bus.cc basic/ws_endpoint.cc market/transactions.cc market/actives.cc
+    market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc
+    letovo-soc-net/page_server.cc letovo-soc-net/authors.cc letovo-soc-net/chat.cc
+    letovo-soc-net/chat_ws.cc
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-server
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-all-frontend
+  REGISTRATION_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-registration-server
+  PLAYWRIGHT_VERSION: "1.55.1"
+  LIVE_E2E_BASE_URL: https://letovocorp.ru
+  LIVE_E2E_WAIT_TIMEOUT_SECONDS: ${{ inputs.wait_timeout_seconds }}
+  LIVE_E2E_REQUIRE_AUTH: "true"
+  LIVE_E2E_REQUIRE_EXTENDED: ${{ inputs.require_extended }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout main with submodules
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: recursive
+          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
+          persist-credentials: false
+
+      - name: Resolve release images
+        id: release
+        env:
+          INPUT_BASE_URL: ${{ inputs.base_url }}
+        run: |
+          set -euo pipefail
+          release_sha="$(git rev-parse HEAD)"
+          base_url="${INPUT_BASE_URL%/}"
+          base_url="${base_url%/}"
+          if [[ "$base_url" == *$'\r'* || "$base_url" == *$'\n'* ]]; then
+            echo "base_url must not contain CR/LF"
+            exit 1
+          fi
+          if [ "$base_url" != "https://letovocorp.ru" ]; then
+            echo "base_url must be https://letovocorp.ru for production releases"
+            exit 1
+          fi
+          {
+            echo "RELEASE_SHA=$release_sha"
+            echo "RELEASE_IMAGE_TAG=$release_sha"
+            echo "LIVE_E2E_BASE_URL=$base_url"
+            echo "BACKEND_RELEASE_IMAGE=${BACKEND_IMAGE}:${release_sha}"
+            echo "REGISTRATION_RELEASE_IMAGE=${REGISTRATION_IMAGE}:${release_sha}"
+            echo "FRONTEND_RELEASE_IMAGE=${FRONTEND_IMAGE}:${release_sha}"
+            echo "LIVE_E2E_EXPECTED_BACKEND_SHA=$release_sha"
+            echo "LIVE_E2E_EXPECTED_FRONTEND_SHA=$release_sha"
+          } >> "$GITHUB_ENV"
+          {
+            echo "release_sha=$release_sha"
+            echo "image_tag=$release_sha"
+            echo "base_url=$base_url"
+            echo "backend_image=${BACKEND_IMAGE}:${release_sha}"
+            echo "registration_image=${REGISTRATION_IMAGE}:${release_sha}"
+            echo "frontend_image=${FRONTEND_IMAGE}:${release_sha}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate production deployment secrets
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
+          LETOVO_PROD_DEPLOY_SSH_KEY: ${{ secrets.LETOVO_PROD_DEPLOY_SSH_KEY }}
+          LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
+          LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
+        run: |
+          set -euo pipefail
+          test -n "$LETOVO_PROD_DEPLOY_USER" || { echo "LETOVO_PROD_DEPLOY_USER secret is required"; exit 1; }
+          test -n "$LETOVO_PROD_DEPLOY_SSH_KEY" || { echo "LETOVO_PROD_DEPLOY_SSH_KEY secret is required"; exit 1; }
+          test -n "$LETOVO_PROD_DEPLOY_HOST" || { echo "LETOVO_PROD_DEPLOY_HOST is required"; exit 1; }
+          test -n "$LETOVO_PROD_DEPLOY_COMPOSE" || { echo "LETOVO_PROD_DEPLOY_COMPOSE is required"; exit 1; }
+          test -n "$LETOVO_PROD_DEPLOY_PROJECT" || { echo "LETOVO_PROD_DEPLOY_PROJECT is required"; exit 1; }
+          test "$LIVE_E2E_REQUIRE_AUTH" = "true"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js for frontend route scan
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Scan production frontend bundle routes
+        working-directory: frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_BASE_URL: ${{ steps.release.outputs.base_url }}/letovo-api
+          NEXT_PUBLIC_BASE_URL_UPLOAD: ${{ steps.release.outputs.base_url }}/letovo-api/upload/
+          NEXT_PUBLIC_BASE_URL_MEDIA: ${{ steps.release.outputs.base_url }}/letovo-api/media/get
+          NEXT_PUBLIC_UPLOAD_URL: ${{ steps.release.outputs.base_url }}/letovo-api/upload/
+          NEXT_PUBLIC_BASE_URL_CLEAR: ${{ steps.release.outputs.base_url }}
+          LETOVO_BUILD_SHA: ${{ steps.release.outputs.release_sha }}
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          if grep -R -I -n -E 'ya\.sergeiscv\.ru|/undefined/auth|/letovo-api/letovo-api' .next; then
+            echo "Found forbidden frontend route or host in built production bundle"
+            exit 1
+          fi
+
+      - name: Build and push production backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          push: true
+          build-args: |
+            MAIN_FILE=server.cpp
+            TEST_FILE=test.cpp
+            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
+          tags: ${{ steps.release.outputs.backend_image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push production registration image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          push: true
+          build-args: |
+            MAIN_FILE=registration_server.cpp
+            TEST_FILE=test.cpp
+            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
+            LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
+          tags: ${{ steps.release.outputs.registration_image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push production frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/dockerfile
+          push: true
+          build-args: |
+            LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
+            NEXT_PUBLIC_BASE_URL=${{ steps.release.outputs.base_url }}/letovo-api
+            NEXT_PUBLIC_BASE_URL_UPLOAD=${{ steps.release.outputs.base_url }}/letovo-api/upload/
+            NEXT_PUBLIC_BASE_URL_MEDIA=${{ steps.release.outputs.base_url }}/letovo-api/media/get
+            NEXT_PUBLIC_UPLOAD_URL=${{ steps.release.outputs.base_url }}/letovo-api/upload/
+            NEXT_PUBLIC_BASE_URL_CLEAR=${{ steps.release.outputs.base_url }}
+          tags: ${{ steps.release.outputs.frontend_image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Configure production SSH
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_SSH_KEY: ${{ secrets.LETOVO_PROD_DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$LETOVO_PROD_DEPLOY_SSH_KEY" > ~/.ssh/letovo-production-release
+          chmod 600 ~/.ssh/letovo-production-release
+          ssh-keyscan -H "$LETOVO_PROD_DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Transfer production images to host
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
+          images=(
+            "$BACKEND_RELEASE_IMAGE"
+            "$REGISTRATION_RELEASE_IMAGE"
+            "$FRONTEND_RELEASE_IMAGE"
+          )
+          for image in "${images[@]}"; do
+            docker pull "$image"
+          done
+          docker save "${images[@]}" | gzip -1 | ssh -i ~/.ssh/letovo-production-release "$remote" 'gzip -dc | docker load'
+
+      - name: Deploy production images
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
+          LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
+          LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
+        run: |
+          set -euo pipefail
+          remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
+          ssh -i ~/.ssh/letovo-production-release "$remote" \
+            "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          test -f "$COMPOSE_FILE"
+          state_dir="/tmp/letovo-production-release-${RUN_ID}"
+          mkdir -p "$state_dir"
+          restore="$state_dir/restore.env"
+          compose_backup="$state_dir/docker-compose.yaml.before-release"
+          candidate="$state_dir/docker-compose.yaml"
+
+          docker image inspect "$BACKEND_IMAGE" >/dev/null
+          docker image inspect "$REGISTRATION_IMAGE" >/dev/null
+          docker image inspect "$FRONTEND_IMAGE" >/dev/null
+
+          cp "$COMPOSE_FILE" "$compose_backup"
+          docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
+          docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
+          docker inspect -f 'letovo-front={{.Config.Image}}' letovo-front >> "$restore"
+
+          sed \
+            -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
+            -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${REGISTRATION_IMAGE}#" \
+            -e "s#image: .*letovo.*front.*:.*#image: ${FRONTEND_IMAGE}#" \
+            "$COMPOSE_FILE" > "$candidate"
+
+          cp "$candidate" "$COMPOSE_FILE"
+          docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d letovo-server letovo-registration-server letovo-front
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$BACKEND_IMAGE"
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$REGISTRATION_IMAGE"
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$FRONTEND_IMAGE"
+          REMOTE
+
+      - name: Set up Node.js for live e2e
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright runtime
+        run: |
+          set -euo pipefail
+          export PLAYWRIGHT_PACKAGE_DIR="$RUNNER_TEMP/letovo-live-e2e"
+          mkdir -p "$PLAYWRIGHT_PACKAGE_DIR"
+          cd "$PLAYWRIGHT_PACKAGE_DIR"
+          npm init -y
+          npm install "playwright@${PLAYWRIGHT_VERSION}"
+          "$PLAYWRIGHT_PACKAGE_DIR/node_modules/.bin/playwright" install --with-deps chromium
+          echo "PLAYWRIGHT_PACKAGE_DIR=$PLAYWRIGHT_PACKAGE_DIR" >> "$GITHUB_ENV"
+
+      - name: Run production live e2e
+        env:
+          LETOVO_E2E_USERNAME: ${{ secrets.LETOVO_E2E_USERNAME }}
+          LETOVO_E2E_PASSWORD: ${{ secrets.LETOVO_E2E_PASSWORD }}
+          LETOVO_E2E_SECONDARY_USERNAME: ${{ secrets.LETOVO_E2E_SECONDARY_USERNAME }}
+          LETOVO_E2E_SECONDARY_PASSWORD: ${{ secrets.LETOVO_E2E_SECONDARY_PASSWORD }}
+        run: node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs
+
+      - name: Roll back production images on failure
+        if: failure()
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
+          LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
+          LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
+        run: |
+          set -euo pipefail
+          test -f ~/.ssh/letovo-production-release || exit 0
+          remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
+          ssh -i ~/.ssh/letovo-production-release "$remote" \
+            "COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          state_dir="/tmp/letovo-production-release-${RUN_ID}"
+          restore="$state_dir/restore.env"
+          compose_backup="$state_dir/docker-compose.yaml.before-release"
+          test -f "$restore" || exit 0
+          test -f "$compose_backup" || exit 0
+
+          cp "$compose_backup" "$COMPOSE_FILE"
+          backend_image="$(awk -F= '$1 == "letovo-server" { print $2 }' "$restore" | tail -n 1)"
+          registration_image="$(awk -F= '$1 == "letovo-registration-server" { print $2 }' "$restore" | tail -n 1)"
+          frontend_image="$(awk -F= '$1 == "letovo-front" { print $2 }' "$restore" | tail -n 1)"
+          test -n "$backend_image"
+          test -n "$registration_image"
+          test -n "$frontend_image"
+          docker image inspect "$backend_image" >/dev/null
+          docker image inspect "$registration_image" >/dev/null
+          docker image inspect "$frontend_image" >/dev/null
+
+          docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d letovo-server letovo-registration-server letovo-front
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$backend_image"
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$registration_image"
+          test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$frontend_image"
+          rm -rf "$state_dir"
+          REMOTE
