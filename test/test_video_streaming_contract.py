@@ -8,6 +8,12 @@ LAZY_VIDEO_TSX = ROOT / "frontend" / "src" / "entities" / "post" / "ui" / "LazyV
 
 def test_media_endpoint_supports_byte_range_responses():
     source = MEDIA_CC.read_text()
+    partial_response_start = source.index(
+        "req->create_response(restinio::status_partial_content())"
+    )
+    partial_response = source[
+        partial_response_start : source.index(".done();", partial_response_start)
+    ]
 
     assert 'req->header().get_field("Range")' in source
     assert "parse_range_header(range_header, file_size)" in source
@@ -17,6 +23,7 @@ def test_media_endpoint_supports_byte_range_responses():
     assert "offset_and_size(" in source
     assert "restinio::status_requested_range_not_satisfiable()" in source
     assert '"bytes */" + std::to_string(file_size)' in source
+    assert 'append_header("Content-Length"' not in partial_response
 
 
 def test_lazy_video_uses_native_streaming_instead_of_blob_prefetch():
@@ -30,3 +37,11 @@ def test_lazy_video_uses_native_streaming_instead_of_blob_prefetch():
     assert "src={src}" in source
     assert "poster={poster}" in source
     assert "playsInline" in source
+
+
+def test_lazy_video_keeps_native_playback_controls_and_error_fallback():
+    source = LAZY_VIDEO_TSX.read_text()
+
+    assert "controls" in source
+    assert "onError={() => setHasError(true)}" in source
+    assert "Видео недоступно" in source
