@@ -128,6 +128,11 @@ pqxx::result full_user_info(std::string username,
       "\"user\".balance, \"user\".registered, \"user\".jointime, "
       "\"user\".avatar_pic, \"user\".active, \"user\".times_visited, "
       "\"user\".brigade, "
+      "(CASE WHEN COALESCE(permission_role.admin, false) = true "
+      "OR COALESCE(permission_role.moder, false) = true "
+      "OR COALESCE(\"user\".userrights, '') IN ('admin', 'moder') "
+      "OR COALESCE(\"roles\".rang, 0) > 0 THEN true ELSE false END) "
+      "AS can_award_achievements, "
       "\"roles\".rolename as role, \"roles\".payment as paycheck, "
       "\"department\".*, \"brigade\".name as brigadename, "
       "(SELECT COALESCE(json_agg(json_build_object("
@@ -139,7 +144,8 @@ pqxx::result full_user_info(std::string username,
       "join \"roles\" on \"user\".role = "
       "\"roles\".roleid  left join \"department\" on \"roles\".departmentid = "
       "\"department\".departmentid left join \"brigade\" on \"user\".brigade = "
-      "\"brigade\".brigade_id where \"user\".username = ($1);",
+      "\"brigade\".brigade_id left join \"role\" permission_role on "
+      "\"user\".username = permission_role.username where \"user\".username = ($1);",
       params);
 
 

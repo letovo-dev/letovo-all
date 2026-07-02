@@ -266,6 +266,16 @@ bool can_read_secret_posts(const std::string &username,
                       "COALESCE(u.userrights, '') = 'admin'");
 }
 
+bool can_award_achievements(const std::string &username,
+                            std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  return has_any_role(username, pool_ptr,
+                      "COALESCE(r.admin, false) = true OR "
+                      "COALESCE(r.moder, false) = true OR "
+                      "COALESCE(u.userrights, '') IN ('admin', 'moder') OR "
+                      "COALESCE((SELECT roles.rang FROM public.roles WHERE "
+                      "roles.roleid = u.role), 0) > 0");
+}
+
 std::string create_post_reveal_token(
     int post_id, const std::string &created_by,
     std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
