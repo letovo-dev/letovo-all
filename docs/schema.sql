@@ -680,7 +680,8 @@ CREATE TABLE public.role (
     write_posts boolean,
     admin boolean,
     moder boolean,
-    main_page boolean
+    main_page boolean,
+    chat_search boolean DEFAULT false
 );
 
 

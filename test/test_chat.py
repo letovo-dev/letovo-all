@@ -396,6 +396,17 @@ def _set_user_rights(username, rights):
         cur.execute('UPDATE "user" SET userrights=%s WHERE username=%s;', (rights, username))
 
 
+def _set_chat_search_role(username, value):
+    with _db() as c, c.cursor() as cur:
+        cur.execute('ALTER TABLE "role" ADD COLUMN IF NOT EXISTS chat_search BOOLEAN DEFAULT false;')
+        cur.execute(
+            'INSERT INTO "role" (username, write_posts, admin, moder, main_page, chat_search) '
+            'VALUES (%s, false, false, false, false, %s) '
+            'ON CONFLICT (username) DO UPDATE SET chat_search = EXCLUDED.chat_search;',
+            (username, value),
+        )
+
+
 def test_set_permission_admin_only():
     _ensure_second_user()
     resp = requests.post(f"{URL}/chat/permission",
@@ -527,6 +538,7 @@ def test_block_override_wins_over_existing_dialog():
 
 
 ADMIN_LIST_PROBE_USER = "test_chat_admin_probe"
+CHAT_SEARCH_TARGET_USER = "test_chat_search_target"
 
 
 def test_get_chats_admin_sees_every_user_but_non_admin_does_not():
@@ -540,6 +552,7 @@ def test_get_chats_admin_sees_every_user_but_non_admin_does_not():
         )
     _clear_override(USERNAME, ADMIN_LIST_PROBE_USER)
     _clear_override(NON_ADMIN_USER, ADMIN_LIST_PROBE_USER)
+    _set_chat_search_role(ADMIN_LIST_PROBE_USER, False)
 
     admin_chats = requests.get(f"{URL}/chats/", headers=auth_headers(), verify=False)
     assert admin_chats.status_code == 200
@@ -548,6 +561,98 @@ def test_get_chats_admin_sees_every_user_but_non_admin_does_not():
     non_admin_chats = requests.get(f"{URL}/chats/", headers=non_admin_headers(), verify=False)
     assert non_admin_chats.status_code == 200
     assert ADMIN_LIST_PROBE_USER not in [u["username"] for u in non_admin_chats.json()["result"]]
+
+
+def test_get_chats_chat_search_role_sees_non_chattable_users_without_admin():
+    # A chat-search requester is not an admin, but can search the full contact list.
+    with _db() as c, c.cursor() as cur:
+        cur.execute(
+            'INSERT INTO "user" (username, passwdhash, chattable, userrights) '
+            "VALUES (%s, %s, false, 'user') ON CONFLICT (username) DO UPDATE "
+            "SET chattable = false;",
+            (ADMIN_LIST_PROBE_USER, "x"),
+        )
+    _clear_override(NON_ADMIN_USER, ADMIN_LIST_PROBE_USER)
+    _set_chat_search_role(NON_ADMIN_USER, True)
+    try:
+        response = requests.get(f"{URL}/chats/", headers=non_admin_headers(), verify=False)
+        assert response.status_code == 200
+        assert ADMIN_LIST_PROBE_USER in [u["username"] for u in response.json()["result"]]
+    finally:
+        _set_chat_search_role(NON_ADMIN_USER, False)
+
+
+def test_get_chats_includes_chat_search_role_user_for_regular_requester():
+    # A chat-search target is discoverable even when user.chattable is false.
+    with _db() as c, c.cursor() as cur:
+        cur.execute(
+            'INSERT INTO "user" (username, passwdhash, chattable, userrights) '
+            "VALUES (%s, %s, false, 'user') ON CONFLICT (username) DO UPDATE "
+            "SET chattable = false;",
+            (CHAT_SEARCH_TARGET_USER, "x"),
+        )
+    _clear_override(NON_ADMIN_USER, CHAT_SEARCH_TARGET_USER)
+    _set_chat_search_role(CHAT_SEARCH_TARGET_USER, True)
+    try:
+        response = requests.get(f"{URL}/chats/", headers=non_admin_headers(), verify=False)
+        assert response.status_code == 200
+        assert CHAT_SEARCH_TARGET_USER in [u["username"] for u in response.json()["result"]]
+    finally:
+        _set_chat_search_role(CHAT_SEARCH_TARGET_USER, False)
+
+
+def test_chat_search_role_can_text_non_chattable_stranger():
+    _ensure_third_user_non_chattable()
+    _clear_override(NON_ADMIN_USER, THIRD_USER)
+    _set_chat_search_role(NON_ADMIN_USER, True)
+    try:
+        resp = _send_via_api(
+            THIRD_USER,
+            "chat-search user reaching out",
+            token=non_admin_headers()["Bearer"],
+        )
+        assert resp.status_code == 200, resp.text
+    finally:
+        _set_chat_search_role(NON_ADMIN_USER, False)
+
+
+def test_regular_user_can_text_chat_search_role_user():
+    with _db() as c, c.cursor() as cur:
+        cur.execute(
+            'INSERT INTO "user" (username, passwdhash, chattable, userrights) '
+            "VALUES (%s, %s, false, 'user') ON CONFLICT (username) DO UPDATE "
+            "SET chattable = false;",
+            (CHAT_SEARCH_TARGET_USER, "x"),
+        )
+    _clear_override(NON_ADMIN_USER, CHAT_SEARCH_TARGET_USER)
+    _set_chat_search_role(CHAT_SEARCH_TARGET_USER, True)
+    try:
+        resp = _send_via_api(
+            CHAT_SEARCH_TARGET_USER,
+            "regular user reaching a chat-search contact",
+            token=non_admin_headers()["Bearer"],
+        )
+        assert resp.status_code == 200, resp.text
+    finally:
+        _set_chat_search_role(CHAT_SEARCH_TARGET_USER, False)
+
+
+def test_block_override_wins_over_chat_search_role():
+    _ensure_third_user_non_chattable()
+    _set_chat_search_role(NON_ADMIN_USER, True)
+    _set_override(NON_ADMIN_USER, THIRD_USER, "block")
+    try:
+        resp = _send_via_api(
+            THIRD_USER,
+            "should be blocked despite chat-search role",
+            token=non_admin_headers()["Bearer"],
+        )
+        assert resp.status_code == 403, resp.text
+        chats = requests.get(f"{URL}/chats/", headers=non_admin_headers(), verify=False).json()["result"]
+        assert THIRD_USER not in [u["username"] for u in chats]
+    finally:
+        _clear_override(NON_ADMIN_USER, THIRD_USER)
+        _set_chat_search_role(NON_ADMIN_USER, False)
 
 
 def test_get_chats_admin_list_sorted_by_recency():

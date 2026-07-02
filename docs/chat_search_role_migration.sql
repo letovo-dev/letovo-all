@@ -1,0 +1,1 @@
+ALTER TABLE "role" ADD COLUMN IF NOT EXISTS chat_search BOOLEAN DEFAULT false;

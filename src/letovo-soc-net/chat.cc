@@ -30,9 +30,27 @@ namespace chat {
         return !result.empty();
     }
 
+    bool has_chat_search_role(const std::string& username,
+                              std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        cp::SafeCon con{pool_ptr};
+        std::vector<std::string> params = {username};
+        pqxx::result result = con->execute_params(
+            "SELECT 1 FROM \"role\" r "
+            "WHERE r.username = $1 "
+            "  AND COALESCE((to_jsonb(r)->>'chat_search')::boolean, false) = true "
+            "LIMIT 1;", params);
+        return !result.empty();
+    }
+
+    bool can_search_all_chats(const std::string& username,
+                              std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        return auth::is_rights_by_username(username, pool_ptr, "admin") ||
+               has_chat_search_role(username, pool_ptr);
+    }
+
     // `a` is the user attempting to chat with `b`. Symmetric except for the
-    // admin shortcut (admins may message anyone). An admin-set `block` override
-    // always wins, including over an admin sender.
+    // privileged shortcut (admins and chat_search users may message anyone).
+    // An admin-set `block` override always wins, including over privileged senders.
     bool can_chat(const std::string& a, const std::string& b,
                   std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         std::string user_a = a < b ? a : b;
@@ -51,17 +69,19 @@ namespace chat {
             }
         }
 
-        if (is_chattable(b, pool_ptr)) return true;            // chat with chattable users
-        if (conversation_exists(a, b, pool_ptr)) return true;  // continue an existing dialog
-        return auth::is_rights_by_username(a, pool_ptr, "admin"); // admins can text anyone
+        if (is_chattable(b, pool_ptr)) return true;             // chat with chattable users
+        if (has_chat_search_role(b, pool_ptr)) return true;     // chat-search users are discoverable
+        if (conversation_exists(a, b, pool_ptr)) return true;   // continue an existing dialog
+        return can_search_all_chats(a, pool_ptr);
     }
 
-    pqxx::result get_chattable_users(const std::string& current_user, bool requester_is_admin,
+    pqxx::result get_chattable_users(const std::string& current_user,
+                                     bool requester_can_search_all,
                                      std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         cp::SafeCon con{pool_ptr};
-        // $2 = requester is admin: admins see every user they may chat with (i.e.
-        // everyone except `block`-overridden pairs), still sorted by recency.
-        std::vector<std::string> params = {current_user, requester_is_admin ? "true" : "false"};
+        // $2 = requester can search all chats: admins and role.chat_search users
+        // see every user they may chat with, except `block`-overridden pairs.
+        std::vector<std::string> params = {current_user, requester_can_search_all ? "true" : "false"};
         pqxx::result result = con->execute_params(
             "SELECT u.username, u.display_name, u.avatar_pic, "
             "  dm.message_text AS last_message, dm.sent_at AS last_message_time "
@@ -69,6 +89,7 @@ namespace chat {
             "LEFT JOIN chat_override co "
             "  ON co.user_a = LEAST(u.username, $1) "
             " AND co.user_b = GREATEST(u.username, $1) "
+            "LEFT JOIN \"role\" ur ON ur.username = u.username "
             "LEFT JOIN LATERAL ("
             "  SELECT message_text, sent_at FROM direct_message "
             "  WHERE ((sender = u.username AND receiver = $1) "
@@ -82,6 +103,7 @@ namespace chat {
             "       $2::boolean "
             "    OR co.override_type = 'allow' "
             "    OR u.chattable = true "
+            "    OR COALESCE((to_jsonb(ur)->>'chat_search')::boolean, false) = true "
             "    OR dm.sent_at IS NOT NULL "
             "  ) "
             "ORDER BY dm.sent_at DESC NULLS LAST, u.username;", params);
@@ -216,8 +238,8 @@ namespace chat::server {
             if (username.empty()) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
-            bool requester_is_admin = auth::is_admin(token, pool_ptr);
-            pqxx::result result = chat::get_chattable_users(username, requester_is_admin, pool_ptr);
+            bool requester_can_search_all = chat::can_search_all_chats(username, pool_ptr);
+            pqxx::result result = chat::get_chattable_users(username, requester_can_search_all, pool_ptr);
             return req->create_response()
                 .set_body(cp::serialize(result))
                 .append_header("Content-Type", "application/json; charset=utf-8")

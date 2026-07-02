@@ -18,7 +18,14 @@ namespace chat {
     bool can_chat(const std::string& a, const std::string& b,
                   std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
-    pqxx::result get_chattable_users(const std::string& current_user, bool requester_is_admin,
+    bool has_chat_search_role(const std::string& username,
+                              std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    bool can_search_all_chats(const std::string& username,
+                              std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    pqxx::result get_chattable_users(const std::string& current_user,
+                                     bool requester_can_search_all,
                                      std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     pqxx::result get_messages(const std::string& user1, const std::string& user2,
