@@ -495,9 +495,6 @@ void user_info(std::unique_ptr<restinio::router::express_router_t<>> &router,
         if (actor.empty()) {
           return req->create_response(restinio::status_unauthorized()).done();
         }
-        if (!security::is_same_user_or_admin(actor, username, pool_ptr)) {
-          return req->create_response(restinio::status_forbidden()).done();
-        }
 
         pqxx::result result = user::user_info(username, pool_ptr);
 

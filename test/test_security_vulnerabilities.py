@@ -84,8 +84,8 @@ def test_user_profile_requires_authentication():
     assert response.status_code == 401
 
 
-def test_user_cannot_read_another_users_private_profile(security_user):
-    # Precondition: the deployment has an existing admin user profile to protect.
+def test_user_can_read_another_users_public_profile_without_private_fields(security_user):
+    # Precondition: the deployment has an existing admin user profile to read publicly.
     response = requests.get(
         f"{BASE_URL}/user/admin",
         headers={"Bearer": security_user["token"]},
@@ -94,7 +94,17 @@ def test_user_cannot_read_another_users_private_profile(security_user):
     )
 
     _skip_if_fixture_is_absent(response, "admin user")
-    assert response.status_code == 403
+    assert response.status_code == 200
+    data = response.json()
+    public_user = data["result"][0]
+    assert "username" in public_user
+    assert "avatar_pic" in public_user
+    assert "departmentid" in public_user
+    assert "rolename" in public_user
+    assert "balance" not in public_user
+    assert "paycheck" not in public_user
+    assert "last_incoming_payment" not in data
+    assert "last_outgoing_payment" not in data
 
 
 def test_full_user_response_does_not_expose_balance_to_other_user(security_user):
