@@ -1,4 +1,5 @@
 #include "social.h"
+#include "../basic/analytics.h"
 
 namespace social {
 
@@ -287,6 +288,9 @@ namespace social::server {
             }
             const bool can_read_secret = security::can_read_secret_posts(username, pool_ptr);
             pqxx::result result = social::get_news((std::string)qp["start"], std::stoi((std::string)qp["size"]), username, date, can_read_secret, pool_ptr);
+            analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
+                req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                "GET", "/social/news", 200, 0, "", "{}", pool_ptr, logger_ptr);
             return req->create_response()
                 .set_body(cp::serialize_with_segment_day(result, pool_ptr))
                 .append_header("Content-Type", "application/json; charset=utf-8")
@@ -311,6 +315,9 @@ namespace social::server {
             }
             const bool can_read_secret = security::can_read_secret_posts(username, pool_ptr);
             pqxx::result result = social::get_comments((std::string)qp["post_id"], (std::string)qp["start"], std::stoi((std::string)qp["size"]), username, can_read_secret, pool_ptr);
+            analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
+                req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                "GET", "/social/comments", 200, 0, "", "{}", pool_ptr, logger_ptr);
             return req->create_response()
                 .set_body(cp::serialize_with_shift_day(result, pool_ptr))
                 .append_header("Content-Type", "application/json; charset=utf-8")
@@ -430,6 +437,9 @@ namespace social::server {
             }
             const bool can_read_secret = security::can_read_secret_posts(username, pool_ptr);
             pqxx::result result = social::get_all_titles(can_read_secret, pool_ptr);
+            analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
+                req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                "GET", "/social/titles", 200, 0, "", "{}", pool_ptr, logger_ptr);
             return req->create_response()
                 .set_body(cp::serialize(result))
                 .append_header("Content-Type", "application/json; charset=utf-8")
@@ -635,6 +645,7 @@ namespace social::server {
             if(username == "") {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
+            const std::string actor = username;
             if(!new_body.HasMember("post_id") || !new_body.HasMember("comment")) {
                 return req->create_response(restinio::status_bad_request()).done();
             }
@@ -647,6 +658,9 @@ namespace social::server {
                 int post_id = social::add_comment(comment, new_body["post_id"].GetString(), username, pool_ptr);
                 const bool can_read_secret = security::can_read_secret_posts(username, pool_ptr);
                 pqxx::result result = social::get_post(std::to_string(post_id), username, can_read_secret, pool_ptr);
+                analytics::record_event(actor, token, req->remote_endpoint().address().to_string(),
+                    req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                    "POST", "/social/comments", 200, 0, "", "{}", pool_ptr, logger_ptr);
                 return req->create_response()
                     .set_body(cp::serialize_with_shift_day(result, pool_ptr))
                     .append_header("Content-Type", "application/json; charset=utf-8")
