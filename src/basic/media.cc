@@ -326,7 +326,6 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
             .append_header(restinio::http_field::accept_ranges, "bytes")
             .append_header(restinio::http_field::content_range,
                            content_range.str())
-            .append_header("Content-Length", std::to_string(content_length))
             .set_body(restinio::sendfile(file_path).offset_and_size(
                 static_cast<restinio::file_offset_t>(range_request.range.start),
                 static_cast<restinio::file_size_t>(content_length)))
