@@ -1,5 +1,94 @@
 #include "media.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <sstream>
+
+namespace {
+
+struct ByteRange {
+  std::uintmax_t start = 0;
+  std::uintmax_t end = 0;
+};
+
+struct RangeRequest {
+  bool present = false;
+  bool valid = false;
+  ByteRange range;
+};
+
+bool parse_uintmax(const std::string &value, std::uintmax_t &result) {
+  if (value.empty()) {
+    return false;
+  }
+  try {
+    std::size_t pos = 0;
+    unsigned long long parsed = std::stoull(value, &pos, 10);
+    if (pos != value.size()) {
+      return false;
+    }
+    result = static_cast<std::uintmax_t>(parsed);
+    return true;
+  } catch (...) {
+    return false;
+  }
+}
+
+RangeRequest parse_range_header(const std::string &range_header,
+                                std::uintmax_t file_size) {
+  RangeRequest request;
+  if (range_header.empty()) {
+    return request;
+  }
+
+  request.present = true;
+  constexpr const char *prefix = "bytes=";
+  if (range_header.rfind(prefix, 0) != 0 || file_size == 0 ||
+      range_header.find(',') != std::string::npos) {
+    return request;
+  }
+
+  std::string spec = range_header.substr(std::string(prefix).size());
+  std::size_t dash = spec.find('-');
+  if (dash == std::string::npos) {
+    return request;
+  }
+
+  std::string start_part = spec.substr(0, dash);
+  std::string end_part = spec.substr(dash + 1);
+  std::uintmax_t start = 0;
+  std::uintmax_t end = 0;
+
+  if (start_part.empty()) {
+    std::uintmax_t suffix_size = 0;
+    if (!parse_uintmax(end_part, suffix_size) || suffix_size == 0) {
+      return request;
+    }
+    suffix_size = std::min(suffix_size, file_size);
+    start = file_size - suffix_size;
+    end = file_size - 1;
+  } else {
+    if (!parse_uintmax(start_part, start)) {
+      return request;
+    }
+    if (end_part.empty()) {
+      end = file_size - 1;
+    } else if (!parse_uintmax(end_part, end)) {
+      return request;
+    }
+  }
+
+  if (start >= file_size || end < start) {
+    return request;
+  }
+
+  request.valid = true;
+  request.range = {start, std::min(end, file_size - 1)};
+  return request;
+}
+
+} // namespace
+
 namespace media {
 media_cash::FileCache
     file_cache(Config::giveMe().pages_config.media_cache_size);
@@ -206,10 +295,50 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
           .set_body(Comment::giveMe().no_access)
           .done();
     }
+
+    std::string range_header;
+    try {
+      range_header = req->header().get_field("Range");
+    } catch (const std::exception &) {
+    }
+
+    std::error_code size_error;
+    std::uintmax_t file_size = std::filesystem::file_size(file_path, size_error);
+    if (!size_error) {
+      RangeRequest range_request = parse_range_header(range_header, file_size);
+      if (range_request.present && !range_request.valid) {
+        return req
+            ->create_response(restinio::status_requested_range_not_satisfiable())
+            .append_header(restinio::http_field::accept_ranges, "bytes")
+            .append_header(restinio::http_field::content_range,
+                           "bytes */" + std::to_string(file_size))
+            .done();
+      }
+      if (range_request.valid) {
+        std::uintmax_t content_length =
+            range_request.range.end - range_request.range.start + 1;
+        std::ostringstream content_range;
+        content_range << "bytes " << range_request.range.start << "-"
+                      << range_request.range.end << "/" << file_size;
+
+        return req->create_response(restinio::status_partial_content())
+            .append_header(restinio::http_field::content_type, content_type)
+            .append_header(restinio::http_field::accept_ranges, "bytes")
+            .append_header(restinio::http_field::content_range,
+                           content_range.str())
+            .append_header("Content-Length", std::to_string(content_length))
+            .set_body(restinio::sendfile(file_path).offset_and_size(
+                static_cast<restinio::file_offset_t>(range_request.range.start),
+                static_cast<restinio::file_size_t>(content_length)))
+            .done();
+      }
+    }
+
     auto file_content = media::file_cache.get_file(file_path);
     if (file_content == nullptr) {
       return req->create_response()
           .append_header(restinio::http_field::content_type, content_type)
+          .append_header(restinio::http_field::accept_ranges, "bytes")
           .set_body(restinio::sendfile(file_path))
           .done();
     } else {
@@ -218,6 +347,7 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
       });
       return req->create_response()
           .append_header(restinio::http_field::content_type, content_type)
+          .append_header(restinio::http_field::accept_ranges, "bytes")
           .set_body(std::string(file_content->begin(), file_content->end()))
           .done();
     }
