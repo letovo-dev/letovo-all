@@ -111,6 +111,8 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "gzip -dc | docker load" in workflow
     assert "docker compose -p \"$PROJECT_NAME\" -f \"$COMPOSE_FILE\" pull" not in workflow
     assert "docker image inspect \"$BACKEND_IMAGE\" >/dev/null" in workflow
+    assert "RELEASE_SHA='${{ steps.release.outputs.release_sha }}'" in workflow
+    assert 's#LETOVO_BUILD_SHA: \\".*\\"#LETOVO_BUILD_SHA: \\"${RELEASE_SHA}\\"#' in workflow
     assert "cp \"$candidate\" \"$COMPOSE_FILE\"" in workflow
     assert "Run production live e2e" in workflow
     assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
