@@ -229,7 +229,7 @@ jobs:
           set -euo pipefail
           remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
-            "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+            "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
           test -f "$COMPOSE_FILE"
           state_dir="/tmp/letovo-production-release-${RUN_ID}"
@@ -251,6 +251,7 @@ jobs:
             -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
             -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${REGISTRATION_IMAGE}#" \
             -e "s#image: .*letovo.*front.*:.*#image: ${FRONTEND_IMAGE}#" \
+            -e "s#LETOVO_BUILD_SHA: \".*\"#LETOVO_BUILD_SHA: \"${RELEASE_SHA}\"#" \
             "$COMPOSE_FILE" > "$candidate"
 
           cp "$candidate" "$COMPOSE_FILE"
