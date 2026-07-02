@@ -1245,7 +1245,7 @@
     "response": {}
   },
   "/user/:username([a-zA-Z0-9\\-]+)": {
-    "explanation": "This method retrieves user information by username. It requires a valid Bearer header or AuthSession cookie. The authenticated caller must be the same user as the requested username or an admin. Anonymous requests return 401, and authenticated callers who are neither the owner nor an admin return 403. On success it returns profile fields such as ID, rights, join time, avatar picture, activity status, visits count, department ID, role name, and registration date.",
+    "explanation": "This method retrieves public user information by username. It requires a valid Bearer header or AuthSession cookie, but any authenticated user may request any other user's public profile. Anonymous requests return 401. On success it returns public profile fields such as ID, rights, join time, avatar picture, activity status, visits count, department ID, role name, brigade data, and registration date. Private account fields such as balance, paycheck, and payment metadata are intentionally omitted; use /user/full/:username for owner/admin-only private profile data.",
     "request": {
       "function": "user_info",
       "header_fields": [
