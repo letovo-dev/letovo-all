@@ -1,4 +1,5 @@
 #include "./transactions.h"
+#include "../basic/analytics.h"
 
 namespace transactions {
 
@@ -326,6 +327,9 @@ namespace transactions::server {
                 switch (tr_id.first)
                 {
                 case TransactionStatus::Success:
+                    analytics::record_event(sender, token, req->remote_endpoint().address().to_string(),
+                        req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                        "POST", "/transactions/prepare", 200, 0, "", "{}", pool_ptr, logger_ptr);
                     return req->create_response()
                         .append_header("Content-Type", "text/plain; charset=utf-8")
                         .set_body(tr_id.second)
@@ -378,6 +382,7 @@ namespace transactions::server {
                 return req->create_response(restinio::status_unauthorized())
                 .done();
             }
+            std::string username = auth::get_username(token, pool_ptr);
 
             if (new_body.HasMember("tr_id")) {
                 std::string tr_id = new_body["tr_id"].GetString();
@@ -387,6 +392,9 @@ namespace transactions::server {
                 {
                 case TransactionStatus::Success:
                     publish_transfer_result(bus_ptr, result);
+                    analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
+                        req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                        "POST", "/transactions/send", 200, 0, "", "{}", pool_ptr, logger_ptr);
                     return req->create_response()
                         .append_header("Content-Type", "text/plain; charset=utf-8")
                         .set_body("ok")
@@ -437,6 +445,9 @@ namespace transactions::server {
             }
 
             std::string username = auth::get_username(token, pool_ptr);
+            analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
+                req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                "GET", "/transactions/balance", 200, 0, "", "{}", pool_ptr, logger_ptr);
 
             return req->create_response()
                 .append_header("Content-Type", "text/plain; charset=utf-8")
@@ -464,6 +475,9 @@ namespace transactions::server {
             }
 
             std::string username = auth::get_username(token, pool_ptr);
+            analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
+                req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                "GET", "/transactions/my", 200, 0, "", "{}", pool_ptr, logger_ptr);
 
             return req->create_response()
                 .append_header("Content-Type", "application/json; charset=utf-8")

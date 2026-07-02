@@ -1,4 +1,5 @@
 #include "./auth.h"
+#include "analytics.h"
 #include "../market/transactions.h"
 
 #include <stdexcept>
@@ -479,6 +480,9 @@ void enable_auth(
                                     : "";
         auto token =
             security::create_session(loginHeader, pool_ptr, useragent, endpoint);
+        analytics::record_event(loginHeader, token, endpoint, useragent, "POST",
+                                "/auth/login", 200, 0, "login", "{}",
+                                pool_ptr, logger_ptr);
         auto responce = req->create_response()
                             .set_body(login_body)
                             .append_header("Authorization", token)
@@ -568,6 +572,9 @@ void enable_reg(std::unique_ptr<restinio::router::express_router_t<>> &router,
                                       : "";
           auto token = security::create_session(loginHeader, pool_ptr,
                                                 useragent, endpoint);
+          analytics::record_event(loginHeader, token, endpoint, useragent,
+                                  "POST", "/auth/reg", 200, 0,
+                                  "registration", "{}", pool_ptr, logger_ptr);
           auto response_body = cp::serialize(user::user_info(loginHeader,
                                                              pool_ptr));
           logger_ptr->info([endpoint, loginHeader] {
@@ -633,6 +640,14 @@ void am_i_authed(
           return req->create_response(restinio::status_unauthorized()).done();
         }
         if (auth::is_authed(token, pool_ptr)) {
+          analytics::record_event(
+              auth::get_username(token, pool_ptr), token,
+              req->remote_endpoint().address().to_string(),
+              req->header().has_field("User-Agent")
+                  ? req->header().get_field("User-Agent")
+                  : "",
+              "GET", "/auth/amiauthed/", 200, 0, "", "{}", pool_ptr,
+              logger_ptr);
           return req->create_response(restinio::status_ok())
               .set_body("{\"status\": \"t\"}")
               .append_header("Content-Type", "application/json; charset=utf-8")

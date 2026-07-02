@@ -1,5 +1,6 @@
 #include "chat.h"
 #include "chat_ws.h"
+#include "../basic/analytics.h"
 #include "../basic/ws_event_bus.h"
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -336,6 +337,9 @@ namespace chat::server {
                 std::string response = fmt::format(
                     R"({{"message_id": {}, "sender": "{}", "receiver": "{}", "status": "sent"}})",
                     message_id, sender, receiver);
+                analytics::record_event(sender, token, req->remote_endpoint().address().to_string(),
+                    req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
+                    "POST", "/new_message", 200, 0, "", "{}", pool_ptr, logger_ptr);
                 return req->create_response()
                     .set_body(response)
                     .append_header("Content-Type", "application/json; charset=utf-8")

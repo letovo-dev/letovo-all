@@ -14,6 +14,7 @@
 
 // server functions
 #include "./basic/auth.h"
+#include "./basic/analytics.h"
 #include "./basic/config.h"
 #include "./basic/media.h"
 #include "./basic/qr_worker.h"
@@ -131,6 +132,8 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   auth::server::change_username(router, pool_ptr, logger_ptr);
   auth::server::register_true(router, pool_ptr, logger_ptr);
   auth::server::is_admin(router, pool_ptr, logger_ptr);
+
+  analytics::server::register_routes(router, pool_ptr, logger_ptr);
 
   user::server::all_avatars(router, pool_ptr, logger_ptr);
   user::server::set_avatar(router, pool_ptr, logger_ptr);

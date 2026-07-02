@@ -26,7 +26,7 @@ concurrency:
 
 env:
   BACKEND_BUILD_FILES: >-
-    basic/auth.cc basic/security.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc
+    basic/auth.cc basic/analytics.cc basic/security.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc
     basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc
     basic/media.cc basic/media_cash.cc basic/qr_worker.cc basic/ws_topic_authorizer.cc
     basic/ws_event_bus.cc basic/ws_endpoint.cc market/transactions.cc market/actives.cc
