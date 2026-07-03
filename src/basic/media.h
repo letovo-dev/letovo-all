@@ -36,6 +36,12 @@ std::vector<std::string> get_all_files(std::string path);
 bool is_secret(std::string file_name, std::string token,
                std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
+void record_public_download(const std::string &relative_filename,
+                            const std::string &content_type,
+                            std::uintmax_t file_size);
+
+std::string top_downloads_json(std::size_t limit);
+
 enum class FileStatus {
   SHARED,
   AVALUABLE,
@@ -51,6 +57,10 @@ namespace media::server {
 void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
               std::shared_ptr<cp::ConnectionsManager> pool_ptr,
               std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+void get_top_downloads(
+    std::unique_ptr<restinio::router::express_router_t<>> &router,
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
 void get_all_files(
     std::unique_ptr<restinio::router::express_router_t<>> &router,

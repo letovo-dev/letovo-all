@@ -36,7 +36,8 @@ ENV MAIN_FILE=${MAIN_FILE}
 ENV BUILD_FILES=${BUILD_FILES}
 
 # Собираем проект
-RUN mkdir build && cd build && cmake .. && make
+RUN mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j"$(nproc)"
+RUN cp /app/build/server_starter /app/server_starter && strip /app/server_starter || true
 
 # ------ Stage 2: runtime -------
 FROM ubuntu:24.04
@@ -44,12 +45,12 @@ FROM ubuntu:24.04
 # Устанавливаем только runtime-библиотеки
 RUN apt update && apt install -y \
         libfmt9 \
-        libhttp-parser-dev \
-        libpqxx-dev \
-        libpq-dev \
-        libssl-dev \
-        libqrencode-dev \
-        libpng-dev \
+        libhttp-parser2.9 \
+        libpqxx-7.8 \
+        libpq5 \
+        libssl3 \
+        libqrencode4 \
+        libpng16-16 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -57,7 +58,7 @@ WORKDIR /app
 ARG LETOVO_BUILD_SHA=unknown
 ENV LETOVO_BUILD_SHA=${LETOVO_BUILD_SHA}
 
-COPY --from=builder /app/build/server_starter .
+COPY --from=builder /app/server_starter .
 
 EXPOSE 8080
 

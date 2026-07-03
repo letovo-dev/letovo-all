@@ -172,6 +172,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
 
   social::server::get_authors_list(router, pool_ptr, logger_ptr);
   social::server::get_news(router, pool_ptr, logger_ptr);
+  social::server::get_news_related(router, pool_ptr, logger_ptr);
   social::server::get_all_posts(router, pool_ptr, logger_ptr);
   social::server::get_posts_by_author(router, pool_ptr, logger_ptr);
   social::server::get_comments(router, pool_ptr, logger_ptr);
@@ -203,6 +204,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   authors::server::get_avaluable_authors(router, pool_ptr, logger_ptr);
 
   media::server::get_file(router, pool_ptr, logger_ptr);
+  media::server::get_top_downloads(router, logger_ptr);
 
   qr::server::achivement_qr(router, pool_ptr, logger_ptr);
   qr::server::page_qr(router, pool_ptr, logger_ptr);

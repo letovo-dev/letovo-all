@@ -1,6 +1,61 @@
 #include "social.h"
 #include "../basic/analytics.h"
 
+#include <algorithm>
+#include <cctype>
+#include <sstream>
+
+namespace {
+
+bool parse_non_negative_int(const std::string& value, int& parsed) {
+    if(value.empty()) {
+        return false;
+    }
+    for(char c : value) {
+        if(!std::isdigit(static_cast<unsigned char>(c))) {
+            return false;
+        }
+    }
+    try {
+        parsed = std::stoi(value);
+        return parsed >= 0;
+    } catch(...) {
+        return false;
+    }
+}
+
+std::vector<int> parse_post_ids_csv(const std::string& raw) {
+    std::vector<int> ids;
+    std::stringstream ss(raw);
+    std::string item;
+    while(std::getline(ss, item, ',')) {
+        int id = 0;
+        if(!parse_non_negative_int(item, id)) {
+            return {};
+        }
+        ids.push_back(id);
+        if(ids.size() > 50) {
+            break;
+        }
+    }
+    std::sort(ids.begin(), ids.end());
+    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+    return ids;
+}
+
+std::string int_csv(const std::vector<int>& ids) {
+    std::string result;
+    for(int id : ids) {
+        if(!result.empty()) {
+            result += ",";
+        }
+        result += std::to_string(id);
+    }
+    return result;
+}
+
+} // namespace
+
 namespace social {
 
     bool is_leap_year(int year) {
@@ -83,6 +138,109 @@ namespace social {
         
         pool_ptr->returnConnection(std::move(con));
         return result;
+    }
+
+    std::string get_news_related(std::vector<int> post_ids, int comments_size, std::string username, bool include_secret, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        if(post_ids.empty()) {
+            return R"({"result":[]})";
+        }
+        comments_size = std::max(comments_size, 0);
+        comments_size = std::min(comments_size, 5);
+
+        const std::string ids = int_csv(post_ids);
+        const std::string visible_post_predicate = include_secret ? "true" : "p.is_secret = false";
+        const std::string visible_comment_predicate = include_secret ? "true" : "p.is_secret = false AND COALESCE(parent.is_secret, false) = false";
+
+        auto con = std::move(pool_ptr->getConnection());
+        std::vector<std::string> params = {username};
+        const std::string query = fmt::format(R"SQL(
+WITH input_ids AS (
+    SELECT unnest(ARRAY[{0}]::int[]) AS post_id
+),
+visible_posts AS (
+    SELECT p.post_id
+    FROM "posts" p
+    JOIN input_ids i ON i.post_id = p.post_id
+    WHERE p.parent_id IS NULL
+      AND p.post_path IS NULL
+      AND ({1})
+),
+media_rows AS (
+    SELECT pm.post_id::int AS post_id,
+           jsonb_agg(
+               jsonb_build_object(
+                   'media', pm.media,
+                   'is_pic', pm.is_pic,
+                   'is_secret', pm.is_secret,
+                   'post_id', pm.post_id
+               )
+               ORDER BY pm.media
+           ) AS media
+    FROM "post_media" pm
+    JOIN visible_posts vp ON vp.post_id::text = pm.post_id
+    WHERE COALESCE(pm.is_secret, false) = false
+    GROUP BY pm.post_id
+),
+comment_counts AS (
+    SELECT p.parent_id::int AS post_id, count(*)::int AS comments_count
+    FROM "posts" p
+    LEFT JOIN "posts" parent ON p.parent_id = parent.post_id
+    JOIN visible_posts vp ON vp.post_id = p.parent_id
+    WHERE p.post_path IS NULL
+      AND ({2})
+    GROUP BY p.parent_id
+),
+ranked_comments AS (
+    SELECT p.*,
+           u.avatar_pic,
+           u.display_name,
+           CASE WHEN l.username = $1 AND l.value = 1 THEN true ELSE false END AS is_liked,
+           CASE WHEN l.username = $1 AND l.value = -1 THEN true ELSE false END AS is_disliked,
+           CASE WHEN s.username IS NOT NULL THEN true ELSE false END AS saved,
+           ROW_NUMBER() OVER (PARTITION BY p.parent_id ORDER BY p.date DESC) AS rn
+    FROM "posts" p
+    LEFT JOIN "posts" parent ON p.parent_id = parent.post_id
+    LEFT JOIN "user_likes" l ON l.post_id = p.post_id AND l.username = $1
+    LEFT JOIN "user_saved" s ON p.post_id = s.post_id AND s.username = $1
+    LEFT JOIN "user" u ON p.author = u.username
+    JOIN visible_posts vp ON vp.post_id = p.parent_id
+    WHERE p.post_path IS NULL
+      AND ({2})
+),
+comment_preview AS (
+    SELECT parent_id::int AS post_id,
+           jsonb_agg(to_jsonb(ranked_comments) - 'rn' ORDER BY date DESC) AS comments
+    FROM ranked_comments
+    WHERE rn <= {3}
+    GROUP BY parent_id
+)
+SELECT jsonb_build_object(
+    'result',
+    COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'post_id', vp.post_id::text,
+                'media', COALESCE(m.media, '[]'::jsonb),
+                'comments_count', COALESCE(cc.comments_count, 0),
+                'comments', COALESCE(cp.comments, '[]'::jsonb)
+            )
+            ORDER BY array_position(ARRAY[{0}]::int[], vp.post_id)
+        ),
+        '[]'::jsonb
+    )
+)::text AS payload
+FROM visible_posts vp
+LEFT JOIN media_rows m ON m.post_id = vp.post_id
+LEFT JOIN comment_counts cc ON cc.post_id = vp.post_id
+LEFT JOIN comment_preview cp ON cp.post_id = vp.post_id;
+)SQL", ids, visible_post_predicate, visible_comment_predicate, comments_size);
+
+        pqxx::result result = con->execute_params(query, params);
+        pool_ptr->returnConnection(std::move(con));
+        if(result.empty() || result[0]["payload"].is_null()) {
+            return R"({"result":[]})";
+        }
+        return result[0]["payload"].as<std::string>();
     }
 
     // FIXME: bug select always returns empty result
@@ -293,6 +451,44 @@ namespace social::server {
                 "GET", "/social/news", 200, 0, "", "{}", pool_ptr, logger_ptr);
             return req->create_response()
                 .set_body(cp::serialize_with_segment_day(result, pool_ptr))
+                .append_header("Content-Type", "application/json; charset=utf-8")
+                .done();
+        });
+    }
+
+    void get_news_related(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_get(R"(/social/news/related:search(.*))", [pool_ptr, logger_ptr](auto req, auto) {
+            logger_ptr->trace([]{return "called /social/news/related";});
+            std::string token = security::bearer_or_cookie_token(req->header());
+            if(token.empty()) {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            std::string username = auth::get_username(token, pool_ptr);
+            if(username == "") {
+                return req->create_response(restinio::status_unauthorized()).done();
+            }
+            const auto qp = restinio::parse_query(req->header().query());
+            if(!qp.has("post_ids")) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            std::vector<int> post_ids = parse_post_ids_csv((std::string)qp["post_ids"]);
+            if(post_ids.empty()) {
+                return req->create_response(restinio::status_bad_request()).done();
+            }
+
+            int comments_size = 3;
+            if(qp.has("comments_size")) {
+                int parsed = 0;
+                if(!parse_non_negative_int((std::string)qp["comments_size"], parsed)) {
+                    return req->create_response(restinio::status_bad_request()).done();
+                }
+                comments_size = parsed;
+            }
+
+            const bool can_read_secret = security::can_read_secret_posts(username, pool_ptr);
+            return req->create_response()
+                .set_body(social::get_news_related(post_ids, comments_size, username, can_read_secret, pool_ptr))
                 .append_header("Content-Type", "application/json; charset=utf-8")
                 .done();
         });
