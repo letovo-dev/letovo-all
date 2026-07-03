@@ -34,3 +34,17 @@ def test_issue91_hot_indexes_cover_feed_comments_media_chat():
     assert "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_user_saved_username_post_id" in sql
     assert "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_direct_message_sender_receiver_time_open" in sql
     assert "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_direct_message_receiver_sender_time_open" in sql
+
+
+def test_media_cache_is_bounded_by_bytes_not_only_file_count():
+    header = read("src/basic/media_cash.h")
+    source = read("src/basic/media_cash.cc")
+
+    assert "m_max_bytes" in header
+    assert "m_max_single_file_bytes" in header
+    assert "m_current_bytes" in header
+    assert "cached_bytes" in header
+    assert "1ull << 30" not in source
+    assert "size > m_max_single_file_bytes" in source
+    assert "m_current_bytes + incoming_size > m_max_bytes" in source
+    assert "m_current_bytes -= min_it->second->size();" in source
