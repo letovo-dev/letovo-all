@@ -171,8 +171,8 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   achivements::server::calendar_day(router, pool_ptr, logger_ptr);
 
   social::server::get_authors_list(router, pool_ptr, logger_ptr);
-  social::server::get_news(router, pool_ptr, logger_ptr);
   social::server::get_news_related(router, pool_ptr, logger_ptr);
+  social::server::get_news(router, pool_ptr, logger_ptr);
   social::server::get_all_posts(router, pool_ptr, logger_ptr);
   social::server::get_posts_by_author(router, pool_ptr, logger_ptr);
   social::server::get_comments(router, pool_ptr, logger_ptr);
