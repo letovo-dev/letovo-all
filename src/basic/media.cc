@@ -310,7 +310,7 @@ std::string top_downloads_json(std::size_t limit) {
     if (emitted > 0) {
       body += ",";
     }
-    body += R"({"url":"/media/get/)";
+    body += R"({"url":"/api/media/get/)";
     body += json_escape(entry.first);
     body += R"(","bytes":)";
     body += std::to_string(entry.second.bytes);

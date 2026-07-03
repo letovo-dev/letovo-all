@@ -60,6 +60,7 @@ def test_media_top_downloads_endpoint_tracks_only_public_bounded_media():
     assert "void get_top_downloads(" in header
     assert 'R"(/media/top-downloads:search(.*))"' in source
     assert "kTopDownloadMaxFileBytes" in source
+    assert 'R"({"url":"/api/media/get/)"' in source
     assert "status == FileStatus::SHARED" in source
     assert "record_public_download(relative_filename" in source
     assert "media::server::get_top_downloads(router, logger_ptr);" in server
