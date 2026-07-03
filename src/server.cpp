@@ -204,6 +204,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   authors::server::get_avaluable_authors(router, pool_ptr, logger_ptr);
 
   media::server::get_file(router, pool_ptr, logger_ptr);
+  media::server::get_top_downloads(router, logger_ptr);
 
   qr::server::achivement_qr(router, pool_ptr, logger_ptr);
   qr::server::page_qr(router, pool_ptr, logger_ptr);

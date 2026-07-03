@@ -1,7 +1,9 @@
 #include "media.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
+#include <mutex>
 #include <sstream>
 
 namespace {
@@ -16,6 +18,56 @@ struct RangeRequest {
   bool valid = false;
   ByteRange range;
 };
+
+constexpr std::uintmax_t kTopDownloadMaxFileBytes = 300ull * 1024ull;
+constexpr std::size_t kTopDownloadDefaultLimit = 20;
+constexpr auto kTopDownloadTtl = std::chrono::hours(24);
+
+struct DownloadStat {
+  std::size_t count = 0;
+  std::uintmax_t bytes = 0;
+  std::string content_type;
+  std::chrono::steady_clock::time_point last_seen;
+};
+
+std::mutex g_download_stats_mutex;
+std::unordered_map<std::string, DownloadStat> g_download_stats;
+
+bool is_top_download_candidate(const std::string &content_type,
+                               std::uintmax_t file_size) {
+  return file_size > 0 && file_size <= kTopDownloadMaxFileBytes &&
+         (content_type.rfind("image/", 0) == 0 ||
+          content_type == "image/svg+xml");
+}
+
+void prune_download_stats_locked(std::chrono::steady_clock::time_point now) {
+  for (auto it = g_download_stats.begin(); it != g_download_stats.end();) {
+    if (now - it->second.last_seen > kTopDownloadTtl) {
+      it = g_download_stats.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+std::string json_escape(const std::string &value) {
+  std::string escaped;
+  escaped.reserve(value.size());
+  for (char c : value) {
+    switch (c) {
+    case '\\':
+      escaped += "\\\\";
+      break;
+    case '"':
+      escaped += "\\\"";
+      break;
+    default:
+      escaped += c;
+      break;
+    }
+  }
+  return escaped;
+}
 
 bool parse_uintmax(const std::string &value, std::uintmax_t &result) {
   if (value.empty()) {
@@ -207,6 +259,71 @@ bool is_secret(std::string file_name, std::string token,
     return false;
   return res[0]["is_secret"].as<bool>();
 }
+
+void record_public_download(const std::string &relative_filename,
+                            const std::string &content_type,
+                            std::uintmax_t file_size) {
+  if (!is_top_download_candidate(content_type, file_size)) {
+    return;
+  }
+
+  const auto now = std::chrono::steady_clock::now();
+  std::lock_guard<std::mutex> lock(g_download_stats_mutex);
+  prune_download_stats_locked(now);
+  auto &stat = g_download_stats[relative_filename];
+  stat.count += 1;
+  stat.bytes = file_size;
+  stat.content_type = content_type;
+  stat.last_seen = now;
+}
+
+std::string top_downloads_json(std::size_t limit) {
+  if (limit == 0) {
+    limit = kTopDownloadDefaultLimit;
+  }
+  limit = std::min<std::size_t>(limit, 50);
+
+  const auto now = std::chrono::steady_clock::now();
+  std::vector<std::pair<std::string, DownloadStat>> items;
+  {
+    std::lock_guard<std::mutex> lock(g_download_stats_mutex);
+    prune_download_stats_locked(now);
+    items.reserve(g_download_stats.size());
+    for (const auto &entry : g_download_stats) {
+      items.push_back(entry);
+    }
+  }
+
+  std::sort(items.begin(), items.end(), [](const auto &a, const auto &b) {
+    if (a.second.count == b.second.count) {
+      return a.first < b.first;
+    }
+    return a.second.count > b.second.count;
+  });
+
+  std::string body = R"({"result":[)";
+  std::size_t emitted = 0;
+  for (const auto &entry : items) {
+    if (emitted >= limit) {
+      break;
+    }
+    if (emitted > 0) {
+      body += ",";
+    }
+    body += R"({"url":"/media/get/)";
+    body += json_escape(entry.first);
+    body += R"(","bytes":)";
+    body += std::to_string(entry.second.bytes);
+    body += R"(,"content_type":")";
+    body += json_escape(entry.second.content_type);
+    body += R"(","count":)";
+    body += std::to_string(entry.second.count);
+    body += "}";
+    emitted += 1;
+  }
+  body += "]}";
+  return body;
+}
 } // namespace media
 
 namespace media::server {
@@ -305,6 +422,10 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
     std::error_code size_error;
     std::uintmax_t file_size = std::filesystem::file_size(file_path, size_error);
     if (!size_error) {
+      if (status == FileStatus::SHARED) {
+        media::record_public_download(relative_filename, content_type, file_size);
+      }
+
       RangeRequest range_request = parse_range_header(range_header, file_size);
       if (range_request.present && !range_request.valid) {
         return req
@@ -324,6 +445,7 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
         return req->create_response(restinio::status_partial_content())
             .append_header(restinio::http_field::content_type, content_type)
             .append_header(restinio::http_field::accept_ranges, "bytes")
+            .append_header(restinio::http_field::cache_control, "public, max-age=86400")
             .append_header(restinio::http_field::content_range,
                            content_range.str())
             .set_body(restinio::sendfile(file_path).offset_and_size(
@@ -338,6 +460,7 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
       return req->create_response()
           .append_header(restinio::http_field::content_type, content_type)
           .append_header(restinio::http_field::accept_ranges, "bytes")
+          .append_header(restinio::http_field::cache_control, "public, max-age=86400")
           .set_body(restinio::sendfile(file_path))
           .done();
     } else {
@@ -347,9 +470,33 @@ void get_file(std::unique_ptr<restinio::router::express_router_t<>> &router,
       return req->create_response()
           .append_header(restinio::http_field::content_type, content_type)
           .append_header(restinio::http_field::accept_ranges, "bytes")
+          .append_header(restinio::http_field::cache_control, "public, max-age=86400")
           .set_body(std::string(file_content->begin(), file_content->end()))
           .done();
     }
+  });
+}
+
+void get_top_downloads(
+    std::unique_ptr<restinio::router::express_router_t<>> &router,
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+  router.get()->http_get(R"(/media/top-downloads:search(.*))", [logger_ptr](auto req, auto) {
+    logger_ptr->trace([] { return "called /media/top-downloads"; });
+    const auto qp = restinio::parse_query(req->header().query());
+    std::size_t limit = kTopDownloadDefaultLimit;
+    if (qp.has("limit")) {
+      try {
+        limit = static_cast<std::size_t>(std::stoul((std::string)qp["limit"]));
+      } catch (...) {
+        return req->create_response(restinio::status_bad_request()).done();
+      }
+    }
+
+    return req->create_response()
+        .append_header("Content-Type", "application/json; charset=utf-8")
+        .append_header(restinio::http_field::cache_control, "public, max-age=900")
+        .set_body(media::top_downloads_json(limit))
+        .done();
   });
 }
 } // namespace media::server

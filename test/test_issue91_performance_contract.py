@@ -48,3 +48,18 @@ def test_media_cache_is_bounded_by_bytes_not_only_file_count():
     assert "size > m_max_single_file_bytes" in source
     assert "m_current_bytes + incoming_size > m_max_bytes" in source
     assert "m_current_bytes -= min_it->second->size();" in source
+
+
+def test_media_top_downloads_endpoint_tracks_only_public_bounded_media():
+    header = read("src/basic/media.h")
+    source = read("src/basic/media.cc")
+    server = read("src/server.cpp")
+
+    assert "record_public_download" in header
+    assert "top_downloads_json" in header
+    assert "void get_top_downloads(" in header
+    assert 'R"(/media/top-downloads:search(.*))"' in source
+    assert "kTopDownloadMaxFileBytes" in source
+    assert "status == FileStatus::SHARED" in source
+    assert "record_public_download(relative_filename" in source
+    assert "media::server::get_top_downloads(router, logger_ptr);" in server
