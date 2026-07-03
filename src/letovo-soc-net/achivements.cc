@@ -1,4 +1,5 @@
 #include "achivements.h"
+#include "../basic/security.h"
 
 namespace achivements {
     pqxx::result full_user_achivements(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
@@ -421,8 +422,9 @@ namespace achivements::server {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 
-            if (!auth::is_admin(token, pool_ptr) && !auth::is_rights_by_username(auth::get_username(token, pool_ptr), pool_ptr, "moder")) {
-                logger_ptr->info([]{return "not admin";});
+            const std::string actor = auth::get_username(token, pool_ptr);
+            if (!security::can_award_achievements(actor, pool_ptr)) {
+                logger_ptr->info([]{return "not allowed to award achievements";});
                 return req->create_response(restinio::status_unauthorized()).done();
             }
 

@@ -52,6 +52,8 @@ bool is_same_user_or_admin(const std::string &requester_username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool can_read_secret_posts(const std::string &username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+bool can_award_achievements(const std::string &username,
+                            std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 std::string create_post_reveal_token(
     int post_id, const std::string &created_by,
     std::shared_ptr<cp::ConnectionsManager> pool_ptr);
