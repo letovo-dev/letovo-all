@@ -597,7 +597,7 @@ namespace social::server {
     }
 
     void get_posts_by_author(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/social/posts/author/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_get(R"(/social/posts/author/:username([a-zA-Z0-9_\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
             logger_ptr->trace([]{return "called /social/posts/author/:username";});
             std::string token = security::bearer_or_cookie_token(req->header());
             if(token.empty()) {
