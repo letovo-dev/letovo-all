@@ -1,7 +1,9 @@
 #include "pqxx_cp.h"
 
+#include <chrono>
 #include <cstdio>
 #include <ctime>
+#include <mutex>
 #include <string_view>
 
 namespace {
@@ -59,6 +61,18 @@ struct CampShift {
     time_t start;
     time_t end;
 };
+
+constexpr auto kMetadataCacheTtl = std::chrono::seconds(60);
+
+struct MetadataCache {
+    std::vector<CalendarSegment> calendar;
+    std::vector<CampShift> shifts;
+    std::chrono::steady_clock::time_point calendar_loaded_at{};
+    std::chrono::steady_clock::time_point shifts_loaded_at{};
+};
+
+MetadataCache g_metadata_cache;
+std::mutex g_metadata_cache_mutex;
 
 // Parse PostgreSQL timestamp "YYYY-MM-DD HH:MM:SS"
 time_t parse_pg_timestamp(const std::string &s) {
@@ -123,6 +137,64 @@ ShiftInfo compute_shift_info(time_t dt, const std::vector<CampShift> &shifts) {
         }
     }
     return {};
+}
+
+std::vector<CampShift> get_cached_shifts(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+    const auto now = std::chrono::steady_clock::now();
+    {
+        std::lock_guard<std::mutex> lock(g_metadata_cache_mutex);
+        if (!g_metadata_cache.shifts.empty() &&
+            now - g_metadata_cache.shifts_loaded_at < kMetadataCacheTtl) {
+            return g_metadata_cache.shifts;
+        }
+    }
+
+    std::vector<CampShift> shifts;
+    cp::SafeCon con{pool_ptr};
+    pqxx::result shift_rows = con->execute(
+        R"(SELECT name, start_date, end_date FROM "camp_dates" ORDER BY start_date)");
+
+    for (const auto &row : shift_rows) {
+        CampShift shift;
+        shift.name = row["name"].as<std::string>();
+        shift.start = parse_pg_timestamp(row["start_date"].as<std::string>());
+        shift.end = parse_pg_timestamp(row["end_date"].as<std::string>());
+        shifts.push_back(std::move(shift));
+    }
+
+    std::lock_guard<std::mutex> lock(g_metadata_cache_mutex);
+    g_metadata_cache.shifts = shifts;
+    g_metadata_cache.shifts_loaded_at = now;
+    return g_metadata_cache.shifts;
+}
+
+std::vector<CalendarSegment> get_cached_calendar(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+    const auto now = std::chrono::steady_clock::now();
+    {
+        std::lock_guard<std::mutex> lock(g_metadata_cache_mutex);
+        if (!g_metadata_cache.calendar.empty() &&
+            now - g_metadata_cache.calendar_loaded_at < kMetadataCacheTtl) {
+            return g_metadata_cache.calendar;
+        }
+    }
+
+    std::vector<CalendarSegment> calendar;
+    cp::SafeCon con{pool_ptr};
+    pqxx::result cal = con->execute(
+        R"(SELECT chapter, start, "end" FROM "calendar" ORDER BY start)");
+
+    for (const auto &row : cal) {
+        CalendarSegment seg;
+        seg.chapter = row["chapter"].as<std::string>();
+        seg.start = parse_pg_timestamp(row["start"].as<std::string>());
+        seg.end = parse_pg_timestamp(row["end"].as<std::string>());
+        calendar.push_back(std::move(seg));
+    }
+
+    std::lock_guard<std::mutex> lock(g_metadata_cache_mutex);
+    g_metadata_cache.calendar = calendar;
+    g_metadata_cache.calendar_loaded_at = now;
+    return g_metadata_cache.calendar;
 }
 
 } // namespace
@@ -193,23 +265,9 @@ std::string serialize_with_shift_day(const pqxx::result &res, std::shared_ptr<Co
   }
 
   std::vector<CampShift> shifts;
-  auto con = std::move(pool_ptr->getConnection());
   try {
-    pqxx::result shift_rows = con->execute(
-        R"(SELECT name, start_date, end_date FROM "camp_dates" ORDER BY start_date)");
-    pool_ptr->returnConnection(std::move(con));
-
-    for (const auto &row : shift_rows) {
-      CampShift shift;
-      shift.name = row["name"].as<std::string>();
-      shift.start = parse_pg_timestamp(row["start_date"].as<std::string>());
-      shift.end = parse_pg_timestamp(row["end_date"].as<std::string>());
-      shifts.push_back(std::move(shift));
-    }
+    shifts = get_cached_shifts(pool_ptr);
   } catch (...) {
-    if (con) {
-      pool_ptr->returnConnection(std::move(con));
-    }
     return serialize(res);
   }
 
@@ -265,35 +323,12 @@ std::string serialize_with_segment_day(const pqxx::result &res, std::shared_ptr<
     return serialize(res);
   }
 
-  // Fetch all calendar segments once
   std::vector<CalendarSegment> calendar;
   std::vector<CampShift> shifts;
-  auto con = std::move(pool_ptr->getConnection());
   try {
-    pqxx::result cal = con->execute(
-        R"(SELECT chapter, start, "end" FROM "calendar" ORDER BY start)");
-    pqxx::result shift_rows = con->execute(
-        R"(SELECT name, start_date, end_date FROM "camp_dates" ORDER BY start_date)");
-    pool_ptr->returnConnection(std::move(con));
-
-    for (const auto &row : cal) {
-      CalendarSegment seg;
-      seg.chapter = row["chapter"].as<std::string>();
-      seg.start = parse_pg_timestamp(row["start"].as<std::string>());
-      seg.end = parse_pg_timestamp(row["end"].as<std::string>());
-      calendar.push_back(std::move(seg));
-    }
-    for (const auto &row : shift_rows) {
-      CampShift shift;
-      shift.name = row["name"].as<std::string>();
-      shift.start = parse_pg_timestamp(row["start_date"].as<std::string>());
-      shift.end = parse_pg_timestamp(row["end_date"].as<std::string>());
-      shifts.push_back(std::move(shift));
-    }
+    calendar = get_cached_calendar(pool_ptr);
+    shifts = get_cached_shifts(pool_ptr);
   } catch (...) {
-    if (con) {
-      pool_ptr->returnConnection(std::move(con));
-    }
     return serialize_with_shift_day(res, pool_ptr);
   }
 

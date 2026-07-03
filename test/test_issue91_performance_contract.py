@@ -63,3 +63,15 @@ def test_media_top_downloads_endpoint_tracks_only_public_bounded_media():
     assert "status == FileStatus::SHARED" in source
     assert "record_public_download(relative_filename" in source
     assert "media::server::get_top_downloads(router, logger_ptr);" in server
+
+
+def test_serializer_metadata_uses_short_ttl_cache():
+    source = read("src/basic/pqxx_cp.cc")
+
+    assert "kMetadataCacheTtl" in source
+    assert "MetadataCache" in source
+    assert "get_cached_shifts" in source
+    assert "get_cached_calendar" in source
+    assert 'SELECT name, start_date, end_date FROM "camp_dates"' in source
+    assert 'SELECT chapter, start, "end" FROM "calendar"' in source
+    assert "std::lock_guard<std::mutex> lock(g_metadata_cache_mutex);" in source
