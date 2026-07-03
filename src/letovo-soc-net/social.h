@@ -29,6 +29,8 @@ namespace social {
         
     pqxx::result get_post_media(std::string post_id, bool pics, bool include_secret, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
+    std::string get_news_related(std::vector<int> post_ids, int comments_size, std::string username, bool include_secret, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
     pqxx::result get_all_titles(bool include_secret, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     pqxx::result get_post(std::string post_id, std::string usenrame, bool include_secret, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
@@ -56,6 +58,8 @@ namespace social::server {
     void get_authors_list(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void get_news(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    void get_news_related(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void get_comments(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
