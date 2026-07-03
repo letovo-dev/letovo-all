@@ -75,3 +75,15 @@ def test_serializer_metadata_uses_short_ttl_cache():
     assert 'SELECT name, start_date, end_date FROM "camp_dates"' in source
     assert 'SELECT chapter, start, "end" FROM "calendar"' in source
     assert "std::lock_guard<std::mutex> lock(g_metadata_cache_mutex);" in source
+
+
+def test_runtime_image_and_compose_limit_disk_pressure():
+    dockerfile = read("src/Dockerfile")
+    compose = read("docs/docker-compose.yaml")
+
+    assert "cmake -DCMAKE_BUILD_TYPE=Release .." in dockerfile
+    assert "strip /app/server_starter" in dockerfile
+    assert "libpqxx-7.8" in dockerfile or "libpqxx-" in dockerfile
+    assert "libpqxx-dev" not in dockerfile.split("# ------ Stage 2: runtime -------", 1)[1]
+    assert compose.count('max-size: "100m"') >= 5
+    assert "--interval 300" in compose

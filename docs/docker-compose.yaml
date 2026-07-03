@@ -11,6 +11,11 @@ services:
           - /mnt/server-configs:/app/configs
         labels:
           - "com.centurylinklabs.watchtower.enable=true"
+        logging:
+          driver: json-file
+          options:
+            max-size: "100m"
+            max-file: "5"
 
     letovo-registration-server:
         image: ghcr.io/letovo-dev/letovo-registration-server:latest
@@ -25,6 +30,11 @@ services:
           - /mnt/server-configs:/app/configs
         labels:
           - "com.centurylinklabs.watchtower.enable=false"
+        logging:
+          driver: json-file
+          options:
+            max-size: "100m"
+            max-file: "5"
 
     watchtower:
         image: containrrr/watchtower
@@ -32,7 +42,12 @@ services:
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
           - /home/sergei-scv/.docker/config.json:/config.json:ro
-        command: --interval 60 --cleanup --include-restarting --label-enable
+        command: --interval 300 --cleanup --include-restarting --label-enable
+        logging:
+          driver: json-file
+          options:
+            max-size: "100m"
+            max-file: "5"
 
     letovo-front:
         image: ghcr.io/letovo-dev/letovo-all-frontend:latest
@@ -65,6 +80,11 @@ services:
           - /mnt/server-media:/app/pages
         ports:
           - "8880:8880"
+        logging:
+          driver: json-file
+          options:
+            max-size: "100m"
+            max-file: "5"
 
     keycloak:
         image: quay.io/keycloak/keycloak:26.0
@@ -85,3 +105,8 @@ services:
             KEYCLOAK_ADMIN_PASSWORD: admin
         ports:
           - "8081:8080"
+        logging:
+          driver: json-file
+          options:
+            max-size: "100m"
+            max-file: "5"
