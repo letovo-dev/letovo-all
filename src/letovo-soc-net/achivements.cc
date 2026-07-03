@@ -327,7 +327,7 @@ namespace achivements {
 
 namespace achivements::server {
     void user_achivements_by_department(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/achivements/user/departments/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_get(R"(/achivements/user/departments/:username([a-zA-Z0-9_\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
             logger_ptr->trace([] { return "called /achivements/user/departments/:username"; });
             auto qrl = req->header().path();
 
@@ -351,7 +351,7 @@ namespace achivements::server {
     }
 
     void user_achivemets(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/achivements/user/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_get(R"(/achivements/user/:username([a-zA-Z0-9_\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
             logger_ptr->trace([]{return "called /achivements/user/:username";});
             auto qrl = req->header().path();
 
@@ -373,7 +373,7 @@ namespace achivements::server {
     }
 
     void full_user_achivemets(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
-        router.get()->http_get(R"(/achivements/user/full/:username([a-zA-Z0-9\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
+        router.get()->http_get(R"(/achivements/user/full/:username([a-zA-Z0-9_\-]+))", [pool_ptr, logger_ptr](auto req, auto) {
             logger_ptr->trace([]{return "called /achivements/user/full/:username";});
             auto qrl = req->header().path();
 
