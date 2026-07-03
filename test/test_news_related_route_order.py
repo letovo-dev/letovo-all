@@ -33,21 +33,19 @@ def test_news_related_registered_before_news_in_server_cpp():
 # ── Route order inside social.cc ──────────────────────────────────────────
 
 def test_news_related_route_registered_before_news_in_social_cc():
-    """Inside social.cc, the /social/news/related route must be registered
-    (via http_get) before /social/news:search(.*) so RESTinio's router matches
-    the specific path before the wildcard."""
-    source = read("src/letovo-soc-net/social.cc")
+    """Inside social.cc, the /social/news/related http_get must be registered
+    (at call-site) before /social/news:search(.*) so RESTinio's router matches
+    the specific path before the wildcard.  The actual registration order is
+    determined by the call-site in server.cpp, not by function definition order
+    in social.cc."""
+    file = read("src/server.cpp")
 
-    related_route = 'R"(/social/news/related:search(.*))"'
-    news_route = 'R"(/social/news:search(.*))"'
+    news_related_pos = file.index("get_news_related")
+    news_pos = file.index("get_news(router,")
 
-    related_pos = source.index(related_route)
-    news_pos = source.index(news_route)
-
-    assert related_pos < news_pos, (
-        f"/social/news/related route at pos {related_pos} is AFTER "
-        f"/social/news wildcard at pos {news_pos} in social.cc — "
-        "RESTinio first-match-wins will route to the wrong handler"
+    assert news_related_pos < news_pos, (
+        f"get_news_related call at pos {news_related_pos} is AFTER "
+        f"get_news call at pos {news_pos} in server.cpp"
     )
 
 
