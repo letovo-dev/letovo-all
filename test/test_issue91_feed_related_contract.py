@@ -31,3 +31,10 @@ def test_news_related_endpoint_uses_bounded_comment_preview():
     assert "comments_size = std::min(comments_size, 5);" in source
     assert "comments_size = std::max(comments_size, 0);" in source
     assert "rn <= " in source
+
+
+def test_news_related_endpoint_omits_null_media_paths():
+    source = read("src/letovo-soc-net/social.cc")
+
+    assert "pm.media IS NOT NULL" in source
+    assert "COALESCE(m.media, '[]'::jsonb)" in source

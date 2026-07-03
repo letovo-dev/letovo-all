@@ -179,6 +179,7 @@ media_rows AS (
     FROM "post_media" pm
     JOIN visible_posts vp ON vp.post_id::text = pm.post_id
     WHERE COALESCE(pm.is_secret, false) = false
+      AND pm.media IS NOT NULL
     GROUP BY pm.post_id
 ),
 comment_counts AS (
