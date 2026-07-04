@@ -65,3 +65,17 @@ def test_transactions_require_active_users():
     assert transaction_source.count("transactions::can_use_transactions(username, pool_ptr)") >= 3
     assert "can_use_transactions(transaction->sender, pool_ptr)" in transaction_source
     assert "can_use_transactions(transaction->receiver, pool_ptr)" in transaction_source
+
+
+def test_admin_sender_bypasses_transaction_recipient_restrictions():
+    repo_root = Path(__file__).resolve().parents[1]
+    transaction_source = (repo_root / "src/market/transactions.cc").read_text()
+
+    assert "bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);" in transaction_source
+    assert "const bool sender_is_admin = auth::is_rights_by_username(sender, pool_ptr);" in transaction_source
+    assert "if (!sender_is_admin &&\n            (!can_use_transactions(transaction->sender, pool_ptr) ||" in transaction_source
+    assert "if (!sender_is_admin && !can_receive_transfer(transaction->receiver, pool_ptr))" in transaction_source
+    assert "if (!sender_is_admin && !can_use_transactions(sender, pool_ptr))" in transaction_source
+    assert "if (!sender_is_admin && !can_use_transactions(reciver, pool_ptr))" in transaction_source
+    assert "if (!sender_is_admin && !can_receive_transfer(reciver, pool_ptr))" in transaction_source
+    assert transaction_source.count("if (!sender_is_admin && !transactions::can_use_transactions(") >= 2
