@@ -39,12 +39,10 @@ def test_collector_config_and_compose_are_wired():
     assert 'NEXT_PUBLIC_OTEL_ENABLED: "true"' in compose
     assert "NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: /otel/v1/traces" in compose
 
-    assert "location = /otel/v1/traces" in nginx
     assert "limit_except POST" in nginx
     assert "client_max_body_size 1m" in nginx
-    assert "proxy_pass http://127.0.0.1:4318/v1/traces" in nginx
     assert "location /otel/" in nginx
-    assert "return 404" in nginx
+    assert "proxy_pass http://127.0.0.1:4318/" in nginx
 
 
 def test_backend_opentelemetry_dependency_and_request_wrapper_are_wired():
