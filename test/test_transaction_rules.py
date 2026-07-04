@@ -32,3 +32,20 @@ def test_admin_negative_transaction_ignores_receiver_balance(tmp_path):
         check=True,
     )
     subprocess.run([str(binary)], check=True)
+
+
+def test_whireable_role_is_required_for_transfer_recipient():
+    repo_root = Path(__file__).resolve().parents[1]
+    auth_source = (repo_root / "src/basic/auth.cc").read_text()
+    transaction_source = (repo_root / "src/market/transactions.cc").read_text()
+    transaction_header = (repo_root / "src/market/transactions.h").read_text()
+    schema = (repo_root / "docs/schema.sql").read_text()
+    migration = (repo_root / "docs/whireable_role_migration.sql").read_text()
+
+    assert '"whireable"' in auth_source
+    assert "bool can_receive_transfer" in transaction_header
+    assert 'auth::is_rights_by_username(username, pool_ptr, "whireable")' in transaction_source
+    assert "TransactionStatus::NotReceiver" in transaction_source
+    assert "receiver is not whireable" in transaction_source
+    assert "whireable boolean DEFAULT false" in schema
+    assert "ADD COLUMN IF NOT EXISTS whireable boolean DEFAULT false" in migration

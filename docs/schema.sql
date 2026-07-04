@@ -680,7 +680,8 @@ CREATE TABLE public.role (
     write_posts boolean,
     admin boolean,
     moder boolean,
-    main_page boolean
+    main_page boolean,
+    whireable boolean DEFAULT false
 );
 
 
@@ -1496,4 +1497,3 @@ CREATE INDEX idx_message_attachments_message_id ON public.message_attachments(me
 --
 
 \unrestrict DcZgZcQEi4f3bvxPbX2ujwdl1hqpF6E4scmb22IrRXAOOfLe0MsHhy1DhNbFZEJ
-

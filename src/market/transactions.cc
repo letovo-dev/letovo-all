@@ -65,6 +65,10 @@ namespace transactions {
         return result[0]["balance"].as<int>();
     }
 
+    bool can_receive_transfer(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        return auth::is_rights_by_username(username, pool_ptr, "whireable");
+    }
+
 
     TransferResult transfer_with_result(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         TransferResult result;
@@ -77,6 +81,11 @@ namespace transactions {
         result.sender = transaction->sender;
         result.receiver = transaction->receiver;
         result.amount = amount;
+
+        if (!can_receive_transfer(transaction->receiver, pool_ptr)) {
+            result.status = TransactionStatus::NotReceiver;
+            return result;
+        }
 
         int balance = get_balance(transaction->sender, pool_ptr);
         bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);
@@ -223,6 +232,9 @@ namespace transactions {
         if (r.empty()) {
             return {TransactionStatus::WrongId, ""};
         }
+        if (!can_receive_transfer(reciver, pool_ptr)) {
+            return {TransactionStatus::NotReceiver, ""};
+        }
         
         return {registered_transactions.add_transaction(tr_id, std::make_shared<TransactionDetails>(sender, reciver, std::to_string(ammount))), tr_id};
     }
@@ -347,6 +359,12 @@ namespace transactions::server {
                         .set_body("wrong username")
                     .done();
                     break;
+                case TransactionStatus::NotReceiver:
+                    return req->create_response(restinio::status_not_acceptable())
+                        .append_header("Content-Type", "text/plain; charset=utf-8")
+                        .set_body("receiver is not whireable")
+                    .done();
+                    break;
                 case TransactionStatus::Error:
                 default:
                     break;
@@ -410,6 +428,12 @@ namespace transactions::server {
                     return req->create_response(restinio::status_not_acceptable())
                         .append_header("Content-Type", "text/plain; charset=utf-8")
                         .set_body("wrong id")
+                    .done();
+                    break;
+                case TransactionStatus::NotReceiver:
+                    return req->create_response(restinio::status_not_acceptable())
+                        .append_header("Content-Type", "text/plain; charset=utf-8")
+                        .set_body("receiver is not whireable")
                     .done();
                     break;
                 case TransactionStatus::Error:
