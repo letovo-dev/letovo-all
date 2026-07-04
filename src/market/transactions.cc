@@ -65,6 +65,10 @@ namespace transactions {
         return result[0]["balance"].as<int>();
     }
 
+    bool can_use_transactions(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        return auth::is_active(username, pool_ptr);
+    }
+
     bool can_receive_transfer(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         return auth::is_rights_by_username(username, pool_ptr, "whireable");
     }
@@ -81,6 +85,12 @@ namespace transactions {
         result.sender = transaction->sender;
         result.receiver = transaction->receiver;
         result.amount = amount;
+
+        if (!can_use_transactions(transaction->sender, pool_ptr) ||
+            !can_use_transactions(transaction->receiver, pool_ptr)) {
+            result.status = TransactionStatus::InactiveUser;
+            return result;
+        }
 
         if (!can_receive_transfer(transaction->receiver, pool_ptr)) {
             result.status = TransactionStatus::NotReceiver;
@@ -207,6 +217,9 @@ namespace transactions {
     }
 
     std::pair<TransactionStatus, std::string> prepare_transaction(std::string sender, std::string reciver, int ammount, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        if (!can_use_transactions(sender, pool_ptr)) {
+            return {TransactionStatus::InactiveUser, ""};
+        }
         int balance = get_balance(sender, pool_ptr);
         bool sender_is_admin = auth::is_rights_by_username(sender, pool_ptr);
         if (!sender_is_admin && ammount < 0) {
@@ -231,6 +244,9 @@ namespace transactions {
         pool_ptr->returnConnection(std::move(con));
         if (r.empty()) {
             return {TransactionStatus::WrongId, ""};
+        }
+        if (!can_use_transactions(reciver, pool_ptr)) {
+            return {TransactionStatus::InactiveUser, ""};
         }
         if (!can_receive_transfer(reciver, pool_ptr)) {
             return {TransactionStatus::NotReceiver, ""};
@@ -321,6 +337,12 @@ namespace transactions::server {
 
             if (new_body.HasMember("receiver") && new_body.HasMember("amount")) {
                 std::string sender = auth::get_username(token, pool_ptr);
+                if (!transactions::can_use_transactions(sender, pool_ptr)) {
+                    return req->create_response(restinio::status_forbidden())
+                        .append_header("Content-Type", "text/plain; charset=utf-8")
+                        .set_body("user is not active")
+                    .done();
+                }
                 std::string receiver = new_body["receiver"].GetString();
                 if(auth::is_user(receiver, pool_ptr) == false) {
                     return req->create_response(restinio::status_not_acceptable())
@@ -365,6 +387,12 @@ namespace transactions::server {
                         .set_body("receiver is not whireable")
                     .done();
                     break;
+                case TransactionStatus::InactiveUser:
+                    return req->create_response(restinio::status_forbidden())
+                        .append_header("Content-Type", "text/plain; charset=utf-8")
+                        .set_body("user is not active")
+                    .done();
+                    break;
                 case TransactionStatus::Error:
                 default:
                     break;
@@ -401,6 +429,12 @@ namespace transactions::server {
                 .done();
             }
             std::string username = auth::get_username(token, pool_ptr);
+            if (!transactions::can_use_transactions(username, pool_ptr)) {
+                return req->create_response(restinio::status_forbidden())
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("user is not active")
+                .done();
+            }
 
             if (new_body.HasMember("tr_id")) {
                 std::string tr_id = new_body["tr_id"].GetString();
@@ -436,6 +470,12 @@ namespace transactions::server {
                         .set_body("receiver is not whireable")
                     .done();
                     break;
+                case TransactionStatus::InactiveUser:
+                    return req->create_response(restinio::status_forbidden())
+                        .append_header("Content-Type", "text/plain; charset=utf-8")
+                        .set_body("user is not active")
+                    .done();
+                    break;
                 case TransactionStatus::Error:
                 default:
                     return req->create_response(restinio::status_internal_server_error())
@@ -469,6 +509,12 @@ namespace transactions::server {
             }
 
             std::string username = auth::get_username(token, pool_ptr);
+            if (!transactions::can_use_transactions(username, pool_ptr)) {
+                return req->create_response(restinio::status_forbidden())
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("user is not active")
+                .done();
+            }
             analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
                 req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
                 "GET", "/transactions/balance", 200, 0, "", "{}", pool_ptr, logger_ptr);
@@ -499,6 +545,12 @@ namespace transactions::server {
             }
 
             std::string username = auth::get_username(token, pool_ptr);
+            if (!transactions::can_use_transactions(username, pool_ptr)) {
+                return req->create_response(restinio::status_forbidden())
+                    .append_header("Content-Type", "text/plain; charset=utf-8")
+                    .set_body("user is not active")
+                .done();
+            }
             analytics::record_event(username, token, req->remote_endpoint().address().to_string(),
                 req->header().has_field("User-Agent") ? req->header().get_field("User-Agent") : "",
                 "GET", "/transactions/my", 200, 0, "", "{}", pool_ptr, logger_ptr);
