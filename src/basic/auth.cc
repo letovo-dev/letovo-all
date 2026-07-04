@@ -2,7 +2,9 @@
 #include "analytics.h"
 #include "../market/transactions.h"
 
+#include <regex>
 #include <stdexcept>
+#include <sstream>
 
 namespace {
 
@@ -69,6 +71,116 @@ bool auth_migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   return password_metadata_columns_exist(pool_ptr) &&
          user_sessions_columns_exist(pool_ptr) &&
          post_reveal_tokens_columns_exist(pool_ptr);
+}
+
+const std::regex kAdminUsernameRegex("^[A-Za-z0-9_-]{4,32}$");
+
+bool json_bool_or_default(const rapidjson::Value &object, const char *field,
+                          bool fallback) {
+  if (!object.IsObject() || !object.HasMember(field)) {
+    return fallback;
+  }
+  return object[field].IsBool() ? object[field].GetBool() : fallback;
+}
+
+std::string json_string_or_default(const rapidjson::Value &object,
+                                   const char *field,
+                                   const std::string &fallback = "") {
+  if (!object.IsObject() || !object.HasMember(field)) {
+    return fallback;
+  }
+  return object[field].IsString() ? object[field].GetString() : fallback;
+}
+
+int json_int_or_default(const rapidjson::Value &object, const char *field,
+                        int fallback) {
+  if (!object.IsObject() || !object.HasMember(field)) {
+    return fallback;
+  }
+  return object[field].IsInt() ? object[field].GetInt() : fallback;
+}
+
+bool parse_admin_create_user_request(const rapidjson::Document &body,
+                                     auth::AdminCreateUserRequest &request) {
+  if (!body.IsObject()) {
+    return false;
+  }
+
+  request.username = json_string_or_default(body, "username");
+  request.display_name =
+      json_string_or_default(body, "display_name", request.username);
+  request.password = json_string_or_default(body, "password");
+  request.userrights = json_string_or_default(body, "userrights", "user");
+  request.role_id = json_int_or_default(body, "role_id", 0);
+  request.active = json_bool_or_default(body, "active", true);
+  request.registered = json_bool_or_default(body, "registered", true);
+  request.chattable = json_bool_or_default(body, "chattable", false);
+
+  if (body.HasMember("role_rights") && body["role_rights"].IsObject()) {
+    const auto &rights = body["role_rights"];
+    request.role_rights.write_posts =
+        json_bool_or_default(rights, "write_posts", false);
+    request.role_rights.admin = json_bool_or_default(rights, "admin", false);
+    request.role_rights.moder = json_bool_or_default(rights, "moder", false);
+    request.role_rights.main_page =
+        json_bool_or_default(rights, "main_page", false);
+  }
+
+  return true;
+}
+
+std::string validate_admin_create_user_request(
+    const auth::AdminCreateUserRequest &request) {
+  if (!std::regex_match(request.username, kAdminUsernameRegex)) {
+    return "username must match ^[A-Za-z0-9_-]{4,32}$";
+  }
+  if (request.password.size() < 8) {
+    return "password must contain at least 8 characters";
+  }
+  if (request.role_id <= 0) {
+    return "role_id must be a positive integer";
+  }
+  if (request.userrights != "user" && request.userrights != "moder" &&
+      request.userrights != "public_author" && request.userrights != "admin") {
+    return "userrights must be user, moder, public_author, or admin";
+  }
+  return "";
+}
+
+std::string json_escape_for_auth_response(const std::string &value) {
+  std::string escaped;
+  escaped.reserve(value.size() + 8);
+  for (char ch : value) {
+    if (ch == '\\') {
+      escaped += "\\\\";
+    } else if (ch == '"') {
+      escaped += "\\\"";
+    } else if (ch == '\n') {
+      escaped += "\\n";
+    } else if (ch == '\r') {
+      escaped += "\\r";
+    } else {
+      escaped += ch;
+    }
+  }
+  return escaped;
+}
+
+std::string admin_create_user_result_json(
+    const auth::AdminCreateUserResult &created) {
+  return fmt::format(
+      R"({{"result":[{{"username":"{}","display_name":"{}","userrights":"{}","role_id":{},"active":{},"registered":{},"chattable":{}}}]}})",
+      json_escape_for_auth_response(created.username),
+      json_escape_for_auth_response(created.display_name),
+      json_escape_for_auth_response(created.userrights), created.role_id,
+      created.active ? "true" : "false", created.registered ? "true" : "false",
+      created.chattable ? "true" : "false");
+}
+
+std::string error_json(const std::string &code, const std::string &message) {
+  return fmt::format(R"({{"error":"{}","message":"{}"}})",
+                     json_escape_for_auth_response(code),
+                     json_escape_for_auth_response(message));
 }
 
 bool revoke_all_sessions_for_user(
@@ -319,6 +431,105 @@ bool reg(std::string username, std::string password, std::string userid,
     return false;
   }
   return false;
+}
+
+bool admin_create_user(const AdminCreateUserRequest &request,
+                       AdminCreateUserResult &created,
+                       std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  auto password_hash = security::hash_password(request.password);
+
+  std::vector<std::string> params = {
+      std::to_string(request.role_id),
+      request.username,
+      request.display_name.empty() ? request.username : request.display_name,
+      password_hash.hash,
+      password_hash.salt,
+      password_hash.algo,
+      std::to_string(password_hash.iterations),
+      request.userrights,
+      request.active ? "true" : "false",
+      request.registered ? "true" : "false",
+      request.chattable ? "true" : "false",
+      request.role_rights.write_posts ? "true" : "false",
+      request.role_rights.admin ? "true" : "false",
+      request.role_rights.moder ? "true" : "false",
+      request.role_rights.main_page ? "true" : "false",
+  };
+
+  cp::SafeCon con{pool_ptr};
+  try {
+    pqxx::result result = con->execute_params(
+        R"SQL(
+WITH selected_role AS (
+  SELECT roleid FROM "roles" WHERE roleid = ($1)::integer
+),
+userid_lock AS (
+  SELECT pg_advisory_xact_lock(110110)
+),
+next_userid AS (
+  SELECT COALESCE(MAX(userid), 0) + 1 AS userid
+  FROM "user", userid_lock
+),
+created_user AS (
+  INSERT INTO "user" (
+    userid, username, display_name, passwdhash, password_salt,
+    password_algo, password_iterations, userrights, role, active, registered, chattable,
+    jointime
+  )
+  SELECT
+    next_userid.userid, ($2), ($3), ($4), ($5),
+    ($6), ($7)::integer, ($8), selected_role.roleid, ($9)::boolean,
+    ($10)::boolean, ($11)::boolean, now()
+  FROM selected_role
+  CROSS JOIN next_userid
+  RETURNING username, display_name, userrights, role, active, registered, chattable
+),
+created_permission AS (
+  INSERT INTO role (username, write_posts, admin, moder, main_page)
+  SELECT
+    created_user.username, ($12)::boolean, ($13)::boolean,
+    ($14)::boolean, ($15)::boolean
+  FROM created_user
+  -- RETURNING created_user.username
+  RETURNING username
+),
+created_user_role AS (
+  INSERT INTO "useroles" (roleid, username)
+  SELECT selected_role.roleid, created_user.username
+  FROM created_user
+  JOIN selected_role ON selected_role.roleid = created_user.role
+  RETURNING roleid
+)
+SELECT
+  created_user.username,
+  created_user.display_name,
+  created_user.userrights,
+  created_user.role AS role_id,
+  created_user.active,
+  created_user.registered,
+  created_user.chattable
+FROM created_user
+JOIN created_permission ON created_permission.username = created_user.username
+JOIN created_user_role ON created_user_role.roleid = created_user.role;
+)SQL",
+        params, true);
+
+    if (result.empty()) {
+      return false;
+    }
+
+    created.username = result[0]["username"].as<std::string>();
+    created.display_name = result[0]["display_name"].as<std::string>();
+    created.userrights = result[0]["userrights"].as<std::string>();
+    created.role_id = result[0]["role_id"].as<int>();
+    created.active = result[0]["active"].as<bool>();
+    created.registered = result[0]["registered"].as<bool>();
+    created.chattable = result[0]["chattable"].as<bool>();
+    users_cash.add_user(created.username);
+    return true;
+  } catch (const pqxx::unique_violation &e) {
+    return false;
+  }
 }
 
 bool delete_user(std::string username,
@@ -980,6 +1191,71 @@ void change_password(
     } else {
       return req->create_response(restinio::status_bad_request()).done();
     }
+  });
+}
+
+void admin_create_user(
+    std::unique_ptr<restinio::router::express_router_t<>> &router,
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr,
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+  router.get()->http_post("/auth/admin_create_user", [pool_ptr, logger_ptr](
+                                                        auto req, auto) {
+    logger_ptr->trace([] { return "called /auth/admin_create_user"; });
+
+    std::string token = security::bearer_or_cookie_token(req->header());
+    if (token.empty()) {
+      return req->create_response(restinio::status_unauthorized()).done();
+    }
+
+    if (!auth::is_admin(token, pool_ptr)) {
+      return req->create_response(restinio::status_unauthorized()).done();
+    }
+
+    rapidjson::Document body;
+    body.Parse(req->body().c_str());
+
+    auth::AdminCreateUserRequest create_request;
+    if (body.HasParseError() ||
+        !parse_admin_create_user_request(body, create_request)) {
+      return req->create_response(restinio::status_bad_request())
+          .append_header("Content-Type", "application/json; charset=utf-8")
+          .set_body(
+              error_json("invalid_payload", "request body must be a JSON object"))
+          .done();
+    }
+
+    const std::string validation_error =
+        validate_admin_create_user_request(create_request);
+    if (!validation_error.empty()) {
+      return req->create_response(restinio::status_bad_request())
+          .append_header("Content-Type", "application/json; charset=utf-8")
+          .set_body(error_json("invalid_payload", validation_error))
+          .done();
+    }
+
+    auth::AdminCreateUserResult created;
+    const bool ok = auth::admin_create_user(create_request, created, pool_ptr);
+    if (!ok) {
+      const bool username_taken =
+          auth::is_user(create_request.username, pool_ptr);
+      return req
+          ->create_response(username_taken ? restinio::status_conflict()
+                                           : restinio::status_bad_request())
+          .append_header("Content-Type", "application/json; charset=utf-8")
+          .set_body(username_taken
+                        ? error_json("duplicate_username",
+                                     "username already exists")
+                        : error_json("invalid_role", "role_id does not exist"))
+          .done();
+    }
+
+    logger_ptr->info([created] {
+      return fmt::format("admin created user {}", created.username);
+    });
+    return req->create_response(restinio::status_created())
+        .append_header("Content-Type", "application/json; charset=utf-8")
+        .set_body(admin_create_user_result_json(created))
+        .done();
   });
 }
 

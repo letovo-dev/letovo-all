@@ -131,6 +131,7 @@ create(std::shared_ptr<cp::ConnectionsManager> pool_ptr,
   auth::server::change_password(router, pool_ptr, logger_ptr);
   auth::server::change_username(router, pool_ptr, logger_ptr);
   auth::server::register_true(router, pool_ptr, logger_ptr);
+  auth::server::admin_create_user(router, pool_ptr, logger_ptr);
   auth::server::is_admin(router, pool_ptr, logger_ptr);
 
   analytics::server::register_routes(router, pool_ptr, logger_ptr);
