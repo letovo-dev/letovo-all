@@ -33,7 +33,8 @@ namespace transactions {
         Error,
         Success,
         NegativeNumber,
-        NotReciver,
+        NotReceiver,
+        InactiveUser,
     };
 
     struct TransferResult {
@@ -64,6 +65,10 @@ namespace transactions {
     TransferResult transfer_with_result(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     int get_balance(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    bool can_use_transactions(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    bool can_receive_transfer(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     pqxx::result get_transactions(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 

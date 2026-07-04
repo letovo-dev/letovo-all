@@ -167,7 +167,8 @@ bool is_user(std::string username,
 bool is_rights_by_username(const std::string& username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                            const std::string& rights) {
-  static const std::unordered_set<std::string> allowed = {"write_posts", "admin", "moder", "main_page"};
+  static const std::unordered_set<std::string> allowed = {
+      "write_posts", "admin", "moder", "main_page", "whireable"};
   if (!allowed.count(rights)) {
     return false;
   }

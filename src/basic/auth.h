@@ -37,6 +37,8 @@ bool is_admin(std::string token,
               std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool is_user(std::string token,
              std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+bool is_active(std::string username,
+               std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 bool is_rights_by_username(const std::string& username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                            const std::string& rights = "admin");
