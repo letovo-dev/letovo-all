@@ -36,12 +36,14 @@ def test_admin_create_user_validates_payload_and_uses_secure_hashing():
     assert 'request.userrights != "admin"' in source
     assert "security::hash_password(request.password)" in source
     assert "std::hash<std::string>{}(request.password)" not in source
+    assert "std::hash<std::string>{}(request.username)" not in source
 
 
 def test_admin_create_user_writes_all_user_permission_and_role_fields_atomically():
     source = read("src/basic/auth.cc")
 
     assert "WITH selected_role AS" in source
+    assert "next_userid AS" in source
     assert 'INSERT INTO "user"' in source
     assert "userid, username, display_name, passwdhash, password_salt" in source
     assert "password_algo, password_iterations, userrights, role, active, registered, chattable" in source

@@ -437,12 +437,9 @@ bool admin_create_user(const AdminCreateUserRequest &request,
                        AdminCreateUserResult &created,
                        std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   auto password_hash = security::hash_password(request.password);
-  const std::string userid =
-      std::to_string(std::hash<std::string>{}(request.username)).substr(0, 5);
 
   std::vector<std::string> params = {
       std::to_string(request.role_id),
-      userid,
       request.username,
       request.display_name.empty() ? request.username : request.display_name,
       password_hash.hash,
@@ -466,6 +463,13 @@ bool admin_create_user(const AdminCreateUserRequest &request,
 WITH selected_role AS (
   SELECT roleid FROM "roles" WHERE roleid = ($1)::integer
 ),
+userid_lock AS (
+  SELECT pg_advisory_xact_lock(110110)
+),
+next_userid AS (
+  SELECT COALESCE(MAX(userid), 0) + 1 AS userid
+  FROM "user", userid_lock
+),
 created_user AS (
   INSERT INTO "user" (
     userid, username, display_name, passwdhash, password_salt,
@@ -473,17 +477,18 @@ created_user AS (
     jointime
   )
   SELECT
-    ($2), ($3), ($4), ($5), ($6),
-    ($7), ($8)::integer, ($9), selected_role.roleid, ($10)::boolean,
-    ($11)::boolean, ($12)::boolean, now()
+    next_userid.userid, ($2), ($3), ($4), ($5),
+    ($6), ($7)::integer, ($8), selected_role.roleid, ($9)::boolean,
+    ($10)::boolean, ($11)::boolean, now()
   FROM selected_role
+  CROSS JOIN next_userid
   RETURNING username, display_name, userrights, role, active, registered, chattable
 ),
 created_permission AS (
   INSERT INTO role (username, write_posts, admin, moder, main_page)
   SELECT
-    created_user.username, ($13)::boolean, ($14)::boolean,
-    ($15)::boolean, ($16)::boolean
+    created_user.username, ($12)::boolean, ($13)::boolean,
+    ($14)::boolean, ($15)::boolean
   FROM created_user
   -- RETURNING created_user.username
   RETURNING username
