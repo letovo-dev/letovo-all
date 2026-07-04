@@ -85,20 +85,21 @@ namespace transactions {
         result.sender = transaction->sender;
         result.receiver = transaction->receiver;
         result.amount = amount;
+        bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);
 
-        if (!can_use_transactions(transaction->sender, pool_ptr) ||
-            !can_use_transactions(transaction->receiver, pool_ptr)) {
+        if (!sender_is_admin &&
+            (!can_use_transactions(transaction->sender, pool_ptr) ||
+             !can_use_transactions(transaction->receiver, pool_ptr))) {
             result.status = TransactionStatus::InactiveUser;
             return result;
         }
 
-        if (!can_receive_transfer(transaction->receiver, pool_ptr)) {
+        if (!sender_is_admin && !can_receive_transfer(transaction->receiver, pool_ptr)) {
             result.status = TransactionStatus::NotReceiver;
             return result;
         }
 
         int balance = get_balance(transaction->sender, pool_ptr);
-        bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);
         if (!can_transfer_amount(balance, amount, sender_is_admin)) {
             result.status = TransactionStatus::NoMoney;
             return result;
@@ -217,11 +218,11 @@ namespace transactions {
     }
 
     std::pair<TransactionStatus, std::string> prepare_transaction(std::string sender, std::string reciver, int ammount, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-        if (!can_use_transactions(sender, pool_ptr)) {
+        const bool sender_is_admin = auth::is_rights_by_username(sender, pool_ptr);
+        if (!sender_is_admin && !can_use_transactions(sender, pool_ptr)) {
             return {TransactionStatus::InactiveUser, ""};
         }
         int balance = get_balance(sender, pool_ptr);
-        bool sender_is_admin = auth::is_rights_by_username(sender, pool_ptr);
         if (!sender_is_admin && ammount < 0) {
             return {TransactionStatus::NegativeNumber, ""};
         } 
@@ -245,10 +246,10 @@ namespace transactions {
         if (r.empty()) {
             return {TransactionStatus::WrongId, ""};
         }
-        if (!can_use_transactions(reciver, pool_ptr)) {
+        if (!sender_is_admin && !can_use_transactions(reciver, pool_ptr)) {
             return {TransactionStatus::InactiveUser, ""};
         }
-        if (!can_receive_transfer(reciver, pool_ptr)) {
+        if (!sender_is_admin && !can_receive_transfer(reciver, pool_ptr)) {
             return {TransactionStatus::NotReceiver, ""};
         }
         
@@ -337,7 +338,8 @@ namespace transactions::server {
 
             if (new_body.HasMember("receiver") && new_body.HasMember("amount")) {
                 std::string sender = auth::get_username(token, pool_ptr);
-                if (!transactions::can_use_transactions(sender, pool_ptr)) {
+                bool sender_is_admin = auth::is_rights_by_username(sender, pool_ptr);
+                if (!sender_is_admin && !transactions::can_use_transactions(sender, pool_ptr)) {
                     return req->create_response(restinio::status_forbidden())
                         .append_header("Content-Type", "text/plain; charset=utf-8")
                         .set_body("user is not active")
@@ -429,7 +431,8 @@ namespace transactions::server {
                 .done();
             }
             std::string username = auth::get_username(token, pool_ptr);
-            if (!transactions::can_use_transactions(username, pool_ptr)) {
+            bool sender_is_admin = auth::is_rights_by_username(username, pool_ptr);
+            if (!sender_is_admin && !transactions::can_use_transactions(username, pool_ptr)) {
                 return req->create_response(restinio::status_forbidden())
                     .append_header("Content-Type", "text/plain; charset=utf-8")
                     .set_body("user is not active")
