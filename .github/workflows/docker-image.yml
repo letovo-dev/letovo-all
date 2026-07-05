@@ -152,6 +152,10 @@ jobs:
             NEXT_PUBLIC_BASE_URL_MEDIA=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/media/get
             NEXT_PUBLIC_UPLOAD_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/upload/
             NEXT_PUBLIC_BASE_URL_CLEAR=${{ env.LIVE_E2E_BASE_URL }}
+            NEXT_PUBLIC_OTEL_ENABLED=true
+            NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otel/v1/traces
+            NEXT_PUBLIC_OTEL_SERVICE_NAME=letovo-frontend
+            NEXT_PUBLIC_LETOVO_BUILD_SHA=${{ github.sha }}
           tags: ${{ env.FRONTEND_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -223,6 +227,10 @@ jobs:
           push: true
           build-args: |
             LETOVO_BUILD_SHA=${{ github.sha }}
+            NEXT_PUBLIC_OTEL_ENABLED=true
+            NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otel/v1/traces
+            NEXT_PUBLIC_OTEL_SERVICE_NAME=letovo-frontend
+            NEXT_PUBLIC_LETOVO_BUILD_SHA=${{ github.sha }}
           tags: |
             ${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
@@ -250,10 +258,18 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Verify frontend OpenTelemetry wiring
+        working-directory: frontend
+        run: npm run test:opentelemetry
+
       - name: Build frontend
         working-directory: frontend
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_OTEL_ENABLED: "true"
+          NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: /otel/v1/traces
+          NEXT_PUBLIC_OTEL_SERVICE_NAME: letovo-frontend
+          NEXT_PUBLIC_LETOVO_BUILD_SHA: ${{ github.sha }}
         run: npm run build
 
       - name: Scan frontend bundle for known bad routes

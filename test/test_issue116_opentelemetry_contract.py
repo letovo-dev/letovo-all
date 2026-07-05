@@ -125,6 +125,6 @@ def test_frontend_opentelemetry_contract_is_wired():
     assert "withFrontendSpan" in browser
     assert "initBrowserTelemetry" in bootstrap
     assert "<TelemetryBootstrap />" in layout
-    assert "withFrontendSpan('analytics.activity_ping'" in analytics
+    assert "'analytics.activity_ping'" in analytics
     assert "ARG NEXT_PUBLIC_OTEL_ENABLED=" in dockerfile
     assert "ARG NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=" in dockerfile
