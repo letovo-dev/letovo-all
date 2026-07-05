@@ -70,6 +70,8 @@ namespace transactions {
 
     bool can_receive_transfer(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
+    bool has_whireable_participant(std::string sender, std::string receiver, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
     pqxx::result get_transactions(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
     /** JSON object: last_incoming_payment, last_outgoing_payment — each is a full transaction row or null. */

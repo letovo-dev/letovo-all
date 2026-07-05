@@ -34,7 +34,7 @@ def test_admin_negative_transaction_ignores_receiver_balance(tmp_path):
     subprocess.run([str(binary)], check=True)
 
 
-def test_whireable_role_is_required_for_transfer_recipient():
+def test_whireable_role_is_required_for_at_least_one_transfer_participant():
     repo_root = Path(__file__).resolve().parents[1]
     auth_header = (repo_root / "src/basic/auth.h").read_text()
     auth_source = (repo_root / "src/basic/auth.cc").read_text()
@@ -46,9 +46,11 @@ def test_whireable_role_is_required_for_transfer_recipient():
     assert '"whireable"' in auth_source
     assert "bool is_active" in auth_header
     assert "bool can_receive_transfer" in transaction_header
+    assert "bool has_whireable_participant" in transaction_header
     assert 'auth::is_rights_by_username(username, pool_ptr, "whireable")' in transaction_source
+    assert "can_receive_transfer(sender, pool_ptr) || can_receive_transfer(receiver, pool_ptr)" in transaction_source
     assert "TransactionStatus::NotReceiver" in transaction_source
-    assert "receiver is not whireable" in transaction_source
+    assert "sender or receiver must be whireable" in transaction_source
     assert "whireable boolean DEFAULT false" in schema
     assert "ADD COLUMN IF NOT EXISTS whireable boolean DEFAULT false" in migration
 
@@ -74,8 +76,8 @@ def test_admin_sender_bypasses_transaction_recipient_restrictions():
     assert "bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);" in transaction_source
     assert "const bool sender_is_admin = auth::is_rights_by_username(sender, pool_ptr);" in transaction_source
     assert "if (!sender_is_admin &&\n            (!can_use_transactions(transaction->sender, pool_ptr) ||" in transaction_source
-    assert "if (!sender_is_admin && !can_receive_transfer(transaction->receiver, pool_ptr))" in transaction_source
+    assert "if (!sender_is_admin && !has_whireable_participant(transaction->sender, transaction->receiver, pool_ptr))" in transaction_source
     assert "if (!sender_is_admin && !can_use_transactions(sender, pool_ptr))" in transaction_source
     assert "if (!sender_is_admin && !can_use_transactions(reciver, pool_ptr))" in transaction_source
-    assert "if (!sender_is_admin && !can_receive_transfer(reciver, pool_ptr))" in transaction_source
+    assert "if (!sender_is_admin && !has_whireable_participant(sender, reciver, pool_ptr))" in transaction_source
     assert transaction_source.count("if (!sender_is_admin && !transactions::can_use_transactions(") >= 2
