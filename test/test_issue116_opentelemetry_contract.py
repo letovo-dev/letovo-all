@@ -54,6 +54,7 @@ def test_backend_opentelemetry_dependency_and_request_wrapper_are_wired():
     header = read("src/basic/otel.h")
     source = read("src/basic/otel.cc")
     server = read("src/server.cpp")
+    registration_server = read("src/registration_server.cpp")
 
     assert "opentelemetry-cpp" in cmake
     assert "GIT_TAG        v1.27.0" in cmake
@@ -80,13 +81,22 @@ def test_backend_opentelemetry_dependency_and_request_wrapper_are_wired():
     assert "HttpTraceContext" in source
     assert "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" in source
     assert "OTEL_SERVICE_NAME" in source
+    assert "OTEL_SDK_DISABLED" in source
+    assert "OTEL_TRACES_EXPORTER" in source
     assert "request.duration_ms" in source
+    assert "http.response.status_code" in header
     assert "trace_id" in source
+    assert "url.query" not in header
+    assert '"query"' not in header
 
     assert '#include "./basic/otel.h"' in server
     assert "telemetry::init_tracing" in server
     assert "telemetry::make_traced_handler(std::move(router), logger_ptr)" in server
     assert "telemetry::shutdown_tracing" in server
+    assert '#include "./basic/otel.h"' in registration_server
+    assert 'telemetry::settings_from_env("letovo-registration-server")' in registration_server
+    assert "telemetry::make_traced_handler(std::move(router), logger_ptr)" in registration_server
+    assert "telemetry::shutdown_tracing" in registration_server
 
 
 def test_frontend_opentelemetry_contract_is_wired():

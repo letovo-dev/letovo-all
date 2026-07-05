@@ -11,10 +11,13 @@ RUN apt update && apt install -y \
         git \
         wget \
         curl \
+        libcurl4-openssl-dev \
         libfmt-dev \
         librestinio-dev \
         libasio-dev \
         rapidjson-dev \
+        libprotobuf-dev \
+        protobuf-compiler \
         libpqxx-dev \
         libpq-dev \
         libssl-dev \
@@ -45,7 +48,9 @@ FROM ubuntu:24.04
 # Устанавливаем только runtime-библиотеки
 RUN apt update && apt install -y \
         libfmt9 \
+        libcurl4 \
         libhttp-parser2.9 \
+        libprotobuf32t64 \
         libpqxx-7.8 \
         libpq5 \
         libssl3 \

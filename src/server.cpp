@@ -17,6 +17,7 @@
 #include "./basic/analytics.h"
 #include "./basic/config.h"
 #include "./basic/media.h"
+#include "./basic/otel.h"
 #include "./basic/qr_worker.h"
 #include "./basic/user_data.h"
 #include "./letovo-soc-net/achivements.h"
@@ -225,36 +226,44 @@ int main() {
   using namespace std::chrono;
 
   auto logger_ptr = std::make_shared<restinio::shared_ostream_logger_t>();
+  telemetry::init_tracing(telemetry::settings_from_env("letovo-server"),
+                          logger_ptr);
 
-  std::shared_ptr<cp::ConnectionsManager> pool_ptr =
-      std::make_shared<cp::ConnectionsManager>(logger_ptr,
-                                               Config::giveMe().sql_config);
+  try {
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr =
+        std::make_shared<cp::ConnectionsManager>(logger_ptr,
+                                                 Config::giveMe().sql_config);
 
-  prepare_paths();
+    prepare_paths();
 
-  pool_ptr->connect();
+    pool_ptr->connect();
 
-  pre_run_checks::do_checks(pool_ptr);
+    pre_run_checks::do_checks(pool_ptr);
 
-  auto bus_ptr        = std::make_shared<ws::EventBus>(logger_ptr, pool_ptr);
-  auto authorizer_ptr = std::make_shared<ws::TopicAuthorizer>();
-  chat::ws::register_topic_rules(authorizer_ptr, pool_ptr);
-  bus_ptr->recover_from_crash();
+    auto bus_ptr        = std::make_shared<ws::EventBus>(logger_ptr, pool_ptr);
+    auto authorizer_ptr = std::make_shared<ws::TopicAuthorizer>();
+    chat::ws::register_topic_rules(authorizer_ptr, pool_ptr);
+    bus_ptr->recover_from_crash();
 
-  auto router = create(pool_ptr, logger_ptr, bus_ptr, authorizer_ptr);
+    auto router = create(pool_ptr, logger_ptr, bus_ptr, authorizer_ptr);
 
-  logger_ptr->info([] {
-    return fmt::format("Server is starting at {}:{}",
-                       Config::giveMe().server_config.adress,
-                       Config::giveMe().server_config.port);
-  });
+    logger_ptr->info([] {
+      return fmt::format("Server is starting at {}:{}",
+                         Config::giveMe().server_config.adress,
+                         Config::giveMe().server_config.port);
+    });
 
-  restinio::run(restinio::on_thread_pool<ws::server_traits>(
-                    Config::giveMe().server_config.thread_pool_size)
-                    .address(Config::giveMe().server_config.adress)
-                    .port(Config::giveMe().server_config.port)
-                    .request_handler(move(router))
-                // .tls_context( std::move(tls_context) )
-  );
+    restinio::run(restinio::on_thread_pool<ws::server_traits>(
+                      Config::giveMe().server_config.thread_pool_size)
+                      .address(Config::giveMe().server_config.adress)
+                      .port(Config::giveMe().server_config.port)
+                      .request_handler(telemetry::make_traced_handler(std::move(router), logger_ptr))
+                  // .tls_context( std::move(tls_context) )
+    );
+    telemetry::shutdown_tracing();
+  } catch (...) {
+    telemetry::shutdown_tracing();
+    throw;
+  }
   return 0;
 }

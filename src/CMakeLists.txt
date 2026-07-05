@@ -48,8 +48,27 @@ set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
 set(BUILD_STATIC_LIBS ON CACHE INTERNAL "")
 FetchContent_MakeAvailable(llhttp)
 
+set(WITH_OTLP_HTTP ON CACHE BOOL "enable OpenTelemetry OTLP HTTP exporter" FORCE)
+set(WITH_OTLP_GRPC OFF CACHE BOOL "disable OpenTelemetry OTLP gRPC exporter" FORCE)
+set(WITH_EXAMPLES OFF CACHE BOOL "disable OpenTelemetry examples" FORCE)
+set(WITH_FUNC_TESTS OFF CACHE BOOL "disable OpenTelemetry functional tests" FORCE)
+set(WITH_BENCHMARK OFF CACHE BOOL "disable OpenTelemetry benchmarks" FORCE)
+set(WITH_TESTING OFF CACHE BOOL "disable OpenTelemetry tests" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "disable dependency tests" FORCE)
+
+FetchContent_Declare(
+    opentelemetry-cpp
+    GIT_REPOSITORY https://github.com/open-telemetry/opentelemetry-cpp.git
+    GIT_TAG        v1.27.0
+)
+FetchContent_MakeAvailable(opentelemetry-cpp)
+
 string(REPLACE " " ";" BUILD_FILES "$ENV{BUILD_FILES}")
 set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")
+list(FIND SOURCES basic/otel.cc OTEL_SOURCE_INDEX)
+if(OTEL_SOURCE_INDEX EQUAL -1)
+    list(APPEND SOURCES basic/otel.cc)
+endif()
 
 # Enable processor-specific optimizations
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -67,4 +86,18 @@ endif()
 
 add_executable(server_starter ${SOURCES})
 
-target_link_libraries(server_starter restinio::restinio jwt-cpp::jwt-cpp -lpqxx -lpq -lssl -lcrypto -lpng -lqrencode)
+target_link_libraries(
+    server_starter
+    restinio::restinio
+    jwt-cpp::jwt-cpp
+    opentelemetry-cpp::api
+    opentelemetry-cpp::trace
+    opentelemetry-cpp::resources
+    opentelemetry-cpp::otlp_http_exporter
+    -lpqxx
+    -lpq
+    -lssl
+    -lcrypto
+    -lpng
+    -lqrencode
+)
