@@ -3,12 +3,16 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 #include "opentelemetry/exporters/otlp/otlp_http_exporter_factory.h"
 #include "opentelemetry/exporters/otlp/otlp_http_exporter_options.h"
+#include "opentelemetry/context/runtime_context.h"
 #include "opentelemetry/sdk/common/global_log_handler.h"
 #include "opentelemetry/sdk/resource/resource.h"
 #include "opentelemetry/sdk/trace/batch_span_processor_factory.h"
@@ -16,6 +20,7 @@
 #include "opentelemetry/sdk/trace/provider.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "opentelemetry/sdk/trace/tracer_provider_factory.h"
+#include "opentelemetry/trace/context.h"
 #include "opentelemetry/trace/propagation/http_trace_context.h"
 
 namespace telemetry {
@@ -30,6 +35,18 @@ namespace propagation = opentelemetry::context::propagation;
 
 std::shared_ptr<trace_sdk::TracerProvider> provider;
 
+const char *domain_event_level_name(DomainEventLevel level) {
+  switch (level) {
+    case DomainEventLevel::kWarn:
+      return "warn";
+    case DomainEventLevel::kError:
+      return "error";
+    case DomainEventLevel::kInfo:
+      return "info";
+  }
+  return "info";
+}
+
 std::string env_or(const char *name, const std::string &fallback) {
   const char *value = std::getenv(name);
   if (value == nullptr || value[0] == '\0') {
@@ -38,16 +55,22 @@ std::string env_or(const char *name, const std::string &fallback) {
   return value;
 }
 
+std::string lower_copy(std::string_view value) {
+  std::string lowered(value);
+  std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                 [](unsigned char c) {
+                   return static_cast<char>(std::tolower(c));
+                 });
+  return lowered;
+}
+
 bool env_bool(const char *name, bool fallback) {
   const char *value = std::getenv(name);
   if (value == nullptr || value[0] == '\0') {
     return fallback;
   }
 
-  std::string raw = value;
-  std::transform(raw.begin(), raw.end(), raw.begin(), [](unsigned char c) {
-    return static_cast<char>(std::tolower(c));
-  });
+  std::string raw = lower_copy(value);
   return raw == "1" || raw == "true" || raw == "yes" || raw == "on";
 }
 
@@ -57,10 +80,7 @@ bool env_is(const char *name, const std::string &expected) {
     return false;
   }
 
-  std::string raw = value;
-  std::transform(raw.begin(), raw.end(), raw.begin(), [](unsigned char c) {
-    return static_cast<char>(std::tolower(c));
-  });
+  std::string raw = lower_copy(value);
   return raw == expected;
 }
 
@@ -75,6 +95,42 @@ internal_log::LogLevel parse_log_level(const std::string &level) {
     return internal_log::LogLevel::Error;
   }
   return internal_log::LogLevel::Info;
+}
+
+std::string attributes_json(
+    const std::vector<std::pair<std::string, std::string>> &attributes) {
+  std::string result = "{";
+  bool first = true;
+  for (const auto &[key, value] : attributes) {
+    if (!first) {
+      result += ",";
+    }
+    first = false;
+    result += fmt::format(R"("{}":"{}")", json_escape(key), json_escape(value));
+  }
+  result += "}";
+  return result;
+}
+
+void write_domain_event_log(
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr,
+    DomainEventLevel level,
+    std::string payload) {
+  if (!logger_ptr) {
+    return;
+  }
+
+  switch (level) {
+    case DomainEventLevel::kError:
+      logger_ptr->error([payload = std::move(payload)] { return payload; });
+      break;
+    case DomainEventLevel::kWarn:
+      logger_ptr->warn([payload = std::move(payload)] { return payload; });
+      break;
+    case DomainEventLevel::kInfo:
+      logger_ptr->info([payload = std::move(payload)] { return payload; });
+      break;
+  }
 }
 
 }  // namespace
@@ -186,6 +242,74 @@ std::string handling_status_name(restinio::request_handling_status_t status) {
       return "not_handled";
   }
   return "unknown";
+}
+
+std::string stable_attribute_hash(std::string_view value) {
+  std::uint64_t hash = 14695981039346656037ULL;
+  for (const unsigned char c : value) {
+    hash ^= static_cast<std::uint64_t>(c);
+    hash *= 1099511628211ULL;
+  }
+  return fmt::format("{:016x}", hash);
+}
+
+bool is_safe_domain_event_attribute(std::string_view key) {
+  const std::string lowered = lower_copy(key);
+  static const std::vector<std::string> blocked = {
+      "password", "passwd", "token", "cookie", "authorization", "body",
+      "query"};
+  return std::none_of(blocked.begin(), blocked.end(),
+                      [&lowered](const auto &term) {
+                        return lowered.find(term) != std::string::npos;
+                      });
+}
+
+void record_domain_event(
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr,
+    std::string_view name,
+    DomainEventLevel level,
+    std::string_view reason,
+    std::initializer_list<DomainEventAttribute> attributes) {
+  namespace trace = opentelemetry::trace;
+  namespace common = opentelemetry::common;
+
+  std::vector<std::pair<std::string, std::string>> safe_attributes;
+  safe_attributes.emplace_back("event.severity", domain_event_level_name(level));
+  safe_attributes.emplace_back("event.reason", reason);
+  for (const auto &attribute : attributes) {
+    if (!is_safe_domain_event_attribute(attribute.key)) {
+      continue;
+    }
+    safe_attributes.emplace_back(attribute.key, attribute.value);
+  }
+
+  std::vector<std::pair<opentelemetry::nostd::string_view,
+                        common::AttributeValue>>
+      span_attributes;
+  span_attributes.reserve(safe_attributes.size());
+  for (const auto &[key, value] : safe_attributes) {
+    span_attributes.emplace_back(
+        opentelemetry::nostd::string_view(key.data(), key.size()),
+        opentelemetry::nostd::string_view(value.data(), value.size()));
+  }
+
+  auto span =
+      trace::GetSpan(opentelemetry::context::RuntimeContext::GetCurrent());
+  span->AddEvent(opentelemetry::nostd::string_view(name.data(), name.size()),
+                 span_attributes);
+
+  const auto context = span->GetContext();
+  write_domain_event_log(
+      logger_ptr,
+      level,
+      fmt::format(
+          R"({{"event":"domain_event","name":"{}","level":"{}","reason":"{}","trace_id":"{}","span_id":"{}","attributes":{}}})",
+          json_escape(name),
+          domain_event_level_name(level),
+          json_escape(reason),
+          trace_id_for_log(context),
+          span_id_for_log(context),
+          attributes_json(safe_attributes)));
 }
 
 }  // namespace telemetry

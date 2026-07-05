@@ -1,5 +1,6 @@
 #include "./auth.h"
 #include "analytics.h"
+#include "otel.h"
 #include "../market/transactions.h"
 
 #include <regex>
@@ -660,24 +661,58 @@ void enable_auth(
     logger_ptr->info(
         [endpoint] { return fmt::format("auth request from {}", endpoint); });
 
+    telemetry::record_domain_event(logger_ptr, "auth.login.started",
+                                   telemetry::DomainEventLevel::kInfo,
+                                   "request_received");
+
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
 
-    if (new_body.HasMember("login") && new_body.HasMember("password")) {
-      std::string loginHeader = new_body["login"].GetString();
-      std::string passwordHeader = new_body["password"].GetString();
+    try {
+      if (new_body.HasMember("login") && new_body["login"].IsString() &&
+          new_body.HasMember("password") && new_body["password"].IsString()) {
+        std::string loginHeader = new_body["login"].GetString();
+        std::string passwordHeader = new_body["password"].GetString();
+        const auto user_hash = telemetry::stable_attribute_hash(loginHeader);
 
-      if (!auth::auth(loginHeader, passwordHeader, pool_ptr)) {
-        return req->create_response(restinio::status_unauthorized())
-            .append_header_date_field()
-            .connection_close()
-            .done();
-      } else {
+        if (!auth::is_user(loginHeader, pool_ptr)) {
+          telemetry::record_domain_event(
+              logger_ptr, "auth.login_failed", telemetry::DomainEventLevel::kWarn,
+              "user_not_found", {{"user.hash", user_hash}});
+          return req->create_response(restinio::status_unauthorized())
+              .append_header_date_field()
+              .connection_close()
+              .done();
+        }
+
+        if (!auth::auth(loginHeader, passwordHeader, pool_ptr)) {
+          telemetry::record_domain_event(
+              logger_ptr, "auth.login_failed", telemetry::DomainEventLevel::kWarn,
+              "bad_credentials", {{"user.hash", user_hash}});
+          return req->create_response(restinio::status_unauthorized())
+              .append_header_date_field()
+              .connection_close()
+              .done();
+        }
+
+        if (!auth::is_active(loginHeader, pool_ptr)) {
+          telemetry::record_domain_event(
+              logger_ptr, "auth.login_failed", telemetry::DomainEventLevel::kWarn,
+              "user_inactive", {{"user.hash", user_hash}});
+          return req->create_response(restinio::status_forbidden())
+              .append_header_date_field()
+              .connection_close()
+              .done();
+        }
+
         if (!user_sessions_columns_exist(pool_ptr)) {
           logger_ptr->error([] {
             return "auth session table is missing or incomplete; cannot create "
                    "login session";
           });
+          telemetry::record_domain_event(
+              logger_ptr, "auth.login_error", telemetry::DomainEventLevel::kError,
+              "session_schema_missing", {{"user.hash", user_hash}});
           return req
               ->create_response(restinio::status_internal_server_error())
               .done();
@@ -695,6 +730,9 @@ void enable_auth(
         analytics::record_event(loginHeader, token, endpoint, useragent, "POST",
                                 "/auth/login", 200, 0, "login", "{}",
                                 pool_ptr, logger_ptr);
+        telemetry::record_domain_event(
+            logger_ptr, "auth.login.success", telemetry::DomainEventLevel::kInfo,
+            "success", {{"user.hash", user_hash}});
         auto responce = req->create_response()
                             .set_body(login_body)
                             .append_header("Authorization", token)
@@ -705,14 +743,29 @@ void enable_auth(
 
         return responce.done();
       }
-    }
 
-    else {
-      return req
-          ->create_response(restinio::status_non_authoritative_information())
+      telemetry::record_domain_event(logger_ptr, "auth.login_failed",
+                                     telemetry::DomainEventLevel::kWarn,
+                                     "missing_credentials");
+      return req->create_response(restinio::status_non_authoritative_information())
           .append_header_date_field()
           .connection_close()
           .done();
+    } catch (const pqxx::broken_connection &) {
+      telemetry::record_domain_event(logger_ptr, "auth.login_error",
+                                     telemetry::DomainEventLevel::kError,
+                                     "db_error");
+      throw;
+    } catch (const pqxx::sql_error &) {
+      telemetry::record_domain_event(logger_ptr, "auth.login_error",
+                                     telemetry::DomainEventLevel::kError,
+                                     "db_error");
+      throw;
+    } catch (const std::exception &) {
+      telemetry::record_domain_event(logger_ptr, "auth.login_error",
+                                     telemetry::DomainEventLevel::kError,
+                                     "unexpected_exception");
+      throw;
     }
   });
 }

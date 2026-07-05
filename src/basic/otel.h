@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -65,6 +66,26 @@ std::string trace_id_for_log(const opentelemetry::trace::SpanContext &context);
 std::string span_id_for_log(const opentelemetry::trace::SpanContext &context);
 std::string handling_status_name(restinio::request_handling_status_t status);
 const char *request_duration_ms_attribute();
+
+enum class DomainEventLevel {
+  kInfo,
+  kWarn,
+  kError,
+};
+
+struct DomainEventAttribute {
+  std::string key;
+  std::string value;
+};
+
+std::string stable_attribute_hash(std::string_view value);
+bool is_safe_domain_event_attribute(std::string_view key);
+void record_domain_event(
+    std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr,
+    std::string_view name,
+    DomainEventLevel level,
+    std::string_view reason,
+    std::initializer_list<DomainEventAttribute> attributes = {});
 
 inline std::string json_escape(std::string_view value) {
   std::string escaped;
