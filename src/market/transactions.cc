@@ -73,6 +73,10 @@ namespace transactions {
         return auth::is_rights_by_username(username, pool_ptr, "whireable");
     }
 
+    bool has_whireable_participant(std::string sender, std::string receiver, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        return can_receive_transfer(sender, pool_ptr) || can_receive_transfer(receiver, pool_ptr);
+    }
+
 
     TransferResult transfer_with_result(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         TransferResult result;
@@ -94,7 +98,7 @@ namespace transactions {
             return result;
         }
 
-        if (!sender_is_admin && !can_receive_transfer(transaction->receiver, pool_ptr)) {
+        if (!sender_is_admin && !has_whireable_participant(transaction->sender, transaction->receiver, pool_ptr)) {
             result.status = TransactionStatus::NotReceiver;
             return result;
         }
@@ -249,7 +253,7 @@ namespace transactions {
         if (!sender_is_admin && !can_use_transactions(reciver, pool_ptr)) {
             return {TransactionStatus::InactiveUser, ""};
         }
-        if (!sender_is_admin && !can_receive_transfer(reciver, pool_ptr)) {
+        if (!sender_is_admin && !has_whireable_participant(sender, reciver, pool_ptr)) {
             return {TransactionStatus::NotReceiver, ""};
         }
         
@@ -386,7 +390,7 @@ namespace transactions::server {
                 case TransactionStatus::NotReceiver:
                     return req->create_response(restinio::status_not_acceptable())
                         .append_header("Content-Type", "text/plain; charset=utf-8")
-                        .set_body("receiver is not whireable")
+                        .set_body("sender or receiver must be whireable")
                     .done();
                     break;
                 case TransactionStatus::InactiveUser:
@@ -470,7 +474,7 @@ namespace transactions::server {
                 case TransactionStatus::NotReceiver:
                     return req->create_response(restinio::status_not_acceptable())
                         .append_header("Content-Type", "text/plain; charset=utf-8")
-                        .set_body("receiver is not whireable")
+                        .set_body("sender or receiver must be whireable")
                     .done();
                     break;
                 case TransactionStatus::InactiveUser:
