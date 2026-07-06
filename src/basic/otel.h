@@ -28,7 +28,8 @@ namespace telemetry {
 struct Settings {
   bool enabled{true};
   std::string service_name{"letovo-server"};
-  std::string traces_endpoint{"http://127.0.0.1:4318/v1/traces"};
+  std::string traces_endpoint{};
+  std::string resource_attributes{};
   std::string log_level{"info"};
 };
 

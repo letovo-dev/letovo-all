@@ -84,6 +84,28 @@ bool env_is(const char *name, const std::string &expected) {
   return raw == expected;
 }
 
+std::vector<std::pair<std::string, std::string>> parse_resource_attributes(
+    const std::string &raw) {
+  std::vector<std::pair<std::string, std::string>> attributes;
+  std::size_t start = 0;
+  while (start < raw.size()) {
+    const std::size_t comma = raw.find(',', start);
+    const std::string item =
+        raw.substr(start, comma == std::string::npos ? std::string::npos
+                                                     : comma - start);
+    const std::size_t equals = item.find('=');
+    if (equals != std::string::npos && equals > 0 &&
+        equals + 1 < item.size()) {
+      attributes.emplace_back(item.substr(0, equals), item.substr(equals + 1));
+    }
+    if (comma == std::string::npos) {
+      break;
+    }
+    start = comma + 1;
+  }
+  return attributes;
+}
+
 internal_log::LogLevel parse_log_level(const std::string &level) {
   if (level == "debug") {
     return internal_log::LogLevel::Debug;
@@ -137,14 +159,19 @@ void write_domain_event_log(
 
 Settings settings_from_env(const std::string &fallback_service_name) {
   Settings settings;
+  const std::string traces_endpoint =
+      env_or("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "");
+  const std::string otlp_endpoint = env_or("OTEL_EXPORTER_OTLP_ENDPOINT", "");
+  settings.traces_endpoint =
+      traces_endpoint.empty() && !otlp_endpoint.empty()
+          ? otlp_endpoint + "/v1/traces"
+          : traces_endpoint;
   settings.enabled = env_bool("OTEL_SDK_ENABLED", true) &&
                      !env_bool("OTEL_SDK_DISABLED", false) &&
-                     !env_is("OTEL_TRACES_EXPORTER", "none");
+                     !env_is("OTEL_TRACES_EXPORTER", "none") &&
+                     !settings.traces_endpoint.empty();
   settings.service_name = env_or("OTEL_SERVICE_NAME", fallback_service_name);
-  settings.traces_endpoint = env_or(
-      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-      env_or("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318") +
-          "/v1/traces");
+  settings.resource_attributes = env_or("OTEL_RESOURCE_ATTRIBUTES", "");
   settings.log_level = env_or("OTEL_LOG_LEVEL", "info");
   return settings;
 }
@@ -163,7 +190,7 @@ void init_tracing(
   if (!settings.enabled) {
     if (logger_ptr) {
       logger_ptr->info([] {
-        return "OpenTelemetry tracing disabled by OTEL_SDK_ENABLED";
+        return "OpenTelemetry tracing disabled by configuration";
       });
     }
     return;
@@ -184,10 +211,16 @@ void init_tracing(
 
   auto processor = trace_sdk::BatchSpanProcessorFactory::Create(
       std::move(exporter), processor_options);
+  auto resource_attributes = parse_resource_attributes(settings.resource_attributes);
+  resource_attributes.emplace_back("service.name", settings.service_name);
+  resource::ResourceAttributes attributes;
+  for (const auto &[key, value] : resource_attributes) {
+    attributes[key] = value;
+  }
   provider = std::shared_ptr<trace_sdk::TracerProvider>(
       trace_sdk::TracerProviderFactory::Create(
           std::move(processor),
-          resource::Resource::Create({{"service.name", settings.service_name}})));
+          resource::Resource::Create(attributes)));
 
   std::shared_ptr<opentelemetry::trace::TracerProvider> api_provider_std =
       provider;

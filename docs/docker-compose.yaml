@@ -1,10 +1,32 @@
 version: '3.8'
 
 services:
+    jaeger:
+        image: jaegertracing/all-in-one:1.57
+        container_name: jaeger
+        restart: unless-stopped
+        environment:
+          COLLECTOR_OTLP_ENABLED: "true"
+          SPAN_STORAGE_TYPE: badger
+          BADGER_EPHEMERAL: "false"
+          BADGER_DIRECTORY_VALUE: /badger/data
+          BADGER_DIRECTORY_KEY: /badger/key
+        volumes:
+          - jaeger-data:/badger
+        ports:
+          - "127.0.0.1:16686:16686"
+        logging:
+          driver: json-file
+          options:
+            max-size: "100m"
+            max-file: "5"
+
     otel-collector:
         image: otel/opentelemetry-collector:0.155.0
         container_name: otel-collector
         restart: unless-stopped
+        depends_on:
+          - jaeger
         command: ["--config=/etc/otelcol/config.yaml"]
         volumes:
           - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
@@ -26,6 +48,7 @@ services:
           - otel-collector
         environment:
           OTEL_SERVICE_NAME: letovo-server
+          OTEL_RESOURCE_ATTRIBUTES: deployment.environment=production,service.namespace=letovocorp
           OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://127.0.0.1:4318/v1/traces
           OTEL_TRACES_EXPORTER: otlp
@@ -52,6 +75,7 @@ services:
           SERVER_ADRESS: "127.0.0.1"
           SERVER_PORT: "8082"
           OTEL_SERVICE_NAME: letovo-registration-server
+          OTEL_RESOURCE_ATTRIBUTES: deployment.environment=production,service.namespace=letovocorp
           OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://127.0.0.1:4318/v1/traces
           OTEL_TRACES_EXPORTER: otlp
@@ -93,6 +117,10 @@ services:
         environment:
           NEXT_PUBLIC_OTEL_ENABLED: "true"
           NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: /otel/v1/traces
+          NEXT_PUBLIC_OTEL_SERVICE_NAME: letovo-frontend
+          NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT: production
+          NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE: letovocorp
+          NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO: "0.1"
         init: true
         cap_drop:
           - ALL
@@ -144,3 +172,6 @@ services:
           options:
             max-size: "100m"
             max-file: "5"
+
+volumes:
+    jaeger-data:

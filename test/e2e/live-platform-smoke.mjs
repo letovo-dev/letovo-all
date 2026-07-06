@@ -10,6 +10,7 @@ const waitTimeoutMs = Number(process.env.LIVE_E2E_WAIT_TIMEOUT_SECONDS || 600) *
 const pollIntervalMs = 10_000;
 const requireAuth = process.env.LIVE_E2E_REQUIRE_AUTH === 'true';
 const requireExtended = process.env.LIVE_E2E_REQUIRE_EXTENDED === 'true';
+const requireOtel = process.env.LIVE_E2E_REQUIRE_OTEL === 'true';
 const expectedBackendSha = process.env.LIVE_E2E_EXPECTED_BACKEND_SHA || '';
 const expectedFrontendSha = process.env.LIVE_E2E_EXPECTED_FRONTEND_SHA || '';
 const username = process.env.LETOVO_E2E_USERNAME || '';
@@ -38,6 +39,47 @@ async function fetchText(path) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function postOtelSmokeSpan() {
+  const now = BigInt(Date.now()) * 1_000_000n;
+  const response = await fetch(`${baseUrl}/otel/v1/traces`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      resourceSpans: [
+        {
+          resource: {
+            attributes: [
+              { key: 'service.name', value: { stringValue: 'letovo-live-e2e' } },
+              { key: 'service.namespace', value: { stringValue: 'letovocorp' } },
+              { key: 'deployment.environment', value: { stringValue: 'production' } },
+            ],
+          },
+          scopeSpans: [
+            {
+              scope: { name: 'letovo.live-e2e' },
+              spans: [
+                {
+                  traceId: '11111111111111111111111111111111',
+                  spanId: '2222222222222222',
+                  name: 'live-e2e-otel-smoke',
+                  kind: 'SPAN_KIND_INTERNAL',
+                  startTimeUnixNano: now.toString(),
+                  endTimeUnixNano: (now + 1_000_000n).toString(),
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }),
+  });
+
+  assert(
+    response.status >= 200 && response.status < 300,
+    `Expected /otel/v1/traces to accept OTLP JSON, got HTTP ${response.status}: ${await response.text()}`,
+  );
 }
 
 async function assertDeploymentMetadata(path, expectedSha, description) {
@@ -339,6 +381,12 @@ async function probeDeployment() {
     api.status === 501,
     `Expected /letovo-api/auth/login GET to return 501, got ${api.status}`,
   );
+
+  if (requireOtel) {
+    await postOtelSmokeSpan();
+  } else {
+    console.log('Skipping OTEL trace smoke because LIVE_E2E_REQUIRE_OTEL is not true.');
+  }
 
   await assertDeploymentMetadata(
     '/letovo-api/deployment/metadata',

@@ -21,23 +21,36 @@ def test_collector_config_and_compose_are_wired():
     assert "processors:" in collector
     assert "batch:" in collector
     assert "exporters:" in collector
+    assert "otlphttp/jaeger:" in collector
+    assert "endpoint: http://jaeger:4318" in collector
     assert "debug:" in collector
     assert "service:" in collector
     assert "pipelines:" in collector
     assert "traces:" in collector
     assert "logs:" in collector
 
+    assert "jaeger:" in compose
+    assert "jaegertracing/all-in-one:1.57" in compose
+    assert "SPAN_STORAGE_TYPE: badger" in compose
+    assert "BADGER_EPHEMERAL: \"false\"" in compose
+    assert "127.0.0.1:16686:16686" in compose
+    assert "jaeger-data:" in compose
     assert "otel-collector:" in compose
     assert "otel/opentelemetry-collector:0.155.0" in compose
+    assert "          - jaeger" in compose
     assert "./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro" in compose
     assert "127.0.0.1:4317:4317" in compose
     assert "127.0.0.1:4318:4318" in compose
     assert "OTEL_SERVICE_NAME: letovo-server" in compose
     assert "OTEL_SERVICE_NAME: letovo-registration-server" in compose
+    assert "OTEL_RESOURCE_ATTRIBUTES: deployment.environment=production,service.namespace=letovocorp" in compose
     assert "OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318" in compose
     assert "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://127.0.0.1:4318/v1/traces" in compose
     assert 'NEXT_PUBLIC_OTEL_ENABLED: "true"' in compose
     assert "NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: /otel/v1/traces" in compose
+    assert "NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT: production" in compose
+    assert "NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE: letovocorp" in compose
+    assert 'NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO: "0.1"' in compose
 
     assert "location = /otel/v1/traces" in nginx
     assert "limit_except POST" in nginx
@@ -81,8 +94,11 @@ def test_backend_opentelemetry_dependency_and_request_wrapper_are_wired():
     assert "HttpTraceContext" in source
     assert "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" in source
     assert "OTEL_SERVICE_NAME" in source
+    assert "OTEL_RESOURCE_ATTRIBUTES" in source
     assert "OTEL_SDK_DISABLED" in source
     assert "OTEL_TRACES_EXPORTER" in source
+    assert '"http://127.0.0.1:4318"' not in source
+    assert "std::string traces_endpoint{}" in header
     assert "request.duration_ms" in source
     assert "http.response.status_code" in header
     assert "trace_id" in source
@@ -122,9 +138,17 @@ def test_frontend_opentelemetry_contract_is_wired():
     assert "propagation.inject" in browser
     assert "traceparent" in browser
     assert "NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT" in browser
+    assert "NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT" in browser
+    assert "NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE" in browser
+    assert "NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO" in browser
+    assert "TraceIdRatioBasedSampler" in browser
+    assert "!initialized" in browser
     assert "withFrontendSpan" in browser
     assert "initBrowserTelemetry" in bootstrap
     assert "<TelemetryBootstrap />" in layout
     assert "'analytics.activity_ping'" in analytics
     assert "ARG NEXT_PUBLIC_OTEL_ENABLED=" in dockerfile
     assert "ARG NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=" in dockerfile
+    assert "ARG NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT=" in dockerfile
+    assert "ARG NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE=" in dockerfile
+    assert "ARG NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO=" in dockerfile
