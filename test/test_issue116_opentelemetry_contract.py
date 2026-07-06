@@ -31,6 +31,7 @@ def test_collector_config_and_compose_are_wired():
 
     assert "jaeger:" in compose
     assert "jaegertracing/all-in-one:1.57" in compose
+    assert 'user: "0:0"' in compose
     assert "SPAN_STORAGE_TYPE: badger" in compose
     assert "BADGER_EPHEMERAL: \"false\"" in compose
     assert "127.0.0.1:16686:16686" in compose
@@ -43,7 +44,7 @@ def test_collector_config_and_compose_are_wired():
     assert "127.0.0.1:4318:4318" in compose
     assert "OTEL_SERVICE_NAME: letovo-server" in compose
     assert "OTEL_SERVICE_NAME: letovo-registration-server" in compose
-    assert "OTEL_RESOURCE_ATTRIBUTES: deployment.environment=production,service.namespace=letovocorp" in compose
+    assert "OTEL_RESOURCE_ATTRIBUTES" not in compose
     assert "OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318" in compose
     assert "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://127.0.0.1:4318/v1/traces" in compose
     assert 'NEXT_PUBLIC_OTEL_ENABLED: "true"' in compose
