@@ -47,6 +47,8 @@ services:
         depends_on:
           - otel-collector
         environment:
+          SERVER_ADRESS: "127.0.0.1"
+          SERVER_PORT: "8080"
           OTEL_SERVICE_NAME: letovo-server
           OTEL_RESOURCE_ATTRIBUTES: deployment.environment=production,service.namespace=letovocorp
           OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
