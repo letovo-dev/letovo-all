@@ -250,6 +250,7 @@ jobs:
           ssh -i ~/.ssh/letovo-production-release "$remote" "mkdir -p '$state_dir'"
           scp -i ~/.ssh/letovo-production-release docs/docker-compose.yaml "$remote:$state_dir/docker-compose.yaml.from-repo"
           scp -i ~/.ssh/letovo-production-release docs/otel-collector-config.yaml "$remote:$state_dir/otel-collector-config.yaml.from-repo"
+          scp -i ~/.ssh/letovo-production-release frontend/front-env.env "$remote:$state_dir/letovo-front.env.from-repo"
           scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py "$remote:$state_dir/patch_nginx_otel.py"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
             "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
@@ -261,13 +262,16 @@ jobs:
           restore="$state_dir/restore.env"
           compose_backup="$state_dir/docker-compose.yaml.before-release"
           otel_backup="$state_dir/otel-collector-config.yaml.before-release"
+          front_env_backup="$state_dir/letovo-front.env.before-release"
           nginx_backup="$state_dir/nginx-site.before-release"
           candidate="$state_dir/docker-compose.yaml"
           repo_compose="$state_dir/docker-compose.yaml.from-repo"
           repo_otel="$state_dir/otel-collector-config.yaml.from-repo"
+          repo_front_env="$state_dir/letovo-front.env.from-repo"
           nginx_candidate="$state_dir/nginx-site.candidate"
           compose_dir="$(dirname "$COMPOSE_FILE")"
           otel_config="$compose_dir/otel-collector-config.yaml"
+          front_env="/mnt/letovo-front.env"
 
           as_root() {
             if [ "$(id -u)" -eq 0 ]; then
@@ -282,10 +286,14 @@ jobs:
           docker image inspect "$FRONTEND_IMAGE" >/dev/null
           test -f "$repo_compose"
           test -f "$repo_otel"
+          test -f "$repo_front_env"
 
           cp "$COMPOSE_FILE" "$compose_backup"
           if [ -f "$otel_config" ]; then
             cp "$otel_config" "$otel_backup"
+          fi
+          if [ -f "$front_env" ]; then
+            as_root cp "$front_env" "$front_env_backup"
           fi
           as_root cp "$NGINX_SITE" "$nginx_backup"
           docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
@@ -300,6 +308,7 @@ jobs:
             "$repo_compose" > "$candidate"
 
           cp "$repo_otel" "$otel_config"
+          as_root install -m 0644 "$repo_front_env" "$front_env"
           cp "$candidate" "$COMPOSE_FILE"
 
           python3 "$state_dir/patch_nginx_otel.py" "$NGINX_SITE" "$nginx_candidate" --server-name letovocorp.ru
@@ -385,6 +394,7 @@ jobs:
           restore="$state_dir/restore.env"
           compose_backup="$state_dir/docker-compose.yaml.before-release"
           otel_backup="$state_dir/otel-collector-config.yaml.before-release"
+          front_env_backup="$state_dir/letovo-front.env.before-release"
           nginx_backup="$state_dir/nginx-site.before-release"
           test -f "$restore" || exit 0
           test -f "$compose_backup" || exit 0
@@ -400,6 +410,9 @@ jobs:
           cp "$compose_backup" "$COMPOSE_FILE"
           if [ -f "$otel_backup" ]; then
             cp "$otel_backup" "$(dirname "$COMPOSE_FILE")/otel-collector-config.yaml"
+          fi
+          if [ -f "$front_env_backup" ]; then
+            as_root install -m 0644 "$front_env_backup" /mnt/letovo-front.env
           fi
           if [ -f "$nginx_backup" ]; then
             as_root cp "$nginx_backup" "$NGINX_SITE"

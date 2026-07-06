@@ -118,9 +118,15 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "gzip -dc | docker load" in workflow
     assert "scp -i ~/.ssh/letovo-production-release docs/docker-compose.yaml" in workflow
     assert "scp -i ~/.ssh/letovo-production-release docs/otel-collector-config.yaml" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release frontend/front-env.env" in workflow
     assert "scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py" in workflow
     assert "otel-collector-config.yaml.before-release" in workflow
+    assert "letovo-front.env.before-release" in workflow
     assert "nginx-site.before-release" in workflow
+    assert 'repo_front_env="$state_dir/letovo-front.env.from-repo"' in workflow
+    assert 'front_env="/mnt/letovo-front.env"' in workflow
+    assert 'test -f "$repo_front_env"' in workflow
+    assert 'as_root install -m 0644 "$repo_front_env" "$front_env"' in workflow
     assert 'python3 "$state_dir/patch_nginx_otel.py" "$NGINX_SITE" "$nginx_candidate" --server-name letovocorp.ru' in workflow
     assert "as_root nginx -t" in workflow
     assert "as_root nginx -s reload || as_root systemctl reload nginx" in workflow
@@ -140,6 +146,7 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "LIVE_E2E_EXPECTED_BACKEND_SHA=$release_sha" in workflow
     assert "Roll back production images on failure" in workflow
     assert "cp \"$otel_backup\" \"$(dirname \"$COMPOSE_FILE\")/otel-collector-config.yaml\"" in workflow
+    assert 'as_root install -m 0644 "$front_env_backup" /mnt/letovo-front.env' in workflow
     assert "as_root cp \"$nginx_backup\" \"$NGINX_SITE\"" in workflow
 
 
