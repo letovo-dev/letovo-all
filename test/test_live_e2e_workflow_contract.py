@@ -137,7 +137,7 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "cp \"$candidate\" \"$COMPOSE_FILE\"" in workflow
     assert "up -d jaeger otel-collector letovo-server letovo-registration-server letovo-front" in workflow
     assert "docker inspect -f '{{.State.Running}}' jaeger" in workflow
-    assert 'curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/auth/login' in workflow
+    assert 'curl --connect-timeout 2 --max-time 5 -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/auth/login' in workflow
     assert "Expected letovo-server on 127.0.0.1:8080 to return 501" in workflow
     assert 'docker logs --tail 200 letovo-server' in workflow
     assert "Run production live e2e" in workflow

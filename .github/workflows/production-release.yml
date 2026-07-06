@@ -329,7 +329,7 @@ jobs:
 
           backend_status=""
           for _ in $(seq 1 30); do
-            backend_status="$(curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/auth/login || true)"
+            backend_status="$(curl --connect-timeout 2 --max-time 5 -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/auth/login || true)"
             if [ "$backend_status" = "501" ]; then
               break
             fi
