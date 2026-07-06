@@ -172,18 +172,23 @@ void record_event(const std::string &username, const std::string &session_id,
         "NULLIF(($9), ''), COALESCE(NULLIF(($10), '')::jsonb, '{}'::jsonb));",
         params, true);
     con->execute_params(
+        "WITH updated AS ("
+        "  UPDATE public.user_activity_last_seen SET "
+        "  last_seen_at = now(), last_route = ($6), "
+        "  last_client_event = NULLIF(($9), ''), "
+        "  session_id_hash = NULLIF(($2), ''), "
+        "  ip_hash = NULLIF(($3), ''), "
+        "  user_agent_hash = NULLIF(($4), '') "
+        "  WHERE username = ($1) RETURNING username"
+        ") "
         "INSERT INTO public.user_activity_last_seen "
         "(username, last_seen_at, last_route, last_client_event, "
         "session_id_hash, ip_hash, user_agent_hash) "
-        "VALUES (($1), now(), ($6), NULLIF(($9), ''), NULLIF(($2), ''), "
-        "NULLIF(($3), ''), NULLIF(($4), '')) "
-        "ON CONFLICT (username) DO UPDATE SET "
-        "last_seen_at = EXCLUDED.last_seen_at, "
-        "last_route = EXCLUDED.last_route, "
-        "last_client_event = EXCLUDED.last_client_event, "
-        "session_id_hash = EXCLUDED.session_id_hash, "
-        "ip_hash = EXCLUDED.ip_hash, "
-        "user_agent_hash = EXCLUDED.user_agent_hash;",
+        "SELECT ($1), now(), ($6), NULLIF(($9), ''), NULLIF(($2), ''), "
+        "NULLIF(($3), ''), NULLIF(($4), '') "
+        "WHERE NOT EXISTS (SELECT 1 FROM updated) "
+        "AND NOT EXISTS (SELECT 1 FROM public.user_activity_last_seen "
+        "WHERE username = ($1));",
         params, true);
   } catch (const std::exception &e) {
     if (logger_ptr) {

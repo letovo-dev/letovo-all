@@ -79,6 +79,14 @@ def test_activity_summary_counts_distinct_usernames_not_requests():
     assert "'top_routes_24h'" in source
 
 
+def test_last_seen_write_does_not_require_preexisting_unique_constraint():
+    source = _read(ANALYTICS_CC)
+
+    assert "WITH updated AS (" in source
+    assert "WHERE NOT EXISTS (SELECT 1 FROM updated)" in source
+    assert "ON CONFLICT (username)" not in source
+
+
 def test_activity_ping_validates_event_and_route_shape():
     source = _read(ANALYTICS_CC)
 

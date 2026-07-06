@@ -41,6 +41,7 @@ env:
   LIVE_E2E_WAIT_TIMEOUT_SECONDS: ${{ inputs.wait_timeout_seconds }}
   LIVE_E2E_REQUIRE_AUTH: "true"
   LIVE_E2E_REQUIRE_EXTENDED: ${{ inputs.require_extended }}
+  LIVE_E2E_REQUIRE_OTEL: "true"
 
 jobs:
   release:
@@ -98,6 +99,7 @@ jobs:
           LETOVO_PROD_DEPLOY_SSH_KEY: ${{ secrets.LETOVO_PROD_DEPLOY_SSH_KEY }}
           LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
           LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
+          LETOVO_PROD_NGINX_SITE: ${{ vars.LETOVO_PROD_NGINX_SITE || '/etc/nginx/sites-available/default' }}
         run: |
           set -euo pipefail
           test -n "$LETOVO_PROD_DEPLOY_USER" || { echo "LETOVO_PROD_DEPLOY_USER secret is required"; exit 1; }
@@ -105,6 +107,7 @@ jobs:
           test -n "$LETOVO_PROD_DEPLOY_HOST" || { echo "LETOVO_PROD_DEPLOY_HOST is required"; exit 1; }
           test -n "$LETOVO_PROD_DEPLOY_COMPOSE" || { echo "LETOVO_PROD_DEPLOY_COMPOSE is required"; exit 1; }
           test -n "$LETOVO_PROD_DEPLOY_PROJECT" || { echo "LETOVO_PROD_DEPLOY_PROJECT is required"; exit 1; }
+          test -n "$LETOVO_PROD_NGINX_SITE" || { echo "LETOVO_PROD_NGINX_SITE is required"; exit 1; }
           test "$LIVE_E2E_REQUIRE_AUTH" = "true"
 
       - name: Set up QEMU
@@ -140,6 +143,9 @@ jobs:
           NEXT_PUBLIC_OTEL_ENABLED: "true"
           NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: /otel/v1/traces
           NEXT_PUBLIC_OTEL_SERVICE_NAME: letovo-frontend
+          NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT: production
+          NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE: letovocorp
+          NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO: "0.1"
           NEXT_PUBLIC_LETOVO_BUILD_SHA: ${{ steps.release.outputs.release_sha }}
         run: |
           set -euo pipefail
@@ -194,6 +200,9 @@ jobs:
             NEXT_PUBLIC_OTEL_ENABLED=true
             NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otel/v1/traces
             NEXT_PUBLIC_OTEL_SERVICE_NAME=letovo-frontend
+            NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT=production
+            NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE=letovocorp
+            NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO=0.1
             NEXT_PUBLIC_LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
           tags: ${{ steps.release.outputs.frontend_image }}
           cache-from: type=gha
@@ -233,24 +242,52 @@ jobs:
           LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
           LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
           LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
+          LETOVO_PROD_NGINX_SITE: ${{ vars.LETOVO_PROD_NGINX_SITE || '/etc/nginx/sites-available/default' }}
         run: |
           set -euo pipefail
           remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
+          state_dir="/tmp/letovo-production-release-${{ github.run_id }}"
+          ssh -i ~/.ssh/letovo-production-release "$remote" "mkdir -p '$state_dir'"
+          scp -i ~/.ssh/letovo-production-release docs/docker-compose.yaml "$remote:$state_dir/docker-compose.yaml.from-repo"
+          scp -i ~/.ssh/letovo-production-release docs/otel-collector-config.yaml "$remote:$state_dir/otel-collector-config.yaml.from-repo"
+          scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py "$remote:$state_dir/patch_nginx_otel.py"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
-            "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+            "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
           test -f "$COMPOSE_FILE"
+          test -f "$NGINX_SITE"
           state_dir="/tmp/letovo-production-release-${RUN_ID}"
           mkdir -p "$state_dir"
           restore="$state_dir/restore.env"
           compose_backup="$state_dir/docker-compose.yaml.before-release"
+          otel_backup="$state_dir/otel-collector-config.yaml.before-release"
+          nginx_backup="$state_dir/nginx-site.before-release"
           candidate="$state_dir/docker-compose.yaml"
+          repo_compose="$state_dir/docker-compose.yaml.from-repo"
+          repo_otel="$state_dir/otel-collector-config.yaml.from-repo"
+          nginx_candidate="$state_dir/nginx-site.candidate"
+          compose_dir="$(dirname "$COMPOSE_FILE")"
+          otel_config="$compose_dir/otel-collector-config.yaml"
+
+          as_root() {
+            if [ "$(id -u)" -eq 0 ]; then
+              "$@"
+            else
+              sudo -n "$@"
+            fi
+          }
 
           docker image inspect "$BACKEND_IMAGE" >/dev/null
           docker image inspect "$REGISTRATION_IMAGE" >/dev/null
           docker image inspect "$FRONTEND_IMAGE" >/dev/null
+          test -f "$repo_compose"
+          test -f "$repo_otel"
 
           cp "$COMPOSE_FILE" "$compose_backup"
+          if [ -f "$otel_config" ]; then
+            cp "$otel_config" "$otel_backup"
+          fi
+          as_root cp "$NGINX_SITE" "$nginx_backup"
           docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
           docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
           docker inspect -f 'letovo-front={{.Config.Image}}' letovo-front >> "$restore"
@@ -260,10 +297,23 @@ jobs:
             -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${REGISTRATION_IMAGE}#" \
             -e "s#image: .*letovo.*front.*:.*#image: ${FRONTEND_IMAGE}#" \
             -e "s#LETOVO_BUILD_SHA: \".*\"#LETOVO_BUILD_SHA: \"${RELEASE_SHA}\"#" \
-            "$COMPOSE_FILE" > "$candidate"
+            "$repo_compose" > "$candidate"
 
+          cp "$repo_otel" "$otel_config"
           cp "$candidate" "$COMPOSE_FILE"
-          docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d letovo-server letovo-registration-server letovo-front
+
+          python3 "$state_dir/patch_nginx_otel.py" "$NGINX_SITE" "$nginx_candidate" --server-name letovocorp.ru
+          as_root cp "$nginx_candidate" "$NGINX_SITE"
+          if ! as_root nginx -t; then
+            as_root cp "$nginx_backup" "$NGINX_SITE"
+            as_root nginx -t
+            exit 1
+          fi
+          as_root nginx -s reload || as_root systemctl reload nginx
+
+          docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d jaeger otel-collector letovo-server letovo-registration-server letovo-front
+          test "$(docker inspect -f '{{.State.Running}}' jaeger)" = "true"
+          test "$(docker inspect -f '{{.State.Running}}' otel-collector)" = "true"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$BACKEND_IMAGE"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$REGISTRATION_IMAGE"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$FRONTEND_IMAGE"
@@ -293,6 +343,29 @@ jobs:
           LETOVO_E2E_SECONDARY_PASSWORD: ${{ secrets.LETOVO_E2E_SECONDARY_PASSWORD }}
         run: node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs
 
+      - name: Verify production OTEL storage
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
+          ssh -i ~/.ssh/letovo-production-release "$remote" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          trace_id="11111111111111111111111111111111"
+          for _ in $(seq 1 30); do
+            body="$(curl -fsS "http://127.0.0.1:16686/api/traces/${trace_id}" || true)"
+            if printf '%s' "$body" | grep -q 'live-e2e-otel-smoke'; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Jaeger did not return the live e2e OTEL smoke span"
+          docker logs --tail 200 otel-collector || true
+          docker logs --tail 200 jaeger || true
+          exit 1
+          REMOTE
+
       - name: Roll back production images on failure
         if: failure()
         env:
@@ -300,20 +373,39 @@ jobs:
           LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
           LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
           LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
+          LETOVO_PROD_NGINX_SITE: ${{ vars.LETOVO_PROD_NGINX_SITE || '/etc/nginx/sites-available/default' }}
         run: |
           set -euo pipefail
           test -f ~/.ssh/letovo-production-release || exit 0
           remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
-            "COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+            "COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
           state_dir="/tmp/letovo-production-release-${RUN_ID}"
           restore="$state_dir/restore.env"
           compose_backup="$state_dir/docker-compose.yaml.before-release"
+          otel_backup="$state_dir/otel-collector-config.yaml.before-release"
+          nginx_backup="$state_dir/nginx-site.before-release"
           test -f "$restore" || exit 0
           test -f "$compose_backup" || exit 0
 
+          as_root() {
+            if [ "$(id -u)" -eq 0 ]; then
+              "$@"
+            else
+              sudo -n "$@"
+            fi
+          }
+
           cp "$compose_backup" "$COMPOSE_FILE"
+          if [ -f "$otel_backup" ]; then
+            cp "$otel_backup" "$(dirname "$COMPOSE_FILE")/otel-collector-config.yaml"
+          fi
+          if [ -f "$nginx_backup" ]; then
+            as_root cp "$nginx_backup" "$NGINX_SITE"
+            as_root nginx -t
+            as_root nginx -s reload || as_root systemctl reload nginx
+          fi
           backend_image="$(awk -F= '$1 == "letovo-server" { print $2 }' "$restore" | tail -n 1)"
           registration_image="$(awk -F= '$1 == "letovo-registration-server" { print $2 }' "$restore" | tail -n 1)"
           frontend_image="$(awk -F= '$1 == "letovo-front" { print $2 }' "$restore" | tail -n 1)"

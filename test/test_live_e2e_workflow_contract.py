@@ -1,4 +1,6 @@
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 
@@ -7,6 +9,7 @@ WORKFLOW = ROOT / ".github" / "workflows" / "live-e2e.yml"
 BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "docker-image.yml"
 PRODUCTION_RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "production-release.yml"
 LIVE_SCRIPT = ROOT / "test" / "e2e" / "live-platform-smoke.mjs"
+NGINX_OTEL_PATCHER = ROOT / "scripts" / "patch_nginx_otel.py"
 COMPOSE = ROOT / "docs" / "docker-compose.yaml"
 BACKEND_DOCKERFILE = ROOT / "src" / "Dockerfile"
 FRONTEND_DOCKERFILE = ROOT / "frontend" / "dockerfile"
@@ -43,6 +46,8 @@ def test_live_e2e_workflow_runs_after_deployable_images_are_published():
     assert "LETOVO_E2E_SECONDARY_PASSWORD" in workflow
     assert "LIVE_E2E_REQUIRE_EXTENDED" in workflow
     assert "inputs.require_extended || 'false'" in workflow
+    assert "LIVE_E2E_REQUIRE_OTEL" in workflow
+    assert "inputs.require_otel || 'false'" in workflow
     assert "node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs" in workflow
     assert "expected_sha:" in workflow
     assert "github.event.workflow_run.head_sha" in workflow
@@ -64,6 +69,7 @@ def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     assert "live-deployment-e2e:" in workflow
     assert "needs: [publish-pr-candidate]" in workflow
     assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
+    assert 'LIVE_E2E_REQUIRE_OTEL: "false"' in workflow
     assert "LIVE_E2E_EXPECTED_BACKEND_SHA: ${{ github.sha }}" in workflow
     assert "LIVE_E2E_EXPECTED_FRONTEND_SHA: ${{ github.sha }}" in workflow
     assert "concurrency:" in workflow
@@ -103,21 +109,38 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "LETOVO_PROD_DEPLOY_HOST" in workflow
     assert "LETOVO_PROD_DEPLOY_USER" in workflow
     assert "LETOVO_PROD_DEPLOY_SSH_KEY" in workflow
+    assert "LETOVO_PROD_NGINX_SITE || '/etc/nginx/sites-available/default'" in workflow
     workflow_env = _workflow_env(workflow)
     assert "LETOVO_PROD_DEPLOY_USER" not in workflow_env
     assert "LETOVO_PROD_DEPLOY_SSH_KEY" not in workflow_env
     assert "Transfer production images to host" in workflow
     assert "docker save \"${images[@]}\" | gzip -1 | ssh" in workflow
     assert "gzip -dc | docker load" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release docs/docker-compose.yaml" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release docs/otel-collector-config.yaml" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py" in workflow
+    assert "otel-collector-config.yaml.before-release" in workflow
+    assert "nginx-site.before-release" in workflow
+    assert 'python3 "$state_dir/patch_nginx_otel.py" "$NGINX_SITE" "$nginx_candidate" --server-name letovocorp.ru' in workflow
+    assert "as_root nginx -t" in workflow
+    assert "as_root nginx -s reload || as_root systemctl reload nginx" in workflow
     assert "docker compose -p \"$PROJECT_NAME\" -f \"$COMPOSE_FILE\" pull" not in workflow
     assert "docker image inspect \"$BACKEND_IMAGE\" >/dev/null" in workflow
     assert "RELEASE_SHA='${{ steps.release.outputs.release_sha }}'" in workflow
     assert 's#LETOVO_BUILD_SHA: \\".*\\"#LETOVO_BUILD_SHA: \\"${RELEASE_SHA}\\"#' in workflow
     assert "cp \"$candidate\" \"$COMPOSE_FILE\"" in workflow
+    assert "up -d jaeger otel-collector letovo-server letovo-registration-server letovo-front" in workflow
+    assert "docker inspect -f '{{.State.Running}}' jaeger" in workflow
     assert "Run production live e2e" in workflow
+    assert "Verify production OTEL storage" in workflow
+    assert "http://127.0.0.1:16686/api/traces/${trace_id}" in workflow
+    assert "live-e2e-otel-smoke" in workflow
     assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
+    assert 'LIVE_E2E_REQUIRE_OTEL: "true"' in workflow
     assert "LIVE_E2E_EXPECTED_BACKEND_SHA=$release_sha" in workflow
     assert "Roll back production images on failure" in workflow
+    assert "cp \"$otel_backup\" \"$(dirname \"$COMPOSE_FILE\")/otel-collector-config.yaml\"" in workflow
+    assert "as_root cp \"$nginx_backup\" \"$NGINX_SITE\"" in workflow
 
 
 def test_production_release_backend_build_files_match_main_ci():
@@ -128,6 +151,12 @@ def test_live_e2e_uses_condition_polling_and_browser_level_checks():
     script = _read(LIVE_SCRIPT)
 
     assert "async function waitForLiveDeployment" in script
+    assert "async function postOtelSmokeSpan" in script
+    assert "LIVE_E2E_REQUIRE_OTEL === 'true'" in script
+    assert "/otel/v1/traces" in script
+    assert "live-e2e-otel-smoke" in script
+    assert "Expected /otel/v1/traces to accept OTLP JSON" in script
+    assert "Skipping OTEL trace smoke because LIVE_E2E_REQUIRE_OTEL is not true." in script
     assert "LIVE_E2E_EXPECTED_BACKEND_SHA" in script
     assert "LIVE_E2E_EXPECTED_FRONTEND_SHA" in script
     assert "async function assertDeploymentMetadata" in script
@@ -175,3 +204,52 @@ def test_images_expose_deployment_metadata_sha():
     assert "ARG NEXT_PUBLIC_BASE_URL_UPLOAD=" in frontend_dockerfile
     assert "ARG NEXT_PUBLIC_BASE_URL_MEDIA=" in frontend_dockerfile
     assert "process.env.LETOVO_BUILD_SHA" in frontend_route
+
+
+def test_nginx_otel_patcher_targets_https_letovocorp_server(tmp_path):
+    source = tmp_path / "site.conf"
+    output = tmp_path / "site.patched.conf"
+    source.write_text(
+        """
+server {
+    listen 80;
+    server_name letovocorp.ru www.letovocorp.ru;
+
+    location = /otel/v1/traces {
+        proxy_pass http://127.0.0.1:4318/v1/traces;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name letovocorp.ru www.letovocorp.ru;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+    }
+}
+""".lstrip(),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [sys.executable, str(NGINX_OTEL_PATCHER), str(source), str(output)],
+        check=True,
+    )
+
+    patched = output.read_text(encoding="utf-8")
+    first_server = patched.index("server {")
+    second_server = patched.index("server {", first_server + 1)
+    http_server = patched[first_server:second_server]
+    https_server = patched[second_server:]
+
+    assert "location = /otel/v1/traces" not in http_server
+    assert "location /otel/" not in http_server
+    assert "location = /otel/v1/traces" in https_server
+    assert "location /otel/" in https_server
+    assert "return 404;" in https_server
+    assert https_server.index("location = /otel/v1/traces") < https_server.index("location / {")
