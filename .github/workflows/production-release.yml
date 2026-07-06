@@ -272,6 +272,7 @@ jobs:
           compose_dir="$(dirname "$COMPOSE_FILE")"
           otel_config="$compose_dir/otel-collector-config.yaml"
           front_env="/mnt/letovo-front.env"
+          smoke_name="letovo-server-release-smoke-${RUN_ID}"
 
           as_root() {
             if [ "$(id -u)" -eq 0 ]; then
@@ -287,6 +288,11 @@ jobs:
           test -f "$repo_compose"
           test -f "$repo_otel"
           test -f "$repo_front_env"
+          docker rm -f "$smoke_name" >/dev/null 2>&1 || true
+          cleanup_smoke() {
+            docker rm -f "$smoke_name" >/dev/null 2>&1 || true
+          }
+          trap cleanup_smoke EXIT
 
           cp "$COMPOSE_FILE" "$compose_backup"
           if [ -f "$otel_config" ]; then
@@ -306,6 +312,41 @@ jobs:
             -e "s#image: .*letovo.*front.*:.*#image: ${FRONTEND_IMAGE}#" \
             -e "s#LETOVO_BUILD_SHA: \".*\"#LETOVO_BUILD_SHA: \"${RELEASE_SHA}\"#" \
             "$repo_compose" > "$candidate"
+
+          docker run -d \
+            --name "$smoke_name" \
+            --network host \
+            -e SERVER_ADRESS=127.0.0.1 \
+            -e SERVER_PORT=18080 \
+            -e LETOVO_BUILD_SHA="$RELEASE_SHA" \
+            -e OTEL_SERVICE_NAME=letovo-server-release-smoke \
+            -e OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318 \
+            -e OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces \
+            -e OTEL_TRACES_EXPORTER=otlp \
+            -e OTEL_LOG_LEVEL=info \
+            -v /mnt/server-media:/app/pages \
+            -v /mnt/server-configs:/app/configs \
+            "$BACKEND_IMAGE"
+
+          smoke_status=""
+          for _ in $(seq 1 20); do
+            if [ "$(docker inspect -f '{{.State.Running}}' "$smoke_name" 2>/dev/null || true)" != "true" ]; then
+              break
+            fi
+            smoke_status="$(curl --connect-timeout 2 --max-time 5 -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:18080/auth/login || true)"
+            if [ "$smoke_status" = "501" ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ "$smoke_status" != "501" ]; then
+            echo "Candidate letovo-server image failed pre-deploy smoke on 127.0.0.1:18080; got ${smoke_status:-no response}"
+            docker ps -a --filter "name=$smoke_name" || true
+            docker logs --tail 200 "$smoke_name" || true
+            exit 1
+          fi
+          cleanup_smoke
+          trap - EXIT
 
           cp "$repo_otel" "$otel_config"
           as_root install -m 0644 "$repo_front_env" "$front_env"

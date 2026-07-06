@@ -82,6 +82,18 @@ def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     assert "Restore live deployment images" in workflow
 
 
+def test_main_latest_frontend_image_bakes_production_api_prefix():
+    workflow = _read(BUILD_WORKFLOW)
+
+    assert "publish-main:" in workflow
+    assert "${{ env.FRONTEND_IMAGE }}:latest" in workflow
+    assert "NEXT_PUBLIC_BASE_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api" in workflow
+    assert "NEXT_PUBLIC_BASE_URL_UPLOAD=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/" in workflow
+    assert "NEXT_PUBLIC_BASE_URL_MEDIA=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/media/get" in workflow
+    assert "NEXT_PUBLIC_UPLOAD_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/" in workflow
+    assert "NEXT_PUBLIC_BASE_URL_CLEAR=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}" in workflow
+
+
 def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     workflow = _read(PRODUCTION_RELEASE_WORKFLOW)
 
@@ -126,6 +138,12 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert 'repo_front_env="$state_dir/letovo-front.env.from-repo"' in workflow
     assert 'front_env="/mnt/letovo-front.env"' in workflow
     assert 'test -f "$repo_front_env"' in workflow
+    assert 'smoke_name="letovo-server-release-smoke-${RUN_ID}"' in workflow
+    assert "docker rm -f \"$smoke_name\" >/dev/null 2>&1 || true" in workflow
+    assert "--name \"$smoke_name\"" in workflow
+    assert "-e SERVER_PORT=18080" in workflow
+    assert "http://127.0.0.1:18080/auth/login" in workflow
+    assert "Candidate letovo-server image failed pre-deploy smoke" in workflow
     assert 'as_root install -m 0644 "$repo_front_env" "$front_env"' in workflow
     assert 'python3 "$state_dir/patch_nginx_otel.py" "$NGINX_SITE" "$nginx_candidate" --server-name letovocorp.ru' in workflow
     assert "as_root nginx -t" in workflow
@@ -194,8 +212,8 @@ def test_checked_in_compose_matches_watchtower_frontend_image_contract():
     compose = _read(COMPOSE)
 
     assert "image: ghcr.io/letovo-dev/letovo-all-frontend:latest" in compose
-    assert 'SERVER_ADRESS: "127.0.0.1"' in compose
-    assert 'SERVER_PORT: "8080"' in compose
+    assert 'user: "0:0"' in compose
+    assert "OTEL_RESOURCE_ATTRIBUTES" not in compose
     assert "com.centurylinklabs.watchtower.enable=true" in compose
     assert 'ports:\n          - "127.0.0.1:3000:3000"' in compose
 
