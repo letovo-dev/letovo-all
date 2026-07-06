@@ -137,6 +137,9 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "cp \"$candidate\" \"$COMPOSE_FILE\"" in workflow
     assert "up -d jaeger otel-collector letovo-server letovo-registration-server letovo-front" in workflow
     assert "docker inspect -f '{{.State.Running}}' jaeger" in workflow
+    assert 'curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/auth/login' in workflow
+    assert "Expected letovo-server on 127.0.0.1:8080 to return 501" in workflow
+    assert 'docker logs --tail 200 letovo-server' in workflow
     assert "Run production live e2e" in workflow
     assert "Verify production OTEL storage" in workflow
     assert "http://127.0.0.1:16686/api/traces/${trace_id}" in workflow
@@ -191,6 +194,8 @@ def test_checked_in_compose_matches_watchtower_frontend_image_contract():
     compose = _read(COMPOSE)
 
     assert "image: ghcr.io/letovo-dev/letovo-all-frontend:latest" in compose
+    assert 'SERVER_ADRESS: "127.0.0.1"' in compose
+    assert 'SERVER_PORT: "8080"' in compose
     assert "com.centurylinklabs.watchtower.enable=true" in compose
     assert 'ports:\n          - "127.0.0.1:3000:3000"' in compose
 

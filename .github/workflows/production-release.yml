@@ -326,6 +326,23 @@ jobs:
           test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$BACKEND_IMAGE"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$REGISTRATION_IMAGE"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$FRONTEND_IMAGE"
+
+          backend_status=""
+          for _ in $(seq 1 30); do
+            backend_status="$(curl -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/auth/login || true)"
+            if [ "$backend_status" = "501" ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ "$backend_status" != "501" ]; then
+            echo "Expected letovo-server on 127.0.0.1:8080 to return 501 for GET /auth/login, got ${backend_status:-no response}"
+            docker ps -a --filter "name=letovo-server" --filter "name=otel-collector" --filter "name=jaeger" || true
+            docker logs --tail 200 letovo-server || true
+            docker logs --tail 200 otel-collector || true
+            docker logs --tail 200 jaeger || true
+            exit 1
+          fi
           REMOTE
 
       - name: Set up Node.js for live e2e
