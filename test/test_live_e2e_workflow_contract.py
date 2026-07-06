@@ -82,6 +82,18 @@ def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     assert "Restore live deployment images" in workflow
 
 
+def test_main_latest_frontend_image_bakes_production_api_prefix():
+    workflow = _read(BUILD_WORKFLOW)
+
+    assert "publish-main:" in workflow
+    assert "${{ env.FRONTEND_IMAGE }}:latest" in workflow
+    assert "NEXT_PUBLIC_BASE_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api" in workflow
+    assert "NEXT_PUBLIC_BASE_URL_UPLOAD=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/" in workflow
+    assert "NEXT_PUBLIC_BASE_URL_MEDIA=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/media/get" in workflow
+    assert "NEXT_PUBLIC_UPLOAD_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/" in workflow
+    assert "NEXT_PUBLIC_BASE_URL_CLEAR=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}" in workflow
+
+
 def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     workflow = _read(PRODUCTION_RELEASE_WORKFLOW)
 
