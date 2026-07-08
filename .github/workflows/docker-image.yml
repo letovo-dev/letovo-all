@@ -230,6 +230,11 @@ jobs:
           push: true
           build-args: |
             LETOVO_BUILD_SHA=${{ github.sha }}
+            NEXT_PUBLIC_BASE_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api
+            NEXT_PUBLIC_BASE_URL_UPLOAD=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/
+            NEXT_PUBLIC_BASE_URL_MEDIA=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/media/get
+            NEXT_PUBLIC_UPLOAD_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/
+            NEXT_PUBLIC_BASE_URL_CLEAR=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}
             NEXT_PUBLIC_OTEL_ENABLED=true
             NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otel/v1/traces
             NEXT_PUBLIC_OTEL_SERVICE_NAME=letovo-frontend

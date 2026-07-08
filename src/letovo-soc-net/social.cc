@@ -244,17 +244,21 @@ LEFT JOIN comment_preview cp ON cp.post_id = vp.post_id;
         return result[0]["payload"].as<std::string>();
     }
 
-    // FIXME: bug select always returns empty result
     void add_like(int like, std::string post_id, std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
-        std::vector<std::string> params = {std::to_string(like), post_id, username};
-        auto check = con->execute_params("SELECT * FROM \"user_likes\" ul WHERE ul.post_id=($2) AND ul.username=($3) and ul.value!=($1);", params);
-        params = {post_id};
-        if(check.size() > 0) {
-            if(like == 1) {
-                con->execute_params("UPDATE \"posts\" SET dislikes = dislikes - 1 WHERE post_id=($2);", params, true);
-            } else if(like == -1) {
-                con->execute_params("UPDATE \"posts\" SET likes = likes - 1 WHERE post_id=($2);", params, true);
+        std::vector<std::string> params = {post_id, username};
+        auto existing = con->execute_params("SELECT value FROM \"user_likes\" WHERE post_id=($1) AND username=($2);", params);
+        if(existing.size() > 0 && existing[0]["value"].as<int>() == like) {
+            pool_ptr->returnConnection(std::move(con));
+            return;
+        }
+        if(existing.size() > 0) {
+            params = {post_id};
+            int existing_like = existing[0]["value"].as<int>();
+            if(existing_like == 1) {
+                con->execute_params("UPDATE \"posts\" SET likes = GREATEST(likes - 1, 0) WHERE post_id=($1);", params, true);
+            } else if(existing_like == -1) {
+                con->execute_params("UPDATE \"posts\" SET dislikes = GREATEST(dislikes - 1, 0) WHERE post_id=($1);", params, true);
             }
         }
         params = {post_id, username};
@@ -272,13 +276,17 @@ LEFT JOIN comment_preview cp ON cp.post_id = vp.post_id;
 
     void delete_like(int like, std::string post_id, std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
-        std::vector<std::string> params = {post_id, username};
-        con->execute_params("DELETE FROM \"user_likes\" WHERE post_id=($1) AND username=($2);", params, true);
+        std::vector<std::string> params = {std::to_string(like), post_id, username};
+        auto removed = con->execute_params("DELETE FROM \"user_likes\" WHERE value=($1) AND post_id=($2) AND username=($3) RETURNING 1;", params, true);
+        if(removed.empty()) {
+            pool_ptr->returnConnection(std::move(con));
+            return;
+        }
         params = {post_id};
         if(like == 1) {
-            con->execute_params("UPDATE \"posts\" SET likes = likes - 1 WHERE post_id=($1);", params, true);
+            con->execute_params("UPDATE \"posts\" SET likes = GREATEST(likes - 1, 0) WHERE post_id=($1);", params, true);
         } else if(like == -1) {
-            con->execute_params("UPDATE \"posts\" SET dislikes = dislikes - 1 WHERE post_id=($1);", params, true);
+            con->execute_params("UPDATE \"posts\" SET dislikes = GREATEST(dislikes - 1, 0) WHERE post_id=($1);", params, true);
         }
         pool_ptr->returnConnection(std::move(con));
     }
