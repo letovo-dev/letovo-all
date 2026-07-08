@@ -695,16 +695,8 @@ void enable_auth(
               .done();
         }
 
-        if (!auth::is_active(loginHeader, pool_ptr)) {
-          telemetry::record_domain_event(
-              logger_ptr, "auth.login_failed", telemetry::DomainEventLevel::kWarn,
-              "user_inactive", {{"user.hash", user_hash}});
-          return req->create_response(restinio::status_forbidden())
-              .append_header_date_field()
-              .connection_close()
-              .done();
-        }
-
+        // Inactive users are intentionally allowed to authenticate: the active
+        // flag controls current-year account lists, not portal login access.
         if (!user_sessions_columns_exist(pool_ptr)) {
           logger_ptr->error([] {
             return "auth session table is missing or incomplete; cannot create "

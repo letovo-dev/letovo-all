@@ -222,6 +222,18 @@ def test_session_authentication_allows_inactive_portal_users():
     assert "u.active = true" not in username_from_session
 
 
+def test_login_allows_inactive_portal_users_by_design():
+    auth_cc = (ROOT / "src/basic/auth.cc").read_text()
+    login_route = auth_cc.split('http_post("/auth/login"', 1)[1]
+    login_route = login_route.split('http_post("/auth/reg"', 1)[0]
+
+    assert "auth::auth(loginHeader, passwordHeader, pool_ptr)" in login_route
+    assert "Inactive users are intentionally allowed to authenticate" in login_route
+    assert "user_inactive" not in login_route
+    assert "status_forbidden" not in login_route
+    assert "auth::is_active(loginHeader, pool_ptr)" not in login_route
+
+
 def test_social_news_saved_and_titles_accept_http_only_auth_session_cookie():
     social_cc = (ROOT / "src/letovo-soc-net/social.cc").read_text()
 
