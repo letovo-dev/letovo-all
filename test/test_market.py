@@ -183,7 +183,7 @@ def test_prepare_transaction_success(sender_user, receiver_user):
     # Success returns transaction ID
     # Conflict (409) means insufficient funds
     # Not found (404) means receiver doesn't exist
-    assert response.status_code in [200, 409, 404]
+    assert response.status_code in [200, 409, 404, 429]
     
     if response.status_code == 200:
         # Should return transaction ID
@@ -203,7 +203,7 @@ def test_prepare_transaction_zero_amount(sender_user, receiver_user):
         verify=False
     )
     # Should succeed as 0 is valid
-    assert response.status_code in [200, 409]
+    assert response.status_code in [200, 409, 429]
 
 
 def test_non_admin_cookie_auth_transfer_flow():
@@ -254,6 +254,60 @@ def test_non_admin_cookie_auth_transfer_flow():
     assert send_response.status_code == 200, send_response.text
 
 
+def test_prepared_transfer_ids_obey_send_cooldown():
+    """A second pre-created transfer ID cannot be sent during the cooldown."""
+    sender = f"cooldown_sender_{uuid.uuid4().hex[:12]}"
+    receiver = f"cooldown_receiver_{uuid.uuid4().hex[:12]}"
+    password = "test"
+
+    for login in (sender, receiver):
+        response = requests.post(
+            f"{BASE_URL}/auth/reg",
+            json={"login": login, "password": password},
+            verify=False,
+        )
+        assert response.status_code == 200, response.text
+
+    login_response = requests.post(
+        f"{BASE_URL}/auth/login",
+        json={"login": sender, "password": password},
+        verify=False,
+    )
+    assert login_response.status_code == 200
+    auth_session = login_response.headers.get("Authorization")
+    assert auth_session
+    cookie_header = {"Cookie": f"AuthSession={auth_session}"}
+
+    prepared_ids = []
+    for _ in range(2):
+        prepare_response = requests.post(
+            f"{BASE_URL}/transactions/prepare",
+            headers=cookie_header,
+            json={"receiver": receiver, "amount": 0},
+            verify=False,
+        )
+        assert prepare_response.status_code == 200, prepare_response.text
+        prepared_ids.append(prepare_response.text)
+
+    first_send_response = requests.post(
+        f"{BASE_URL}/transactions/send",
+        headers=cookie_header,
+        json={"tr_id": prepared_ids[0]},
+        verify=False,
+    )
+    assert first_send_response.status_code == 200, first_send_response.text
+
+    second_send_response = requests.post(
+        f"{BASE_URL}/transactions/send",
+        headers=cookie_header,
+        json={"tr_id": prepared_ids[1]},
+        verify=False,
+    )
+    assert second_send_response.status_code == 429
+    assert second_send_response.headers.get("Retry-After") == "5"
+    assert second_send_response.text == "transfer cooldown active"
+
+
 def test_prepare_negative_transaction_as_admin(admin_user, sender_user):
     """Admins can prepare negative transactions without receiver balance checks."""
     response = requests.post(
@@ -266,7 +320,10 @@ def test_prepare_negative_transaction_as_admin(admin_user, sender_user):
         verify=False
     )
 
-    assert response.status_code == 200
+    assert response.status_code in [200, 429]
+    if response.status_code == 429:
+        assert response.headers.get("Retry-After") == "5"
+        return
     assert response.text
 
 
@@ -433,7 +490,7 @@ def test_full_transaction_flow_insufficient_funds(sender_user, receiver_user):
     
     # Should fail with insufficient funds (409 Conflict)
     # or succeed if user has special rights
-    assert prepare_response.status_code in [200, 409]
+    assert prepare_response.status_code in [200, 409, 429]
 
 
 def test_transaction_to_self(sender_user):
@@ -448,7 +505,7 @@ def test_transaction_to_self(sender_user):
         verify=False
     )
     # System should allow this (it's a valid edge case)
-    assert response.status_code in [200, 409]
+    assert response.status_code in [200, 409, 429]
 
 
 # Note: No cleanup needed since we're using persistent "test" and "scv" users

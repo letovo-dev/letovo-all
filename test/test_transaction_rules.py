@@ -81,3 +81,24 @@ def test_admin_sender_bypasses_transaction_recipient_restrictions():
     assert "if (!sender_is_admin && !can_use_transactions(reciver, pool_ptr))" in transaction_source
     assert "if (!sender_is_admin && !has_whireable_participant(sender, reciver, pool_ptr))" in transaction_source
     assert transaction_source.count("if (!sender_is_admin && !transactions::can_use_transactions(") >= 2
+
+
+def test_transfer_prepare_has_five_second_cooldown_for_all_senders():
+    repo_root = Path(__file__).resolve().parents[1]
+    transaction_source = (repo_root / "src/market/transactions.cc").read_text()
+    transaction_header = (repo_root / "src/market/transactions.h").read_text()
+    transaction_rules = (repo_root / "src/market/transaction_rules.h").read_text()
+
+    assert "constexpr int kTransferCooldownSeconds = 5;" in transaction_rules
+    assert "Cooldown," in transaction_header
+    assert "int transfer_cooldown_seconds_remaining" in transaction_header
+    assert 'FROM "transactions"' in transaction_source
+    assert "WHERE sender = $1" in transaction_source
+    assert "MAX(transactiontime)" in transaction_source
+    assert "LOCALTIMESTAMP - MAX(transactiontime)" in transaction_source
+    assert "transfer_cooldown_seconds_remaining(sender, pool_ptr) > 0" in transaction_source
+    assert "transfer_cooldown_seconds_remaining(transaction->sender, pool_ptr) > 0" in transaction_source
+    assert transaction_source.count("TransactionStatus::Cooldown") >= 3
+    assert transaction_source.count("restinio::status_too_many_requests()") >= 2
+    assert transaction_source.count('append_header("Retry-After", std::to_string(kTransferCooldownSeconds))') >= 2
+    assert transaction_source.count('set_body("transfer cooldown active")') >= 2
