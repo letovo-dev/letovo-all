@@ -77,6 +77,28 @@ namespace transactions {
         return can_receive_transfer(sender, pool_ptr) || can_receive_transfer(receiver, pool_ptr);
     }
 
+    int transfer_cooldown_seconds_remaining(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        auto con = std::move(pool_ptr->getConnection());
+        std::vector<std::string> params = {username, std::to_string(kTransferCooldownSeconds)};
+        pqxx::result result = con->execute_params(
+            R"(SELECT CASE
+                   WHEN MAX(transactiontime) IS NULL THEN 0
+                   ELSE GREATEST(
+                       0,
+                       $2::integer - FLOOR(EXTRACT(EPOCH FROM (LOCALTIMESTAMP - MAX(transactiontime))))::integer
+                   )
+               END AS seconds_remaining
+               FROM "transactions"
+               WHERE sender = $1)",
+            params);
+        pool_ptr->returnConnection(std::move(con));
+
+        if (result.empty() || result[0]["seconds_remaining"].is_null()) {
+            return 0;
+        }
+        return result[0]["seconds_remaining"].as<int>();
+    }
+
 
     TransferResult transfer_with_result(std::string tr_id, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         TransferResult result;
@@ -90,6 +112,11 @@ namespace transactions {
         result.receiver = transaction->receiver;
         result.amount = amount;
         bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);
+
+        if (transfer_cooldown_seconds_remaining(transaction->sender, pool_ptr) > 0) {
+            result.status = TransactionStatus::Cooldown;
+            return result;
+        }
 
         if (!sender_is_admin &&
             (!can_use_transactions(transaction->sender, pool_ptr) ||
@@ -256,6 +283,9 @@ namespace transactions {
         if (!sender_is_admin && !has_whireable_participant(sender, reciver, pool_ptr)) {
             return {TransactionStatus::NotReceiver, ""};
         }
+        if (transfer_cooldown_seconds_remaining(sender, pool_ptr) > 0) {
+            return {TransactionStatus::Cooldown, ""};
+        }
         
         return {registered_transactions.add_transaction(tr_id, std::make_shared<TransactionDetails>(sender, reciver, std::to_string(ammount))), tr_id};
     }
@@ -399,6 +429,13 @@ namespace transactions::server {
                         .set_body("user is not active")
                     .done();
                     break;
+                case TransactionStatus::Cooldown:
+                    return req->create_response(restinio::status_too_many_requests())
+                        .append_header("Content-Type", "text/plain; charset=utf-8")
+                        .append_header("Retry-After", std::to_string(kTransferCooldownSeconds))
+                        .set_body("transfer cooldown active")
+                    .done();
+                    break;
                 case TransactionStatus::Error:
                 default:
                     break;
@@ -481,6 +518,13 @@ namespace transactions::server {
                     return req->create_response(restinio::status_forbidden())
                         .append_header("Content-Type", "text/plain; charset=utf-8")
                         .set_body("user is not active")
+                    .done();
+                    break;
+                case TransactionStatus::Cooldown:
+                    return req->create_response(restinio::status_too_many_requests())
+                        .append_header("Content-Type", "text/plain; charset=utf-8")
+                        .append_header("Retry-After", std::to_string(kTransferCooldownSeconds))
+                        .set_body("transfer cooldown active")
                     .done();
                     break;
                 case TransactionStatus::Error:
