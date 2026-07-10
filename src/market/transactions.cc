@@ -209,7 +209,13 @@ namespace transactions {
     pqxx::result get_transactions(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
         std::vector<std::string> params = {username};
-        pqxx::result result = con->execute_params("SELECT * FROM \"transactions\" WHERE sender=($1) OR receiver=($1);", params);
+        pqxx::result result = con->execute_params(
+            "SELECT * FROM \"transactions\" "
+            "WHERE (sender=($1) OR receiver=($1)) "
+            "AND transactiontime >= LOCALTIMESTAMP - INTERVAL '7 days' "
+            "ORDER BY transactiontime DESC, transactionid DESC "
+            "LIMIT 100;",
+            params);
         pool_ptr->returnConnection(std::move(con));
         if (result.empty()) {
             return {};
