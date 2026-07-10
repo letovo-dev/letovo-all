@@ -135,12 +135,13 @@ async function loginAs(page, login, loginPassword) {
   await page.locator('#form_login').fill(login);
   await page.locator('#form_password').fill(loginPassword);
 
-  const loginResponsePromise = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return url.pathname.endsWith('/auth/login');
-  }, { timeout: 60_000 });
-  await page.getByRole('button', { name: 'Войти' }).click();
-  const loginResponse = await loginResponsePromise;
+  const [loginResponse] = await Promise.all([
+    page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname.endsWith('/auth/login');
+    }, { timeout: 60_000 }),
+    page.getByRole('button', { name: 'Войти' }).click(),
+  ]);
   assert(
     loginResponse.status() === 200,
     `Login API ${loginResponse.url()} returned HTTP ${loginResponse.status()}`,
