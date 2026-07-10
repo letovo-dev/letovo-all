@@ -362,10 +362,10 @@ jobs:
           docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
           docker inspect -f 'letovo-front={{.Config.Image}}' letovo-front >> "$restore"
 
-          sed \
+          sed -E \
             -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
             -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${REGISTRATION_IMAGE}#" \
-            -e "s#image: ghcr.io/letovo-dev/letovo.*frontend:.*#image: ${FRONTEND_IMAGE}#" \
+            -e "/^    letovo-front:/,/^    [[:alnum:]_-]+:$/ s#^([[:space:]]*)image:.*#\\1image: ${FRONTEND_IMAGE}#" \
             "$COMPOSE_FILE" > "$candidate"
 
           docker compose -p "$PROJECT_NAME" -f "$candidate" pull letovo-server letovo-registration-server letovo-front
@@ -420,10 +420,10 @@ jobs:
           test -n "$frontend_image"
 
           candidate="$state_dir/docker-compose.restore.yaml"
-          sed \
+          sed -E \
             -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${backend_image}#" \
             -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${registration_image}#" \
-            -e "s#image: ghcr.io/letovo-dev/letovo.*frontend:.*#image: ${frontend_image}#" \
+            -e "/^    letovo-front:/,/^    [[:alnum:]_-]+:$/ s#^([[:space:]]*)image:.*#\\1image: ${frontend_image}#" \
             "$COMPOSE_FILE" > "$candidate"
 
           docker compose -p "$PROJECT_NAME" -f "$candidate" pull letovo-server letovo-registration-server letovo-front || true
