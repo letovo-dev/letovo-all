@@ -55,3 +55,14 @@ def test_private_user_endpoint_stays_owner_admin_only():
 
     assert "security::is_same_user_or_admin(actor, username, pool_ptr)" in handler
     assert "status_forbidden" in handler
+
+
+def test_transaction_history_is_recent_ordered_and_bounded():
+    source = TRANSACTIONS_CC.read_text()
+    query_start = source.index("pqxx::result get_transactions(")
+    query_end = source.index("std::string last_incoming_outgoing_payments_json", query_start)
+    query = source[query_start:query_end]
+
+    assert "LOCALTIMESTAMP - INTERVAL '7 days'" in query
+    assert "ORDER BY transactiontime DESC, transactionid DESC" in query
+    assert "LIMIT 100" in query
