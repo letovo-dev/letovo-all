@@ -128,6 +128,11 @@ pqxx::result full_user_info(std::string username,
       "\"user\".balance, \"user\".registered, \"user\".jointime, "
       "\"user\".avatar_pic, \"user\".active, \"user\".times_visited, "
       "\"user\".brigade, "
+      "(CASE WHEN (COALESCE(permission_role.ava_upload, false) = true "
+      "OR COALESCE(permission_role.admin, false) = true "
+      "OR COALESCE(permission_role.moder, false) = true) "
+      "AND \"user\".active=true AND \"user\".userrights <> 'child' "
+      "THEN true ELSE false END) AS can_upload_avatar, "
       "(CASE WHEN COALESCE(permission_role.admin, false) = true "
       "OR COALESCE(permission_role.moder, false) = true "
       "OR COALESCE(\"user\".userrights, '') IN ('admin', 'moder') "
@@ -456,7 +461,15 @@ void set_avatar(std::string username, std::string avatar,
 
 }
 
-std::vector<std::string> all_avatars(bool is_admin) {
+static std::string personal_avatar_relative(const std::string &username) {
+  return "/images/personal_avatars/" + security::sha256_hex(username) + "/";
+}
+
+static std::filesystem::path media_root() {
+  return std::filesystem::path(Config::giveMe().pages_config.media_path.absolute);
+}
+
+std::vector<std::string> all_avatars(const std::string &username, bool is_admin) {
   std::vector<std::string> avatars;
   for (const auto &entry : std::filesystem::directory_iterator(
            Config::giveMe().pages_config.user_avatars_path.absolute)) {
@@ -476,7 +489,31 @@ std::vector<std::string> all_avatars(bool is_admin) {
       }
     }
   }
+  const auto relative = personal_avatar_relative(username);
+  const auto directory = media_root() / relative.substr(1);
+  if (std::filesystem::exists(directory)) {
+    for (const auto &entry : std::filesystem::directory_iterator(directory)) {
+      if (std::filesystem::is_regular_file(entry.status()))
+        avatars.push_back(relative + entry.path().filename().string());
+    }
+  }
   return avatars;
+}
+
+bool can_use_avatar(const std::string &username, const std::string &avatar,
+                    bool is_admin) {
+  if (avatar.empty() || avatar[0] != '/' || avatar.find("..") != std::string::npos ||
+      avatar.find('\\') != std::string::npos) return false;
+  const auto shared = Config::giveMe().pages_config.user_avatars_path.relative;
+  const auto admin = Config::giveMe().pages_config.admin_avatars_path.relative;
+  const auto personal = personal_avatar_relative(username);
+  if (avatar.rfind(shared, 0) != 0 && !(is_admin && avatar.rfind(admin, 0) == 0) &&
+      avatar.rfind(personal, 0) != 0) return false;
+  std::error_code ec;
+  const auto root = std::filesystem::weakly_canonical(media_root(), ec);
+  const auto file = std::filesystem::weakly_canonical(media_root() / avatar.substr(1), ec);
+  return !ec && file.string().rfind(root.string() + "/", 0) == 0 &&
+         std::filesystem::is_regular_file(file, ec);
 }
 } // namespace user
 
@@ -932,10 +969,14 @@ void all_avatars(
             if(token.empty()) {
                 return req->create_response(restinio::status_unauthorized()).done();
             }
+    std::string username = auth::get_username(token, pool_ptr);
+    if (username.empty()) {
+      return req->create_response(restinio::status_unauthorized()).done();
+    }
     return req->create_response()
         .append_header("Content-Type", "application/json; charset=utf-8")
-        .set_body(
-            cp::serialize(user::all_avatars(auth::is_admin(token, pool_ptr))))
+        .set_body(cp::serialize(
+            user::all_avatars(username, auth::is_admin(token, pool_ptr))))
         .done();
   });
 }
@@ -965,6 +1006,9 @@ void set_avatar(std::unique_ptr<restinio::router::express_router_t<>> &router,
     if (new_body.HasMember("avatar")) {
       std::string username = auth::get_username(token, pool_ptr);
       std::string avatar = new_body["avatar"].GetString();
+      if (!user::can_use_avatar(username, avatar, auth::is_admin(token, pool_ptr))) {
+        return req->create_response(restinio::status_forbidden()).done();
+      }
       if (media::check_if_file_exists(avatar).empty()) {
         return req->create_response(restinio::status_bad_request())
             .append_header("Content-Type", "text/plain; charset=utf-8")

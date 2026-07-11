@@ -2,6 +2,8 @@
     "admins": [],
     "media_url": "http://localhost/api/media/get/",
     "ava_path": "images/admin_avatars",
+    "personal_ava_path": "images/personal_avatars",
+    "max_avatar_size": 5242880,
     "paths": {
         "images": "images/uploaded",
         "videos": "videos/uploaded",

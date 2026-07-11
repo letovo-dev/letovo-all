@@ -281,7 +281,7 @@ bool is_rights_by_username(const std::string& username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                            const std::string& rights) {
   static const std::unordered_set<std::string> allowed = {
-      "write_posts", "admin", "moder", "main_page", "whireable"};
+      "write_posts", "admin", "moder", "main_page", "whireable", "ava_upload"};
   if (!allowed.count(rights)) {
     return false;
   }
@@ -486,10 +486,10 @@ created_user AS (
   RETURNING username, display_name, userrights, role, active, registered, chattable
 ),
 created_permission AS (
-  INSERT INTO role (username, write_posts, admin, moder, main_page)
+  INSERT INTO role (username, write_posts, admin, moder, main_page, ava_upload)
   SELECT
     created_user.username, ($12)::boolean, ($13)::boolean,
-    ($14)::boolean, ($15)::boolean
+    ($14)::boolean, ($15)::boolean, created_user.userrights <> 'child'
   FROM created_user
   -- RETURNING created_user.username
   RETURNING username
@@ -958,18 +958,22 @@ void am_i_uploader(
           return req->create_response(restinio::status_unauthorized()).done();
         }
         std::string username = auth::get_username(token, pool_ptr);
-        if (auth::is_rights_by_username(username, pool_ptr, "moder") ||
-            auth::is_rights_by_username(username, pool_ptr, "admin")) {
-          return req->create_response(restinio::status_ok())
-              .set_body("{\"status\": \"t\"}")
+        if (username.empty()) return req->create_response(restinio::status_unauthorized()).done();
+        const bool generic = auth::is_rights_by_username(username, pool_ptr, "moder") ||
+                             auth::is_rights_by_username(username, pool_ptr, "admin");
+        cp::SafeCon con{pool_ptr};
+        const auto avatar_rows = con->execute_params(
+            "SELECT 1 FROM \"user\" u LEFT JOIN \"role\" r ON r.username=u.username "
+            "WHERE u.username=($1) AND u.active=true AND u.userrights <> 'child' AND "
+            "(COALESCE(r.ava_upload,false)=true OR COALESCE(r.admin,false)=true OR COALESCE(r.moder,false)=true);",
+            std::vector<std::string>{username});
+        const bool avatar = !avatar_rows.empty();
+        return req->create_response(restinio::status_ok())
+              .set_body("{\"status\": \"" + std::string(generic ? "t" : "f") +
+                        "\", \"avatar_status\": \"" + std::string(avatar ? "t" : "f") +
+                        "\", \"username\": \"" + username + "\"}")
               .append_header("Content-Type", "application/json; charset=utf-8")
               .done();
-        } else {
-          return req->create_response(restinio::status_ok())
-              .set_body("{\"status\": \"f\"}")
-              .append_header("Content-Type", "application/json; charset=utf-8")
-              .done();
-        }
       });
 }
 
