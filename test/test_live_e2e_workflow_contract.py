@@ -202,6 +202,9 @@ def test_live_e2e_uses_condition_polling_and_browser_level_checks():
     assert "page.goto(`${baseUrl}/login`" in script
     assert "page.locator('#form_login')" in script
     assert "page.locator('#form_password')" in script
+    assert "async function fillLoginForm" in script
+    assert "await button.isEnabled()" in script
+    assert "Login form did not become enabled after hydration" in script
     assert "page.getByRole('button', { name: 'Войти' })" in script
     assert "url.pathname.endsWith('/auth/login')" in script
     assert "JSON.parse(response.text)" in script

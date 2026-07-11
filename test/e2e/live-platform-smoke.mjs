@@ -121,6 +121,21 @@ async function fetchAuthenticated(page, path, options = {}) {
   );
 }
 
+async function fillLoginForm(page, login, loginPassword) {
+  const loginInput = page.locator('#form_login');
+  const passwordInput = page.locator('#form_password');
+  const button = page.getByRole('button', { name: 'Войти' });
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await loginInput.fill(login);
+    await passwordInput.fill(loginPassword);
+    if (await button.isEnabled()) return button;
+    await page.waitForTimeout(250);
+  }
+
+  throw new Error('Login form did not become enabled after hydration');
+}
+
 async function loginAs(page, login, loginPassword) {
   await page.context().clearCookies();
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
@@ -132,15 +147,14 @@ async function loginAs(page, login, loginPassword) {
   await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' });
   await page.locator('#form_login').waitFor({ state: 'visible' });
   await page.locator('#form_password').waitFor({ state: 'visible' });
-  await page.locator('#form_login').fill(login);
-  await page.locator('#form_password').fill(loginPassword);
+  const loginButton = await fillLoginForm(page, login, loginPassword);
 
   const [loginResponse] = await Promise.all([
     page.waitForResponse((response) => {
       const url = new URL(response.url());
       return url.pathname.endsWith('/auth/login');
     }, { timeout: 60_000 }),
-    page.getByRole('button', { name: 'Войти' }).click(),
+    loginButton.click(),
   ]);
   assert(
     loginResponse.status() === 200,
