@@ -78,6 +78,10 @@ def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     assert "LETOVO_E2E_DEPLOY_SSH_KEY" in workflow
     assert "LETOVO_E2E_DEPLOY_PROJECT" in workflow
     assert "Deploy PR candidate images to live e2e" in workflow
+    assert "scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql" in workflow
+    assert "pg_dump -U scv -d letovo_db -t public.role" in workflow
+    assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
+    assert "avatar_upload_role_migration.sql" in workflow
     assert "docker compose -p \"$PROJECT_NAME\" -f \"$candidate\" up -d letovo-server letovo-registration-server letovo-front" in workflow
     assert "Restore live deployment images" in workflow
 
@@ -132,6 +136,10 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "scp -i ~/.ssh/letovo-production-release docs/otel-collector-config.yaml" in workflow
     assert "scp -i ~/.ssh/letovo-production-release frontend/front-env.env" in workflow
     assert "scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release docs/avatar_upload_role_migration.sql" in workflow
+    assert "pg_dump -U scv -d letovo_db -t public.role" in workflow
+    assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
+    assert "role.before-avatar-migration.sql" in workflow
     assert "otel-collector-config.yaml.before-release" in workflow
     assert "letovo-front.env.before-release" in workflow
     assert "nginx-site.before-release" in workflow

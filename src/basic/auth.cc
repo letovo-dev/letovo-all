@@ -520,7 +520,8 @@ created_permission AS (
   INSERT INTO role (username, write_posts, admin, moder, main_page, ava_upload)
   SELECT
     created_user.username, ($12)::boolean, ($13)::boolean,
-    ($14)::boolean, ($15)::boolean, created_user.userrights <> 'child'
+    ($14)::boolean, ($15)::boolean,
+    COALESCE(created_user.userrights <> 'child', false)
   FROM created_user
   -- RETURNING created_user.username
   RETURNING username

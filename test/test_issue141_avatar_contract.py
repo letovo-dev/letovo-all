@@ -8,8 +8,15 @@ def test_schema_and_migration_contract():
     migration = (ROOT / "docs/avatar_upload_role_migration.sql").read_text()
     assert "ava_upload boolean DEFAULT false NOT NULL" in schema
     assert "ADD COLUMN IF NOT EXISTS ava_upload boolean NOT NULL DEFAULT false" in migration
-    assert "userrights <> 'child'" in migration
+    assert "COALESCE(u.userrights <> 'child', false)" in migration
     assert "NOT EXISTS" in migration
+
+
+def test_registration_grants_avatar_upload_fail_closed_for_nullable_userrights():
+    auth = (ROOT / "src/basic/auth.cc").read_text()
+
+    assert "COALESCE(created_user.userrights <> 'child', false)" in auth
+    assert "created_user.userrights <> 'child'\n" not in auth
 
 
 def test_backend_capability_and_path_authorization_contract():
@@ -20,7 +27,7 @@ def test_backend_capability_and_path_authorization_contract():
     assert "username" in auth
     assert "userrights" in auth and "child" in auth
     assert "main_page, ava_upload" in auth
-    assert "created_user.userrights <> 'child'" in auth
+    assert "COALESCE(created_user.userrights <> 'child', false)" in auth
     assert "std::vector<std::string> avatar_params" in auth
     assert "avatar_params);" in auth
     assert "avatar_upload_column_exists" in auth
