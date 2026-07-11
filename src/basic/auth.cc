@@ -962,11 +962,12 @@ void am_i_uploader(
         const bool generic = auth::is_rights_by_username(username, pool_ptr, "moder") ||
                              auth::is_rights_by_username(username, pool_ptr, "admin");
         cp::SafeCon con{pool_ptr};
+        std::vector<std::string> avatar_params = {username};
         const auto avatar_rows = con->execute_params(
             "SELECT 1 FROM \"user\" u LEFT JOIN \"role\" r ON r.username=u.username "
             "WHERE u.username=($1) AND u.active=true AND u.userrights <> 'child' AND "
             "(COALESCE(r.ava_upload,false)=true OR COALESCE(r.admin,false)=true OR COALESCE(r.moder,false)=true);",
-            std::vector<std::string>{username});
+            avatar_params);
         const bool avatar = !avatar_rows.empty();
         return req->create_response(restinio::status_ok())
               .set_body("{\"status\": \"" + std::string(generic ? "t" : "f") +
