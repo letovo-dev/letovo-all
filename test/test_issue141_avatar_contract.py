@@ -23,6 +23,10 @@ def test_backend_capability_and_path_authorization_contract():
     assert "created_user.userrights <> 'child'" in auth
     assert "std::vector<std::string> avatar_params" in auth
     assert "avatar_params);" in auth
+    assert "avatar_upload_column_exists" in auth
+    assert "uploader_capabilities_json" in auth
+    assert "HasParseError()" in user
+    assert 'new_body["avatar"].IsString()' in user
     assert "can_upload_avatar" in user
     assert "personal_avatars" in user
     assert "can_use_avatar" in user

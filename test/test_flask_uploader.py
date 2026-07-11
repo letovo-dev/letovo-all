@@ -66,3 +66,24 @@ def test_cookie_auth_is_forwarded_to_backend(monkeypatch):
     monkeypatch.setattr(uploader.requests, "get", fake_get)
     assert uploader.api_get_upload_capabilities(None, "letovo_session=secret") == auth()
     assert captured == {"Cookie": "letovo_session=secret"}
+
+
+def test_generic_upload_accepts_legacy_auth_response(monkeypatch, tmp_path):
+    monkeypatch.setitem(uploader.config, "check_admin", True)
+    monkeypatch.setattr(uploader, "ROOT_PATH", str(tmp_path))
+    monkeypatch.setitem(uploader.config, "paths", {"images": "images"})
+    monkeypatch.setitem(uploader.config, "supported", {"png": "images"})
+    (tmp_path / "images").mkdir()
+
+    class Response:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"status": "t"}
+
+    monkeypatch.setattr(uploader.requests, "get", lambda *args, **kwargs: Response())
+    response = uploader.app.test_client().post(
+        "/", data={"file": (io.BytesIO(PNG), "legacy.png")},
+        headers={"Bearer": "legacy"})
+    assert response.status_code == 200

@@ -989,6 +989,10 @@ void set_avatar(std::unique_ptr<restinio::router::express_router_t<>> &router,
     logger_ptr->trace([] { return "called /user/set_avatar"; });
     rapidjson::Document new_body;
     new_body.Parse(req->body().c_str());
+    if (new_body.HasParseError() || !new_body.IsObject() ||
+        !new_body.HasMember("avatar") || !new_body["avatar"].IsString()) {
+      return req->create_response(restinio::status_bad_request()).done();
+    }
 
     std::string token = security::bearer_or_cookie_token(req->header());
             if(token.empty()) {

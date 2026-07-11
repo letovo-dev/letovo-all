@@ -35,9 +35,7 @@ def api_get_upload_capabilities(token: str, cookie: str = ""):
         result = r.json()
         if not isinstance(result, dict):
             return None
-        if result.get("status") not in {"t", "f"} or result.get("avatar_status") not in {"t", "f"}:
-            return None
-        if not isinstance(result.get("username"), str) or not result["username"]:
+        if result.get("status") not in {"t", "f"}:
             return None
         return result
     except (requests.RequestException, ValueError, TypeError, KeyError):
@@ -88,7 +86,8 @@ def upload_avatar():
     token = flask.request.headers.get('Bearer', None)
     capabilities = api_get_upload_capabilities(
         token, flask.request.headers.get('Cookie', ''))
-    if capabilities is None or capabilities.get("avatar_status") != "t":
+    if (capabilities is None or capabilities.get("avatar_status") != "t" or
+            not isinstance(capabilities.get("username"), str) or not capabilities["username"]):
         return "Forbidden", 403
     supplied_extension = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ""
     if supplied_extension not in {"png", "jpg", "jpeg", "webp"}:
