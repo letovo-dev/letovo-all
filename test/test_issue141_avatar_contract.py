@@ -8,6 +8,9 @@ def test_schema_and_migration_contract():
     migration = (ROOT / "docs/avatar_upload_role_migration.sql").read_text()
     assert "ava_upload boolean DEFAULT false NOT NULL" in schema
     assert "ADD COLUMN IF NOT EXISTS ava_upload boolean NOT NULL DEFAULT false" in migration
+    assert "CREATE TEMP TABLE avatar_upload_migration_state" in migration
+    assert "column_was_missing" in migration
+    assert "state.column_was_missing" in migration
     assert "COALESCE(u.userrights <> 'child', false)" in migration
     assert "NOT EXISTS" in migration
 

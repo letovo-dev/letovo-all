@@ -375,6 +375,8 @@ jobs:
           docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t public.role > "$role_backup"
           test -s "$role_backup"
+          # Forward-only additive migration: never restore the whole role table
+          # automatically, because that could erase concurrent permission edits.
           docker cp "$migration" letovo-postgres-1:/tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 \
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
@@ -447,5 +449,7 @@ jobs:
 
           docker compose -p "$PROJECT_NAME" -f "$candidate" pull letovo-server letovo-registration-server letovo-front || true
           docker compose -p "$PROJECT_NAME" -f "$candidate" up -d letovo-server letovo-registration-server letovo-front
+          # The additive schema migration intentionally remains in place. The
+          # retained role dump is for explicit operator recovery only.
           rm -rf "$state_dir"
           REMOTE

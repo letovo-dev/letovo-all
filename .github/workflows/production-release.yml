@@ -318,6 +318,8 @@ jobs:
           test -s "$role_backup_tmp"
           as_root mkdir -p "$backup_root"
           as_root install -m 0600 "$role_backup_tmp" "$role_backup"
+          # Forward-only additive migration: automatic table restoration could
+          # erase permission edits made while release verification is running.
           docker cp "$migration" letovo-postgres-1:/tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 \
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
@@ -509,5 +511,7 @@ jobs:
           test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$backend_image"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$registration_image"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$frontend_image"
+          # Keep the backward-compatible schema migration. The durable role
+          # dump is reserved for deliberate operator recovery, not blind rollback.
           rm -rf "$state_dir"
           REMOTE
