@@ -4,6 +4,8 @@
 #include "../market/transactions.h"
 
 #include <regex>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 #include <stdexcept>
 #include <sstream>
 
@@ -68,10 +70,39 @@ bool post_reveal_tokens_columns_exist(
   return !result.empty() && result[0]["count"].as<int>() == 6;
 }
 
+bool avatar_upload_column_exists(
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  cp::SafeCon con{pool_ptr};
+  std::vector<std::string> params = {};
+  pqxx::result result = con->execute_params(
+      "SELECT COUNT(*) AS count FROM information_schema.columns "
+      "WHERE table_schema = 'public' AND table_name = 'role' "
+      "AND column_name = 'ava_upload';",
+      params);
+  return !result.empty() && result[0]["count"].as<int>() == 1;
+}
+
 bool auth_migrations_ready(std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
   return password_metadata_columns_exist(pool_ptr) &&
          user_sessions_columns_exist(pool_ptr) &&
-         post_reveal_tokens_columns_exist(pool_ptr);
+         post_reveal_tokens_columns_exist(pool_ptr) &&
+         avatar_upload_column_exists(pool_ptr);
+}
+
+std::string uploader_capabilities_json(bool generic, bool avatar,
+                                       const std::string &username) {
+  rapidjson::Document doc;
+  doc.SetObject();
+  auto &allocator = doc.GetAllocator();
+  doc.AddMember("status", generic ? "t" : "f", allocator);
+  doc.AddMember("avatar_status", avatar ? "t" : "f", allocator);
+  doc.AddMember("username",
+                rapidjson::Value(username.c_str(), username.size(), allocator),
+                allocator);
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  doc.Accept(writer);
+  return std::string(buffer.GetString(), buffer.GetSize());
 }
 
 const std::regex kAdminUsernameRegex("^[A-Za-z0-9_-]{4,32}$");
@@ -281,7 +312,7 @@ bool is_rights_by_username(const std::string& username,
                            std::shared_ptr<cp::ConnectionsManager> pool_ptr,
                            const std::string& rights) {
   static const std::unordered_set<std::string> allowed = {
-      "write_posts", "admin", "moder", "main_page", "whireable"};
+      "write_posts", "admin", "moder", "main_page", "whireable", "ava_upload"};
   if (!allowed.count(rights)) {
     return false;
   }
@@ -486,10 +517,11 @@ created_user AS (
   RETURNING username, display_name, userrights, role, active, registered, chattable
 ),
 created_permission AS (
-  INSERT INTO role (username, write_posts, admin, moder, main_page)
+  INSERT INTO role (username, write_posts, admin, moder, main_page, ava_upload)
   SELECT
     created_user.username, ($12)::boolean, ($13)::boolean,
-    ($14)::boolean, ($15)::boolean
+    ($14)::boolean, ($15)::boolean,
+    COALESCE(created_user.userrights <> 'child', false)
   FROM created_user
   -- RETURNING created_user.username
   RETURNING username
@@ -958,18 +990,21 @@ void am_i_uploader(
           return req->create_response(restinio::status_unauthorized()).done();
         }
         std::string username = auth::get_username(token, pool_ptr);
-        if (auth::is_rights_by_username(username, pool_ptr, "moder") ||
-            auth::is_rights_by_username(username, pool_ptr, "admin")) {
-          return req->create_response(restinio::status_ok())
-              .set_body("{\"status\": \"t\"}")
+        if (username.empty()) return req->create_response(restinio::status_unauthorized()).done();
+        const bool generic = auth::is_rights_by_username(username, pool_ptr, "moder") ||
+                             auth::is_rights_by_username(username, pool_ptr, "admin");
+        cp::SafeCon con{pool_ptr};
+        std::vector<std::string> avatar_params = {username};
+        const auto avatar_rows = con->execute_params(
+            "SELECT 1 FROM \"user\" u LEFT JOIN \"role\" r ON r.username=u.username "
+            "WHERE u.username=($1) AND u.active=true AND u.userrights <> 'child' AND "
+            "(COALESCE(r.ava_upload,false)=true OR COALESCE(r.admin,false)=true OR COALESCE(r.moder,false)=true);",
+            avatar_params);
+        const bool avatar = !avatar_rows.empty();
+        return req->create_response(restinio::status_ok())
+              .set_body(uploader_capabilities_json(generic, avatar, username))
               .append_header("Content-Type", "application/json; charset=utf-8")
               .done();
-        } else {
-          return req->create_response(restinio::status_ok())
-              .set_body("{\"status\": \"f\"}")
-              .append_header("Content-Type", "application/json; charset=utf-8")
-              .done();
-        }
       });
 }
 

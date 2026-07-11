@@ -681,7 +681,8 @@ CREATE TABLE public.role (
     admin boolean,
     moder boolean,
     main_page boolean,
-    whireable boolean DEFAULT false
+    whireable boolean DEFAULT false,
+    ava_upload boolean DEFAULT false NOT NULL
 );
 
 

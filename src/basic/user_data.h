@@ -76,7 +76,9 @@ pqxx::result all_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 void set_avatar(std::string username, std::string avatar,
                 std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
-std::vector<std::string> all_avatars(bool is_admin);
+std::vector<std::string> all_avatars(const std::string &username, bool is_admin);
+bool can_use_avatar(const std::string &username, const std::string &avatar,
+                    bool is_admin);
 
 } // namespace user
 

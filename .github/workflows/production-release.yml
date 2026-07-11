@@ -252,6 +252,8 @@ jobs:
           scp -i ~/.ssh/letovo-production-release docs/otel-collector-config.yaml "$remote:$state_dir/otel-collector-config.yaml.from-repo"
           scp -i ~/.ssh/letovo-production-release frontend/front-env.env "$remote:$state_dir/letovo-front.env.from-repo"
           scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py "$remote:$state_dir/patch_nginx_otel.py"
+          scp -i ~/.ssh/letovo-production-release docs/avatar_upload_role_migration.sql \
+            "$remote:$state_dir/avatar_upload_role_migration.sql"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
             "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
@@ -268,11 +270,15 @@ jobs:
           repo_compose="$state_dir/docker-compose.yaml.from-repo"
           repo_otel="$state_dir/otel-collector-config.yaml.from-repo"
           repo_front_env="$state_dir/letovo-front.env.from-repo"
+          migration="$state_dir/avatar_upload_role_migration.sql"
           nginx_candidate="$state_dir/nginx-site.candidate"
           compose_dir="$(dirname "$COMPOSE_FILE")"
           otel_config="$compose_dir/otel-collector-config.yaml"
           front_env="/mnt/letovo-front.env"
           smoke_name="letovo-server-release-smoke-${RUN_ID}"
+          backup_root="$(dirname "$(dirname "$COMPOSE_FILE")")/backups/production-release-${RUN_ID}"
+          role_backup="$backup_root/role.before-avatar-migration.sql"
+          role_backup_tmp="$state_dir/role.before-avatar-migration.sql"
 
           as_root() {
             if [ "$(id -u)" -eq 0 ]; then
@@ -288,6 +294,7 @@ jobs:
           test -f "$repo_compose"
           test -f "$repo_otel"
           test -f "$repo_front_env"
+          test -f "$migration"
           docker rm -f "$smoke_name" >/dev/null 2>&1 || true
           cleanup_smoke() {
             docker rm -f "$smoke_name" >/dev/null 2>&1 || true
@@ -305,6 +312,19 @@ jobs:
           docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
           docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
           docker inspect -f 'letovo-front={{.Config.Image}}' letovo-front >> "$restore"
+
+          docker exec letovo-postgres-1 \
+            pg_dump -U scv -d letovo_db -t public.role > "$role_backup_tmp"
+          test -s "$role_backup_tmp"
+          as_root mkdir -p "$backup_root"
+          as_root install -m 0600 "$role_backup_tmp" "$role_backup"
+          # Forward-only additive migration: automatic table restoration could
+          # erase permission edits made while release verification is running.
+          docker cp "$migration" letovo-postgres-1:/tmp/avatar_upload_role_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
+              -f /tmp/avatar_upload_role_migration.sql
+          docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
 
           sed \
             -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
@@ -491,5 +511,7 @@ jobs:
           test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$backend_image"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$registration_image"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$frontend_image"
+          # Keep the backward-compatible schema migration. The durable role
+          # dump is reserved for deliberate operator recovery, not blind rollback.
           rm -rf "$state_dir"
           REMOTE
