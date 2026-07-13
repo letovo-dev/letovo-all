@@ -13,4 +13,8 @@ inline bool can_transfer_amount(int sender_balance, int amount, bool sender_is_a
     return effective_sender_balance >= amount;
 }
 
+inline bool has_whireable_participant(bool sender_whireable, bool receiver_whireable) {
+    return sender_whireable || receiver_whireable;
+}
+
 } // namespace transactions
