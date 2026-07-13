@@ -74,7 +74,11 @@ namespace transactions {
     }
 
     bool has_whireable_participant(std::string sender, std::string receiver, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
-        return can_receive_transfer(sender, pool_ptr) || can_receive_transfer(receiver, pool_ptr);
+        const bool sender_whireable = can_receive_transfer(sender, pool_ptr);
+        if (sender_whireable) {
+            return true;
+        }
+        return has_whireable_participant(sender_whireable, can_receive_transfer(receiver, pool_ptr));
     }
 
     int transfer_cooldown_seconds_remaining(std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
