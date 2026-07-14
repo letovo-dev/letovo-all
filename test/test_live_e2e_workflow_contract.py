@@ -105,6 +105,12 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     workflow = _read(PRODUCTION_RELEASE_WORKFLOW)
 
     assert "workflow_dispatch:" in workflow
+    assert "child_avatar_migration_mode:" in workflow
+    assert "preview-child-avatar-migration:" in workflow
+    assert "inputs.child_avatar_migration_mode == 'preview'" in workflow
+    assert "inputs.child_avatar_migration_mode == 'apply'" in workflow
+    assert "child_avatar_expected_count:" in workflow
+    assert "child_avatar_expected_sha256:" in workflow
     assert "target_ref:" not in workflow
     assert "ref: main" in workflow
     assert "default: https://letovocorp.ru" in workflow

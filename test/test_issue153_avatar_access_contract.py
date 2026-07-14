@@ -60,3 +60,13 @@ def test_candidate_and_production_deploy_preview_backup_and_apply_policy():
         assert "-v apply=false" in workflow
         assert "-v apply=true" in workflow
         assert "umask 077" in workflow
+
+    production = RELEASE_WORKFLOW.read_text()
+    assert "preview-child-avatar-migration:" in production
+    assert "inputs.child_avatar_migration_mode == 'preview'" in production
+    assert "inputs.child_avatar_migration_mode == 'apply'" in production
+    assert "child_avatar_expected_count" in production
+    assert "child_avatar_expected_sha256" in production
+    assert "Child avatar preview count changed" in production
+    assert "Child avatar preview hash changed" in production
+    assert "sha256sum" in production

@@ -15,6 +15,22 @@ on:
         description: Run mutating authenticated e2e checks after deployment
         required: false
         default: "false"
+      child_avatar_migration_mode:
+        description: Preview child avatar changes or apply an approved preview
+        required: true
+        type: choice
+        options:
+          - preview
+          - apply
+        default: preview
+      child_avatar_expected_count:
+        description: Required for apply; affected-row count from the approved preview
+        required: false
+        default: ""
+      child_avatar_expected_sha256:
+        description: Required for apply; SHA-256 of the approved preview CSV
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -44,7 +60,76 @@ env:
   LIVE_E2E_REQUIRE_OTEL: "true"
 
 jobs:
+  preview-child-avatar-migration:
+    if: inputs.child_avatar_migration_mode == 'preview'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout migration
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Configure production SSH
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_SSH_KEY: ${{ secrets.LETOVO_PROD_DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$LETOVO_PROD_DEPLOY_SSH_KEY" > ~/.ssh/letovo-production-release
+          chmod 600 ~/.ssh/letovo-production-release
+          ssh-keyscan -H "$LETOVO_PROD_DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Preserve child avatar migration preview
+        env:
+          LETOVO_PROD_DEPLOY_HOST: ${{ vars.LETOVO_PROD_DEPLOY_HOST || '84.201.185.37' }}
+          LETOVO_PROD_DEPLOY_USER: ${{ secrets.LETOVO_PROD_DEPLOY_USER }}
+          LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
+        run: |
+          set -euo pipefail
+          remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
+          state_dir="/tmp/letovo-child-avatar-preview-${{ github.run_id }}"
+          ssh -i ~/.ssh/letovo-production-release "$remote" "mkdir -p '$state_dir'"
+          scp -i ~/.ssh/letovo-production-release docs/child_avatar_access_migration.sql \
+            "$remote:$state_dir/child_avatar_access_migration.sql"
+          ssh -i ~/.ssh/letovo-production-release "$remote" \
+            "COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          umask 077
+          state_dir="/tmp/letovo-child-avatar-preview-${RUN_ID}"
+          migration="$state_dir/child_avatar_access_migration.sql"
+          preview_tmp="$state_dir/child-avatar-migration-preview.csv"
+          metadata_tmp="$state_dir/child-avatar-migration-preview.txt"
+          backup_root="$(dirname "$(dirname "$COMPOSE_FILE")")/backups/child-avatar-preview-${RUN_ID}"
+
+          as_root() {
+            if [ "$(id -u)" -eq 0 ]; then
+              "$@"
+            else
+              sudo -n "$@"
+            fi
+          }
+
+          test -f "$migration"
+          docker cp "$migration" letovo-postgres-1:/tmp/child_avatar_access_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -q --csv -v ON_ERROR_STOP=1 -v apply=false \
+              -U scv -d letovo_db \
+              -f /tmp/child_avatar_access_migration.sql > "$preview_tmp"
+          docker exec letovo-postgres-1 rm -f /tmp/child_avatar_access_migration.sql
+          preview_count="$(tail -n +2 "$preview_tmp" | wc -l | tr -d ' ')"
+          preview_sha256="$(sha256sum "$preview_tmp" | cut -d ' ' -f 1)"
+          printf 'count=%s\nsha256=%s\n' "$preview_count" "$preview_sha256" > "$metadata_tmp"
+          as_root mkdir -p "$backup_root"
+          as_root install -m 0600 "$preview_tmp" "$backup_root/child-avatar-migration-preview.csv"
+          as_root install -m 0600 "$metadata_tmp" "$backup_root/child-avatar-migration-preview.txt"
+          echo "Child avatar preview preserved: count=$preview_count sha256=$preview_sha256 path=$backup_root"
+          REMOTE
+
   release:
+    if: inputs.child_avatar_migration_mode == 'apply'
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -100,6 +185,8 @@ jobs:
           LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
           LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
           LETOVO_PROD_NGINX_SITE: ${{ vars.LETOVO_PROD_NGINX_SITE || '/etc/nginx/sites-available/default' }}
+          CHILD_AVATAR_EXPECTED_COUNT: ${{ inputs.child_avatar_expected_count }}
+          CHILD_AVATAR_EXPECTED_SHA256: ${{ inputs.child_avatar_expected_sha256 }}
         run: |
           set -euo pipefail
           test -n "$LETOVO_PROD_DEPLOY_USER" || { echo "LETOVO_PROD_DEPLOY_USER secret is required"; exit 1; }
@@ -109,6 +196,8 @@ jobs:
           test -n "$LETOVO_PROD_DEPLOY_PROJECT" || { echo "LETOVO_PROD_DEPLOY_PROJECT is required"; exit 1; }
           test -n "$LETOVO_PROD_NGINX_SITE" || { echo "LETOVO_PROD_NGINX_SITE is required"; exit 1; }
           test "$LIVE_E2E_REQUIRE_AUTH" = "true"
+          [[ "$CHILD_AVATAR_EXPECTED_COUNT" =~ ^[0-9]+$ ]] || { echo "child_avatar_expected_count must be a non-negative integer"; exit 1; }
+          [[ "$CHILD_AVATAR_EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "child_avatar_expected_sha256 must be a lowercase SHA-256"; exit 1; }
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -243,6 +332,8 @@ jobs:
           LETOVO_PROD_DEPLOY_COMPOSE: ${{ vars.LETOVO_PROD_DEPLOY_COMPOSE || '/srv/letovo/compose/docker-compose.yaml' }}
           LETOVO_PROD_DEPLOY_PROJECT: ${{ vars.LETOVO_PROD_DEPLOY_PROJECT || 'compose' }}
           LETOVO_PROD_NGINX_SITE: ${{ vars.LETOVO_PROD_NGINX_SITE || '/etc/nginx/sites-available/default' }}
+          CHILD_AVATAR_EXPECTED_COUNT: ${{ inputs.child_avatar_expected_count }}
+          CHILD_AVATAR_EXPECTED_SHA256: ${{ inputs.child_avatar_expected_sha256 }}
         run: |
           set -euo pipefail
           remote="${LETOVO_PROD_DEPLOY_USER}@${LETOVO_PROD_DEPLOY_HOST}"
@@ -257,7 +348,7 @@ jobs:
           scp -i ~/.ssh/letovo-production-release docs/child_avatar_access_migration.sql \
             "$remote:$state_dir/child_avatar_access_migration.sql"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
-            "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
+            "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' EXPECTED_CHILD_AVATAR_COUNT='$CHILD_AVATAR_EXPECTED_COUNT' EXPECTED_CHILD_AVATAR_SHA256='$CHILD_AVATAR_EXPECTED_SHA256' bash -s" <<'REMOTE'
           set -euo pipefail
           umask 077
           test -f "$COMPOSE_FILE"
@@ -337,6 +428,16 @@ jobs:
             psql -q --csv -v ON_ERROR_STOP=1 -v apply=false \
               -U scv -d letovo_db \
               -f /tmp/child_avatar_access_migration.sql > "$child_avatar_preview_tmp"
+          child_avatar_preview_count="$(tail -n +2 "$child_avatar_preview_tmp" | wc -l | tr -d ' ')"
+          child_avatar_preview_sha256="$(sha256sum "$child_avatar_preview_tmp" | cut -d ' ' -f 1)"
+          test "$child_avatar_preview_count" = "$EXPECTED_CHILD_AVATAR_COUNT" || {
+            echo "Child avatar preview count changed: expected $EXPECTED_CHILD_AVATAR_COUNT, got $child_avatar_preview_count"
+            exit 1
+          }
+          test "$child_avatar_preview_sha256" = "$EXPECTED_CHILD_AVATAR_SHA256" || {
+            echo "Child avatar preview hash changed: expected $EXPECTED_CHILD_AVATAR_SHA256, got $child_avatar_preview_sha256"
+            exit 1
+          }
           as_root install -m 0600 "$child_avatar_preview_tmp" \
             "$child_avatar_preview"
           # Forward-only additive migration: automatic table restoration could
