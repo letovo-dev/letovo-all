@@ -11,6 +11,11 @@
 #include <vector>
 
 namespace user {
+struct AvatarAccess {
+  bool is_child = false;
+  bool can_upload_personal = false;
+};
+
 pqxx::result role(int role_id,
                   std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
@@ -76,9 +81,12 @@ pqxx::result all_departments(std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 void set_avatar(std::string username, std::string avatar,
                 std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
-std::vector<std::string> all_avatars(const std::string &username, bool is_admin);
+AvatarAccess avatar_access(const std::string &username,
+                           std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+std::vector<std::string> all_avatars(const std::string &username, bool is_admin,
+                                     const AvatarAccess &access);
 bool can_use_avatar(const std::string &username, const std::string &avatar,
-                    bool is_admin);
+                    bool is_admin, const AvatarAccess &access);
 
 } // namespace user
 

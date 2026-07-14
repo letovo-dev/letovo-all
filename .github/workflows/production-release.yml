@@ -254,9 +254,12 @@ jobs:
           scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py "$remote:$state_dir/patch_nginx_otel.py"
           scp -i ~/.ssh/letovo-production-release docs/avatar_upload_role_migration.sql \
             "$remote:$state_dir/avatar_upload_role_migration.sql"
+          scp -i ~/.ssh/letovo-production-release docs/child_avatar_access_migration.sql \
+            "$remote:$state_dir/child_avatar_access_migration.sql"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
             "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
+          umask 077
           test -f "$COMPOSE_FILE"
           test -f "$NGINX_SITE"
           state_dir="/tmp/letovo-production-release-${RUN_ID}"
@@ -271,6 +274,7 @@ jobs:
           repo_otel="$state_dir/otel-collector-config.yaml.from-repo"
           repo_front_env="$state_dir/letovo-front.env.from-repo"
           migration="$state_dir/avatar_upload_role_migration.sql"
+          child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
           nginx_candidate="$state_dir/nginx-site.candidate"
           compose_dir="$(dirname "$COMPOSE_FILE")"
           otel_config="$compose_dir/otel-collector-config.yaml"
@@ -279,6 +283,10 @@ jobs:
           backup_root="$(dirname "$(dirname "$COMPOSE_FILE")")/backups/production-release-${RUN_ID}"
           role_backup="$backup_root/role.before-avatar-migration.sql"
           role_backup_tmp="$state_dir/role.before-avatar-migration.sql"
+          user_backup="$backup_root/user.before-child-avatar-migration.sql"
+          user_backup_tmp="$state_dir/user.before-child-avatar-migration.sql"
+          child_avatar_preview="$backup_root/child-avatar-migration-preview.csv"
+          child_avatar_preview_tmp="$state_dir/child-avatar-migration-preview.csv"
 
           as_root() {
             if [ "$(id -u)" -eq 0 ]; then
@@ -295,6 +303,7 @@ jobs:
           test -f "$repo_otel"
           test -f "$repo_front_env"
           test -f "$migration"
+          test -f "$child_avatar_migration"
           docker rm -f "$smoke_name" >/dev/null 2>&1 || true
           cleanup_smoke() {
             docker rm -f "$smoke_name" >/dev/null 2>&1 || true
@@ -316,8 +325,20 @@ jobs:
           docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t public.role > "$role_backup_tmp"
           test -s "$role_backup_tmp"
+          docker exec letovo-postgres-1 \
+            pg_dump -U scv -d letovo_db -t 'public."user"' > "$user_backup_tmp"
+          test -s "$user_backup_tmp"
           as_root mkdir -p "$backup_root"
           as_root install -m 0600 "$role_backup_tmp" "$role_backup"
+          as_root install -m 0600 "$user_backup_tmp" "$user_backup"
+          docker cp "$child_avatar_migration" \
+            letovo-postgres-1:/tmp/child_avatar_access_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -q --csv -v ON_ERROR_STOP=1 -v apply=false \
+              -U scv -d letovo_db \
+              -f /tmp/child_avatar_access_migration.sql > "$child_avatar_preview_tmp"
+          as_root install -m 0600 "$child_avatar_preview_tmp" \
+            "$child_avatar_preview"
           # Forward-only additive migration: automatic table restoration could
           # erase permission edits made while release verification is running.
           docker cp "$migration" letovo-postgres-1:/tmp/avatar_upload_role_migration.sql
@@ -325,6 +346,11 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -v apply=true -U scv -d letovo_db \
+              -f /tmp/child_avatar_access_migration.sql
+          docker exec letovo-postgres-1 \
+            rm -f /tmp/child_avatar_access_migration.sql
 
           sed \
             -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
