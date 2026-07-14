@@ -45,6 +45,10 @@ def test_migration_has_preview_apply_backup_safe_contract():
     assert "u.userrights = 'child'" in migration
     assert "NULLIF(u.avatar_pic, '') IS NOT NULL" in migration
     assert "approved.path = ltrim(u.avatar_pic, '/')" in migration
+    assert "expected_child_avatar_migration" in migration
+    assert "child_avatar_approved_preview.csv" in migration
+    assert "EXCEPT" in migration
+    assert "current child avatar candidates differ from approved preview" in migration
     assert "child_avatar_migration_preview" in migration
     assert "remaining_count <> 0" in migration
     assert "BEGIN;" in migration and "COMMIT;" in migration
@@ -59,6 +63,7 @@ def test_candidate_and_production_deploy_preview_backup_and_apply_policy():
         assert "pg_dump -U scv -d letovo_db -t 'public.\"user\"'" in workflow
         assert "-v apply=false" in workflow
         assert "-v apply=true" in workflow
+        assert "child_avatar_approved_preview.csv" in workflow
         assert "umask 077" in workflow
 
     production = RELEASE_WORKFLOW.read_text()

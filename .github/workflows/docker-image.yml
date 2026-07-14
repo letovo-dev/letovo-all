@@ -398,11 +398,16 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
+          docker cp "$child_avatar_preview" \
+            letovo-postgres-1:/tmp/child_avatar_approved_preview.csv
+          docker exec letovo-postgres-1 \
+            chmod 0644 /tmp/child_avatar_approved_preview.csv
           docker exec letovo-postgres-1 \
             psql -v ON_ERROR_STOP=1 -v apply=true -U scv -d letovo_db \
               -f /tmp/child_avatar_access_migration.sql
           docker exec letovo-postgres-1 \
-            rm -f /tmp/child_avatar_access_migration.sql
+            rm -f /tmp/child_avatar_access_migration.sql \
+              /tmp/child_avatar_approved_preview.csv
 
           sed -E \
             -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \

@@ -40,6 +40,18 @@ INSERT INTO approved_child_avatar(path) VALUES
 BEGIN;
 LOCK TABLE public."user" IN SHARE ROW EXCLUSIVE MODE;
 
+CREATE TEMP TABLE expected_child_avatar_migration (
+  username text NOT NULL,
+  previous_avatar text NOT NULL,
+  fallback_avatar text NOT NULL
+) ON COMMIT DROP;
+
+COPY expected_child_avatar_migration (
+  username, previous_avatar, fallback_avatar
+)
+FROM '/tmp/child_avatar_approved_preview.csv'
+WITH (FORMAT csv, HEADER true);
+
 CREATE TEMP TABLE child_avatar_migration_preview ON COMMIT DROP AS
 SELECT username, avatar_pic AS previous_avatar
 FROM public."user" u
@@ -50,6 +62,26 @@ WHERE u.userrights = 'child'
     FROM approved_child_avatar approved
     WHERE approved.path = ltrim(u.avatar_pic, '/')
   );
+
+DO $$
+BEGIN
+  IF EXISTS (
+    (SELECT username, previous_avatar, 'images/avatars/12.png' AS fallback_avatar
+     FROM child_avatar_migration_preview
+     EXCEPT
+     SELECT username, previous_avatar, fallback_avatar
+     FROM expected_child_avatar_migration)
+    UNION ALL
+    (SELECT username, previous_avatar, fallback_avatar
+     FROM expected_child_avatar_migration
+     EXCEPT
+     SELECT username, previous_avatar, 'images/avatars/12.png' AS fallback_avatar
+     FROM child_avatar_migration_preview)
+  ) THEN
+    RAISE EXCEPTION 'current child avatar candidates differ from approved preview';
+  END IF;
+END
+$$;
 
 UPDATE public."user" u
 SET avatar_pic = 'images/avatars/12.png'
