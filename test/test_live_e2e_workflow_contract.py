@@ -79,7 +79,10 @@ def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     assert "LETOVO_E2E_DEPLOY_PROJECT" in workflow
     assert "Deploy PR candidate images to live e2e" in workflow
     assert "scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql" in workflow
+    assert "scp -i ~/.ssh/live-e2e docs/child_avatar_access_migration.sql" in workflow
     assert "pg_dump -U scv -d letovo_db -t public.role" in workflow
+    assert "user.before-child-avatar-migration.sql" in workflow
+    assert "child-avatar-migration-preview.csv" in workflow
     assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
     assert "avatar_upload_role_migration.sql" in workflow
     assert "docker compose -p \"$PROJECT_NAME\" -f \"$candidate\" up -d letovo-server letovo-registration-server letovo-front" in workflow
@@ -102,6 +105,12 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     workflow = _read(PRODUCTION_RELEASE_WORKFLOW)
 
     assert "workflow_dispatch:" in workflow
+    assert "child_avatar_migration_mode:" in workflow
+    assert "preview-child-avatar-migration:" in workflow
+    assert "inputs.child_avatar_migration_mode == 'preview'" in workflow
+    assert "inputs.child_avatar_migration_mode == 'apply'" in workflow
+    assert "child_avatar_expected_count:" in workflow
+    assert "child_avatar_expected_sha256:" in workflow
     assert "target_ref:" not in workflow
     assert "ref: main" in workflow
     assert "default: https://letovocorp.ru" in workflow
@@ -137,7 +146,10 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "scp -i ~/.ssh/letovo-production-release frontend/front-env.env" in workflow
     assert "scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py" in workflow
     assert "scp -i ~/.ssh/letovo-production-release docs/avatar_upload_role_migration.sql" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release docs/child_avatar_access_migration.sql" in workflow
     assert "pg_dump -U scv -d letovo_db -t public.role" in workflow
+    assert "user.before-child-avatar-migration.sql" in workflow
+    assert "child-avatar-migration-preview.csv" in workflow
     assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
     assert "role.before-avatar-migration.sql" in workflow
     assert "otel-collector-config.yaml.before-release" in workflow

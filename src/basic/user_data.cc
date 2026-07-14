@@ -1,4 +1,5 @@
 #include "user_data.h"
+#include "avatar_policy.h"
 #include "security.h"
 #include "../market/transactions.h"
 
@@ -469,17 +470,38 @@ static std::filesystem::path media_root() {
   return std::filesystem::path(Config::giveMe().pages_config.media_path.absolute);
 }
 
-std::vector<std::string> all_avatars(const std::string &username, bool is_admin) {
+AvatarAccess avatar_access(
+    const std::string &username,
+    std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+  cp::SafeCon con{pool_ptr};
+  std::vector<std::string> params = {username};
+  const auto rows = con->execute_params(
+      "SELECT COALESCE(u.userrights = 'child', false) AS is_child, "
+      "(COALESCE(u.userrights <> 'child', false) AND u.active = true AND "
+      "(COALESCE(r.ava_upload, false) OR COALESCE(r.admin, false) OR "
+      "COALESCE(r.moder, false))) AS can_upload_personal "
+      "FROM public.\"user\" u LEFT JOIN public.role r ON r.username = u.username "
+      "WHERE u.username = ($1);",
+      params);
+  if (rows.empty()) return {};
+  return {rows[0]["is_child"].as<bool>(),
+          rows[0]["can_upload_personal"].as<bool>()};
+}
+
+std::vector<std::string> all_avatars(const std::string &username, bool is_admin,
+                                     const AvatarAccess &access) {
   std::vector<std::string> avatars;
   for (const auto &entry : std::filesystem::directory_iterator(
            Config::giveMe().pages_config.user_avatars_path.absolute)) {
     if (std::filesystem::is_regular_file(entry.status())) {
-      avatars.push_back(
+      const auto avatar =
           Config::giveMe().pages_config.user_avatars_path.relative +
-          entry.path().filename().string());
+          entry.path().filename().string();
+      if (!access.is_child || avatar_policy::is_approved_for_child(avatar))
+        avatars.push_back(avatar);
     }
   }
-  if (is_admin) {
+  if (!access.is_child && is_admin) {
     for (const auto &entry : std::filesystem::directory_iterator(
              Config::giveMe().pages_config.admin_avatars_path.absolute)) {
       if (std::filesystem::is_regular_file(entry.status())) {
@@ -491,7 +513,8 @@ std::vector<std::string> all_avatars(const std::string &username, bool is_admin)
   }
   const auto relative = personal_avatar_relative(username);
   const auto directory = media_root() / relative.substr(1);
-  if (std::filesystem::exists(directory)) {
+  if (!access.is_child && access.can_upload_personal &&
+      std::filesystem::exists(directory)) {
     for (const auto &entry : std::filesystem::directory_iterator(directory)) {
       if (std::filesystem::is_regular_file(entry.status()))
         avatars.push_back(relative + entry.path().filename().string());
@@ -501,17 +524,27 @@ std::vector<std::string> all_avatars(const std::string &username, bool is_admin)
 }
 
 bool can_use_avatar(const std::string &username, const std::string &avatar,
-                    bool is_admin) {
-  if (avatar.empty() || avatar[0] != '/' || avatar.find("..") != std::string::npos ||
+                    bool is_admin, const AvatarAccess &access) {
+  if (avatar.empty() || avatar.find("..") != std::string::npos ||
       avatar.find('\\') != std::string::npos) return false;
-  const auto shared = Config::giveMe().pages_config.user_avatars_path.relative;
-  const auto admin = Config::giveMe().pages_config.admin_avatars_path.relative;
-  const auto personal = personal_avatar_relative(username);
-  if (avatar.rfind(shared, 0) != 0 && !(is_admin && avatar.rfind(admin, 0) == 0) &&
-      avatar.rfind(personal, 0) != 0) return false;
+  const auto normalized = avatar_policy::normalize(avatar);
+  const auto shared = avatar_policy::normalize(
+      Config::giveMe().pages_config.user_avatars_path.relative);
+  const auto admin = avatar_policy::normalize(
+      Config::giveMe().pages_config.admin_avatars_path.relative);
+  const auto personal = avatar_policy::normalize(personal_avatar_relative(username));
+  if (access.is_child) {
+    if (!avatar_policy::is_approved_for_child(normalized)) return false;
+  } else if (normalized.rfind(shared, 0) != 0 &&
+             !(is_admin && normalized.rfind(admin, 0) == 0) &&
+             !(access.can_upload_personal &&
+               normalized.rfind(personal, 0) == 0)) {
+    return false;
+  }
   std::error_code ec;
   const auto root = std::filesystem::weakly_canonical(media_root(), ec);
-  const auto file = std::filesystem::weakly_canonical(media_root() / avatar.substr(1), ec);
+  const auto file =
+      std::filesystem::weakly_canonical(media_root() / normalized, ec);
   return !ec && file.string().rfind(root.string() + "/", 0) == 0 &&
          std::filesystem::is_regular_file(file, ec);
 }
@@ -975,8 +1008,9 @@ void all_avatars(
     }
     return req->create_response()
         .append_header("Content-Type", "application/json; charset=utf-8")
-        .set_body(cp::serialize(
-            user::all_avatars(username, auth::is_admin(token, pool_ptr))))
+        .set_body(cp::serialize(user::all_avatars(
+            username, auth::is_admin(token, pool_ptr),
+            user::avatar_access(username, pool_ptr))))
         .done();
   });
 }
@@ -1010,7 +1044,9 @@ void set_avatar(std::unique_ptr<restinio::router::express_router_t<>> &router,
     if (new_body.HasMember("avatar")) {
       std::string username = auth::get_username(token, pool_ptr);
       std::string avatar = new_body["avatar"].GetString();
-      if (!user::can_use_avatar(username, avatar, auth::is_admin(token, pool_ptr))) {
+      if (!user::can_use_avatar(username, avatar,
+                                auth::is_admin(token, pool_ptr),
+                                user::avatar_access(username, pool_ptr))) {
         return req->create_response(restinio::status_forbidden()).done();
       }
       if (media::check_if_file_exists(avatar).empty()) {

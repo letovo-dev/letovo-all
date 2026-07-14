@@ -353,19 +353,26 @@ jobs:
           ssh -i ~/.ssh/live-e2e "$remote" "mkdir -p '$state_dir'"
           scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql \
             "$remote:$state_dir/avatar_upload_role_migration.sql"
+          scp -i ~/.ssh/live-e2e docs/child_avatar_access_migration.sql \
+            "$remote:$state_dir/child_avatar_access_migration.sql"
           ssh -i ~/.ssh/live-e2e "$remote" \
             "BACKEND_IMAGE='$BACKEND_CANDIDATE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_CANDIDATE_IMAGE' FRONTEND_IMAGE='$FRONTEND_CANDIDATE_IMAGE' COMPOSE_FILE='$LETOVO_E2E_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_E2E_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
+          umask 077
           test -f "$COMPOSE_FILE"
           state_dir="/tmp/letovo-live-e2e-${RUN_ID}"
           mkdir -p "$state_dir"
           restore="$state_dir/restore.env"
           candidate="$state_dir/docker-compose.yaml"
           migration="$state_dir/avatar_upload_role_migration.sql"
+          child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
           backup_root="$HOME/backups/letovo-live-e2e-${RUN_ID}"
           role_backup="$backup_root/role.before-avatar-migration.sql"
+          user_backup="$backup_root/user.before-child-avatar-migration.sql"
+          child_avatar_preview="$backup_root/child-avatar-migration-preview.csv"
 
           test -f "$migration"
+          test -f "$child_avatar_migration"
           mkdir -p "$backup_root"
 
           docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
@@ -375,6 +382,15 @@ jobs:
           docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t public.role > "$role_backup"
           test -s "$role_backup"
+          docker exec letovo-postgres-1 \
+            pg_dump -U scv -d letovo_db -t 'public."user"' > "$user_backup"
+          test -s "$user_backup"
+          docker cp "$child_avatar_migration" \
+            letovo-postgres-1:/tmp/child_avatar_access_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -q --csv -v ON_ERROR_STOP=1 -v apply=false \
+              -U scv -d letovo_db \
+              -f /tmp/child_avatar_access_migration.sql > "$child_avatar_preview"
           # Forward-only additive migration: never restore the whole role table
           # automatically, because that could erase concurrent permission edits.
           docker cp "$migration" letovo-postgres-1:/tmp/avatar_upload_role_migration.sql
@@ -382,6 +398,16 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
+          docker cp "$child_avatar_preview" \
+            letovo-postgres-1:/tmp/child_avatar_approved_preview.csv
+          docker exec letovo-postgres-1 \
+            chmod 0644 /tmp/child_avatar_approved_preview.csv
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -v apply=true -U scv -d letovo_db \
+              -f /tmp/child_avatar_access_migration.sql
+          docker exec letovo-postgres-1 \
+            rm -f /tmp/child_avatar_access_migration.sql \
+              /tmp/child_avatar_approved_preview.csv
 
           sed -E \
             -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
