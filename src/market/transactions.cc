@@ -1,5 +1,9 @@
 #include "./transactions.h"
 #include "../basic/analytics.h"
+#include <cctype>
+#include <cstdint>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 namespace transactions {
 
@@ -258,6 +262,170 @@ namespace transactions {
         return result[0][0].as<std::string>();
     }
 
+    DepartmentPayoutResult preview_department_payout(
+        int department_id, int amount,
+        std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        DepartmentPayoutResult payout;
+        payout.department_id = department_id;
+        payout.amount = amount;
+
+        auto con = std::move(pool_ptr->getConnection());
+        std::vector<std::string> params = {
+            std::to_string(department_id), std::to_string(amount)};
+        pqxx::result rows = con->execute_params(
+            R"(SELECT d.departmentid,
+                      d.departmentname,
+                      COUNT(u.username)::integer AS recipient_count,
+                      (COUNT(u.username) * $2::bigint)::bigint AS total
+               FROM "department" d
+               LEFT JOIN "roles" r
+                 ON r.departmentid = d.departmentid
+                AND r.roleid BETWEEN 1 AND 28
+               LEFT JOIN "user" u
+                 ON u.role = r.roleid
+                AND u.active = true
+                AND u.registered = true
+               WHERE d.departmentid = $1::integer
+               GROUP BY d.departmentid, d.departmentname)",
+            params);
+        pool_ptr->returnConnection(std::move(con));
+
+        if (rows.empty()) {
+            payout.status = DepartmentPayoutStatus::DepartmentNotFound;
+            return payout;
+        }
+
+        payout.department_name = rows[0]["departmentname"].as<std::string>();
+        payout.recipient_count = rows[0]["recipient_count"].as<int>();
+        payout.total = rows[0]["total"].as<long long>();
+        payout.status = payout.recipient_count == 0
+            ? DepartmentPayoutStatus::NoRecipients
+            : DepartmentPayoutStatus::Success;
+        return payout;
+    }
+
+    DepartmentPayoutResult apply_department_payout(
+        int department_id, int amount, const std::string& actor,
+        const std::string& request_id, int expected_recipient_count,
+        std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
+        DepartmentPayoutResult payout;
+        payout.department_id = department_id;
+        payout.amount = amount;
+
+        auto con = std::move(pool_ptr->getConnection());
+        std::vector<std::string> params = {
+            std::to_string(department_id), std::to_string(amount), actor,
+            request_id, std::to_string(expected_recipient_count)};
+        pqxx::result rows = con->execute_params(
+            R"(WITH request_lock AS (
+                   SELECT pg_advisory_xact_lock(hashtext($4))
+               ),
+               department_row AS (
+                   SELECT d.departmentid, d.departmentname
+                   FROM "department" d
+                   CROSS JOIN request_lock
+                   WHERE d.departmentid = $1::integer
+               ),
+               recipients AS MATERIALIZED (
+                   SELECT u.username
+                   FROM "user" u
+                   JOIN "roles" r ON r.roleid = u.role
+                   CROSS JOIN department_row d
+                   WHERE r.departmentid = d.departmentid
+                     AND r.roleid BETWEEN 1 AND 28
+                     AND u.active = true
+                     AND u.registered = true
+               ),
+               recipient_totals AS (
+                   SELECT COUNT(*)::integer AS recipient_count
+                   FROM recipients
+               ),
+               balance_guard AS (
+                   SELECT COALESCE(
+                       BOOL_AND(u.balance <= 2147483647 - $2::integer), false
+                   ) AS safe
+                   FROM "user" u
+                   JOIN recipients r ON r.username = u.username
+               ),
+               existing AS (
+                   SELECT COUNT(*)::integer AS recipient_count,
+                          COALESCE(SUM(amount), 0)::bigint AS total
+                   FROM "transactions"
+                   WHERE reason LIKE ('%; request ' || $4)
+               ),
+               updated AS (
+                   UPDATE "user" u
+                   SET balance = u.balance + $2::integer
+                   FROM recipients r, recipient_totals totals, existing prior,
+                        balance_guard guard
+                   WHERE u.username = r.username
+                     AND prior.recipient_count = 0
+                     AND totals.recipient_count = $5::integer
+                     AND guard.safe
+                   RETURNING u.username
+               ),
+               inserted AS (
+                   INSERT INTO "transactions" (sender, receiver, amount, reason)
+                   SELECT $3,
+                          updated.username,
+                          $2::integer,
+                          'department payout: ' || d.departmentname ||
+                          '; issued by ' || $3 || '; request ' || $4
+                   FROM updated
+                   CROSS JOIN department_row d
+                   RETURNING transactionid
+               )
+               SELECT d.departmentid,
+                      d.departmentname,
+                      totals.recipient_count AS eligible_count,
+                      CASE WHEN prior.recipient_count > 0
+                           THEN prior.recipient_count
+                           ELSE totals.recipient_count END AS recipient_count,
+                      CASE WHEN prior.recipient_count > 0
+                           THEN prior.total
+                           ELSE totals.recipient_count::bigint * $2::bigint END AS total,
+                      (SELECT COUNT(*)::integer FROM inserted) AS inserted_count,
+                      (prior.recipient_count > 0) AS duplicate
+               FROM department_row d
+               CROSS JOIN recipient_totals totals
+               CROSS JOIN existing prior)",
+            params, true);
+        pool_ptr->returnConnection(std::move(con));
+
+        if (rows.empty()) {
+            payout.status = DepartmentPayoutStatus::DepartmentNotFound;
+            return payout;
+        }
+
+        payout.department_name = rows[0]["departmentname"].as<std::string>();
+        const int eligible_count = rows[0]["eligible_count"].as<int>();
+        payout.recipient_count = rows[0]["recipient_count"].as<int>();
+        payout.total = rows[0]["total"].as<long long>();
+        payout.duplicate = rows[0]["duplicate"].as<bool>();
+        const int inserted_count = rows[0]["inserted_count"].as<int>();
+
+        if (payout.duplicate) {
+            payout.status = DepartmentPayoutStatus::Success;
+            return payout;
+        }
+        if (eligible_count == 0) {
+            payout.status = DepartmentPayoutStatus::NoRecipients;
+            return payout;
+        }
+        if (eligible_count != expected_recipient_count) {
+            payout.status = DepartmentPayoutStatus::PreviewChanged;
+            return payout;
+        }
+        if (inserted_count != eligible_count) {
+            payout.status = DepartmentPayoutStatus::Error;
+            return payout;
+        }
+
+        payout.applied = true;
+        payout.status = DepartmentPayoutStatus::Success;
+        return payout;
+    }
+
     std::pair<TransactionStatus, std::string> prepare_transaction(std::string sender, std::string reciver, int ammount, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         const bool sender_is_admin = auth::is_rights_by_username(sender, pool_ptr);
         if (!sender_is_admin && !can_use_transactions(sender, pool_ptr)) {
@@ -302,6 +470,125 @@ namespace transactions {
 } // namespace transactions
 
 namespace transactions::server {
+    static std::string department_payout_json(
+        const transactions::DepartmentPayoutResult& payout) {
+        rapidjson::Document body(rapidjson::kObjectType);
+        auto& allocator = body.GetAllocator();
+        body.AddMember("department_id", payout.department_id, allocator);
+        body.AddMember(
+            "department_name",
+            rapidjson::Value(payout.department_name.c_str(), allocator), allocator);
+        body.AddMember("amount", payout.amount, allocator);
+        body.AddMember("recipient_count", payout.recipient_count, allocator);
+        body.AddMember("total", static_cast<int64_t>(payout.total), allocator);
+        body.AddMember("applied", payout.applied, allocator);
+        body.AddMember("duplicate", payout.duplicate, allocator);
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        body.Accept(writer);
+        return buffer.GetString();
+    }
+
+    static bool valid_payout_request_id(const std::string& request_id) {
+        if (request_id.size() < 16 || request_id.size() > 64) {
+            return false;
+        }
+        for (unsigned char c : request_id) {
+            if (!std::isalnum(c) && c != '-') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void department_payout(
+        std::unique_ptr<restinio::router::express_router_t<>>& router,
+        std::shared_ptr<cp::ConnectionsManager> pool_ptr,
+        std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+        router.get()->http_post(
+            "/transactions/department-payout",
+            [pool_ptr, logger_ptr](auto req, auto) {
+                logger_ptr->trace([] { return "called /transactions/department-payout"; });
+                const std::string token = security::bearer_or_cookie_token(req->header());
+                if (token.empty() || !auth::is_authed(token, pool_ptr)) {
+                    return req->create_response(restinio::status_unauthorized()).done();
+                }
+                if (!auth::is_admin(token, pool_ptr)) {
+                    return req->create_response(restinio::status_forbidden())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"admin rights required"})")
+                        .done();
+                }
+
+                rapidjson::Document body;
+                body.Parse(req->body().c_str());
+                if (body.HasParseError() || !body.IsObject() ||
+                    !body.HasMember("department_id") || !body["department_id"].IsInt() ||
+                    !body.HasMember("amount") || !body["amount"].IsInt() ||
+                    !body.HasMember("request_id") || !body["request_id"].IsString() ||
+                    !body.HasMember("confirm") || !body["confirm"].IsBool()) {
+                    return req->create_response(restinio::status_bad_request())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"department_id, positive integer amount, request_id and confirm are required"})")
+                        .done();
+                }
+
+                const int department_id = body["department_id"].GetInt();
+                const int amount = body["amount"].GetInt();
+                const std::string request_id = body["request_id"].GetString();
+                const bool confirm = body["confirm"].GetBool();
+                if (department_id <= 0 || amount <= 0 ||
+                    !valid_payout_request_id(request_id) ||
+                    (confirm && (!body.HasMember("expected_recipient_count") ||
+                                 !body["expected_recipient_count"].IsInt() ||
+                                 body["expected_recipient_count"].GetInt() <= 0))) {
+                    return req->create_response(restinio::status_bad_request())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"invalid department payout parameters"})")
+                        .done();
+                }
+
+                transactions::DepartmentPayoutResult payout = confirm
+                    ? transactions::apply_department_payout(
+                        department_id, amount, auth::get_username(token, pool_ptr),
+                        request_id, body["expected_recipient_count"].GetInt(), pool_ptr)
+                    : transactions::preview_department_payout(department_id, amount, pool_ptr);
+
+                switch (payout.status) {
+                case transactions::DepartmentPayoutStatus::Success:
+                    if (confirm && payout.applied) {
+                        analytics::record_event(
+                            auth::get_username(token, pool_ptr), token,
+                            req->remote_endpoint().address().to_string(),
+                            req->header().has_field("User-Agent")
+                                ? req->header().get_field("User-Agent") : "",
+                            "POST", "/transactions/department-payout", 200, 0,
+                            "", "{}", pool_ptr, logger_ptr);
+                    }
+                    return req->create_response()
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(department_payout_json(payout)).done();
+                case transactions::DepartmentPayoutStatus::DepartmentNotFound:
+                    return req->create_response(restinio::status_not_found())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"department not found"})").done();
+                case transactions::DepartmentPayoutStatus::NoRecipients:
+                    return req->create_response(restinio::status_conflict())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"department has no eligible recipients"})").done();
+                case transactions::DepartmentPayoutStatus::PreviewChanged:
+                    return req->create_response(restinio::status_conflict())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"recipient list changed; preview again"})").done();
+                case transactions::DepartmentPayoutStatus::Error:
+                default:
+                    return req->create_response(restinio::status_internal_server_error())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"department payout failed"})").done();
+                }
+            });
+    }
+
     static void publish_balance_update(
         const std::shared_ptr<ws::EventBus>& bus_ptr,
         const std::string& username,
