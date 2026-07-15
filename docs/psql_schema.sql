@@ -626,7 +626,8 @@ CREATE TABLE public.transactions (
     amount bigint NOT NULL,
     sender character varying NOT NULL,
     receiver character varying NOT NULL,
-    transactiontime timestamp without time zone DEFAULT now() NOT NULL
+    transactiontime timestamp without time zone DEFAULT now() NOT NULL,
+    reason character varying DEFAULT 'wire transfer'::character varying NOT NULL
 );
 
 

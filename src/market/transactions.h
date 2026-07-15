@@ -47,6 +47,25 @@ namespace transactions {
         int sender_balance = 0;
         int receiver_balance = 0;
     };
+
+    enum struct DepartmentPayoutStatus {
+        Success,
+        DepartmentNotFound,
+        NoRecipients,
+        PreviewChanged,
+        Error,
+    };
+
+    struct DepartmentPayoutResult {
+        DepartmentPayoutStatus status = DepartmentPayoutStatus::Error;
+        int department_id = 0;
+        std::string department_name;
+        int amount = 0;
+        int recipient_count = 0;
+        long long total = 0;
+        bool applied = false;
+        bool duplicate = false;
+    };
     
     class RegisteredTransaction {
         public:
@@ -81,6 +100,15 @@ namespace transactions {
     std::string last_incoming_outgoing_payments_json(
         std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 
+    DepartmentPayoutResult preview_department_payout(
+        int department_id, int amount,
+        std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
+    DepartmentPayoutResult apply_department_payout(
+        int department_id, int amount, const std::string& actor,
+        const std::string& request_id, int expected_recipient_count,
+        std::shared_ptr<cp::ConnectionsManager> pool_ptr);
+
     std::pair<TransactionStatus, std::string> prepare_transaction(std::string sender, std::string reciver, int ammount, std::shared_ptr<cp::ConnectionsManager> pool_ptr);
 } // namespace transactions
 
@@ -92,4 +120,6 @@ namespace transactions::server {
     void get_transactions(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 
     void prepare_transaction(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
+
+    void department_payout(std::unique_ptr<restinio::router::express_router_t<>>& router, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr);
 } // namespace transactions::server
