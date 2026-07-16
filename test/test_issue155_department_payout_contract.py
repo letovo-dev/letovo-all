@@ -41,6 +41,27 @@ def test_apply_is_atomic_auditable_and_idempotent():
     assert "reason character varying DEFAULT 'wire transfer'" in SCHEMA
 
 
+def test_payout_does_not_read_or_debit_admin_balance():
+    handler = TRANSACTIONS.split(
+        '"/transactions/department-payout"', 1
+    )[1].split('"/transactions/prepare"', 1)[0]
+    assert "get_balance(" not in handler
+    assert 'SET balance = u.balance + $2::integer' in TRANSACTIONS
+    assert "SET balance = u.balance -" not in TRANSACTIONS.split(
+        "DepartmentPayoutResult apply_department_payout", 1
+    )[1].split("prepare_transaction", 1)[0]
+
+
+def test_preview_confirm_inputs_and_safe_outcome_logging_are_explicit():
+    assert "department_id, amount, actor" in TRANSACTIONS
+    assert 'body["expected_recipient_count"].GetInt()' in TRANSACTIONS
+    assert '"department_payout department_id={} confirm={} outcome={}"' in TRANSACTIONS
+    assert "department_payout_status_name(status)" in TRANSACTIONS
+    assert "request_id" not in TRANSACTIONS.split(
+        '"department_payout department_id={} confirm={} outcome={}"', 1
+    )[1].split("switch (payout.status)", 1)[0]
+
+
 def test_amount_and_request_id_are_validated():
     assert "amount <= 0" in TRANSACTIONS
     assert "valid_payout_request_id" in TRANSACTIONS

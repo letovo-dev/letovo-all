@@ -470,6 +470,23 @@ namespace transactions {
 } // namespace transactions
 
 namespace transactions::server {
+    static const char* department_payout_status_name(
+        transactions::DepartmentPayoutStatus status) {
+        switch (status) {
+        case transactions::DepartmentPayoutStatus::Success:
+            return "success";
+        case transactions::DepartmentPayoutStatus::DepartmentNotFound:
+            return "department_not_found";
+        case transactions::DepartmentPayoutStatus::NoRecipients:
+            return "no_recipients";
+        case transactions::DepartmentPayoutStatus::PreviewChanged:
+            return "preview_changed";
+        case transactions::DepartmentPayoutStatus::Error:
+        default:
+            return "error";
+        }
+    }
+
     static std::string department_payout_json(
         const transactions::DepartmentPayoutResult& payout) {
         rapidjson::Document body(rapidjson::kObjectType);
@@ -548,17 +565,23 @@ namespace transactions::server {
                         .done();
                 }
 
+                const std::string actor = auth::get_username(token, pool_ptr);
                 transactions::DepartmentPayoutResult payout = confirm
                     ? transactions::apply_department_payout(
-                        department_id, amount, auth::get_username(token, pool_ptr),
+                        department_id, amount, actor,
                         request_id, body["expected_recipient_count"].GetInt(), pool_ptr)
                     : transactions::preview_department_payout(department_id, amount, pool_ptr);
+                logger_ptr->info([department_id, confirm, status = payout.status] {
+                    return fmt::format(
+                        "department_payout department_id={} confirm={} outcome={}",
+                        department_id, confirm, department_payout_status_name(status));
+                });
 
                 switch (payout.status) {
                 case transactions::DepartmentPayoutStatus::Success:
                     if (confirm && payout.applied) {
                         analytics::record_event(
-                            auth::get_username(token, pool_ptr), token,
+                            actor, token,
                             req->remote_endpoint().address().to_string(),
                             req->header().has_field("User-Agent")
                                 ? req->header().get_field("User-Agent") : "",
