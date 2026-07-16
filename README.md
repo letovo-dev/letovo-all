@@ -16,6 +16,19 @@
 
 ---
 
+## API-документация
+
+`docs/openapi.json` — OpenAPI 3.1-инвентаризация backend-маршрутов, доступных не только администраторам. Production server: `https://letovocorp.ru/letovo-api`.
+
+Перегенерировать спецификацию после изменения маршрутов:
+
+```bash
+python3 docs/generate_openapi.py
+python3 -m pytest -q test/test_openapi_non_admin_coverage.py
+```
+
+Строго admin-only обработчики и development-пробы намеренно не входят в документ.
+
 ## Разработка
 
 ### Как добавить свои модули - С++
