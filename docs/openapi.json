@@ -411,12 +411,12 @@
         ]
       }
     },
-    "/actives/active/{id}": {
+    "/actives/active/{identifier}": {
       "get": {
         "tags": [
           "actives"
         ],
-        "summary": "GET /actives/active/{id}",
+        "summary": "GET /actives/active/{identifier}",
         "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
         "responses": {
           "200": {
@@ -434,40 +434,7 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ]
-      }
-    },
-    "/actives/active/{ticker}": {
-      "get": {
-        "tags": [
-          "actives"
-        ],
-        "summary": "GET /actives/active/{ticker}",
-        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
-        "responses": {
-          "200": {
-            "description": "Successful response"
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Authentication or authorization failed"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "parameters": [
-          {
-            "name": "ticker",
+            "name": "identifier",
             "in": "path",
             "required": true,
             "schema": {
@@ -500,12 +467,12 @@
         }
       }
     },
-    "/actives/history/{id}": {
+    "/actives/history/{identifier}": {
       "get": {
         "tags": [
           "actives"
         ],
-        "summary": "GET /actives/history/{id}",
+        "summary": "GET /actives/history/{identifier}",
         "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
         "responses": {
           "200": {
@@ -523,40 +490,7 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ]
-      }
-    },
-    "/actives/history/{ticker}": {
-      "get": {
-        "tags": [
-          "actives"
-        ],
-        "summary": "GET /actives/history/{ticker}",
-        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
-        "responses": {
-          "200": {
-            "description": "Successful response"
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Authentication or authorization failed"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "parameters": [
-          {
-            "name": "ticker",
+            "name": "identifier",
             "in": "path",
             "required": true,
             "schema": {
@@ -1757,39 +1691,6 @@
         }
       }
     },
-    "/post/qr/{post_id}": {
-      "get": {
-        "tags": [
-          "post"
-        ],
-        "summary": "GET /post/qr/{post_id}",
-        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
-        "responses": {
-          "200": {
-            "description": "Successful response"
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "401": {
-            "description": "Authentication or authorization failed"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "parameters": [
-          {
-            "name": "post_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ]
-      }
-    },
     "/post/reveal_secret/{token}": {
       "get": {
         "tags": [
@@ -2714,6 +2615,40 @@
             "authSession": []
           }
         ]
+      }
+    },
+    "/user/create_role": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "POST /user/create_role",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
       }
     },
     "/user/delete_role": {

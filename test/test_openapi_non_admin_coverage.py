@@ -29,4 +29,8 @@ def test_openapi_is_portal_scoped_and_excludes_admin_only_handlers():
     documented_paths = set(spec["paths"])
     assert "/auth/admin_create_user" not in documented_paths
     assert "/transactions/department-payout" not in documented_paths
+    assert "/post/qr/{post_id}" not in documented_paths
+    assert "/user/create_role" in documented_paths
     assert all("{search}" not in path for path in documented_paths)
+    assert "/actives/active/{identifier}" in documented_paths
+    assert "/actives/history/{identifier}" in documented_paths

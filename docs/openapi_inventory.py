@@ -19,9 +19,9 @@ ADMIN_ONLY_HANDLERS = {
     ("src/basic/auth.cc", "admin_create_user", "/auth/admin_create_user"),
     ("src/basic/auth.cc", "add_new_user", "/auth/add_user"),
     ("src/basic/user_data.cc", "add_user_role", "/user/add_role"),
-    ("src/basic/user_data.cc", "create_role", "/user/create_role"),
     ("src/basic/user_data.cc", "set_users_department", "/user/set_department"),
     ("src/basic/ws_endpoint.cc", "list_active_sessions", "/ws/sessions/active"),
+    ("src/basic/qr_worker.cc", "page_qr", "/post/qr/:post_id([0-9]+)"),
     ("src/letovo-soc-net/achivements.cc", "delete_achivement", "/achivements/delete"),
     ("src/letovo-soc-net/achivements.cc", "create_achivement", "/achivements/create"),
     ("src/letovo-soc-net/chat.cc", "set_permission", "/chat/permission"),
@@ -49,8 +49,14 @@ PARAM_RE = re.compile(r":([A-Za-z_][\w]*)\([^)]*\)")
 
 
 def openapi_path(route: str) -> str:
-    return PARAM_RE.sub(
+    normalized = PARAM_RE.sub(
         lambda match: "{" + match.group(1) + "}", route.replace(":search(.*)", "")
+    )
+    return (
+        normalized.replace("/actives/active/{id}", "/actives/active/{identifier}")
+        .replace("/actives/active/{ticker}", "/actives/active/{identifier}")
+        .replace("/actives/history/{id}", "/actives/history/{identifier}")
+        .replace("/actives/history/{ticker}", "/actives/history/{identifier}")
     )
 
 
