@@ -312,11 +312,11 @@ namespace transactions {
         payout.department_id = department_id;
         payout.amount = amount;
 
-        auto con = std::move(pool_ptr->getConnection());
+        cp::SafeCon con{pool_ptr};
         std::vector<std::string> params = {
             std::to_string(department_id), std::to_string(amount), actor,
             request_id, std::to_string(expected_recipient_count)};
-        pqxx::result rows = con->execute_params(
+        pqxx::result rows = con->execute_params_or_throw(
             R"(WITH request_lock AS (
                    SELECT pg_advisory_xact_lock(hashtext($4))
                ),
@@ -390,10 +390,16 @@ namespace transactions {
                CROSS JOIN recipient_totals totals
                CROSS JOIN existing prior)",
             params, true);
-        pool_ptr->returnConnection(std::move(con));
 
         if (rows.empty()) {
-            payout.status = DepartmentPayoutStatus::DepartmentNotFound;
+            std::vector<std::string> department_params = {
+                std::to_string(department_id)};
+            pqxx::result department = con->execute_params_or_throw(
+                R"(SELECT 1 FROM "department" WHERE departmentid = $1::integer)",
+                department_params);
+            payout.status = department.empty()
+                ? DepartmentPayoutStatus::DepartmentNotFound
+                : DepartmentPayoutStatus::Error;
             return payout;
         }
 
@@ -566,11 +572,32 @@ namespace transactions::server {
                 }
 
                 const std::string actor = auth::get_username(token, pool_ptr);
-                transactions::DepartmentPayoutResult payout = confirm
-                    ? transactions::apply_department_payout(
-                        department_id, amount, actor,
-                        request_id, body["expected_recipient_count"].GetInt(), pool_ptr)
-                    : transactions::preview_department_payout(department_id, amount, pool_ptr);
+                transactions::DepartmentPayoutResult payout;
+                try {
+                    payout = confirm
+                        ? transactions::apply_department_payout(
+                            department_id, amount, actor,
+                            request_id, body["expected_recipient_count"].GetInt(), pool_ptr)
+                        : transactions::preview_department_payout(department_id, amount, pool_ptr);
+                } catch (const pqxx::sql_error& error) {
+                    const std::string sqlstate = error.sqlstate();
+                    const std::string message = error.what();
+                    logger_ptr->error([sqlstate, message] {
+                        return "department payout database failure: SQLSTATE=" +
+                            sqlstate + " message=" + message;
+                    });
+                    return req->create_response(restinio::status_internal_server_error())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"department payout failed"})").done();
+                } catch (const std::exception& error) {
+                    const std::string message = error.what();
+                    logger_ptr->error([message] {
+                        return "department payout database failure: " + message;
+                    });
+                    return req->create_response(restinio::status_internal_server_error())
+                        .append_header("Content-Type", "application/json; charset=utf-8")
+                        .set_body(R"({"error":"department payout failed"})").done();
+                }
                 logger_ptr->info([department_id, confirm, status = payout.status] {
                     return fmt::format(
                         "department_payout department_id={} confirm={} outcome={}",

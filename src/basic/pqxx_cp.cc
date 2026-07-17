@@ -532,6 +532,20 @@ pqxx::result AsyncConnection::execute_params(const std::string &sql,
   return r;
 }
 
+pqxx::result AsyncConnection::execute_params_or_throw(
+    const std::string &sql, std::vector<std::string> &params, bool commit) {
+  if (!is_open()) {
+    con = std::make_shared<pqxx::connection>(connect_string);
+  }
+  pqxx::work w(*con);
+  pqxx::result r = w.exec_params(sql, pqxx::prepare::make_dynamic_params(params));
+  if (commit) {
+    w.commit();
+  }
+  last_used = std::chrono::system_clock::now();
+  return r;
+}
+
 pqxx::result AsyncConnection::execute_params(const std::string &sql,
                                              std::vector<int> &params,
                                              bool commit) {
