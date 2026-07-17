@@ -50,6 +50,9 @@ public:
   pqxx::result execute_params(const std::string &sql,
                               std::vector<std::string> &params,
                               bool commit = false);
+  pqxx::result execute_params_or_throw(const std::string &sql,
+                                       std::vector<std::string> &params,
+                                       bool commit = false);
   pqxx::result execute_many(std::vector<Request> &);
   pqxx::result execute_params(const std::string &sql, std::vector<int> &params,
                               bool commit = false);

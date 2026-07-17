@@ -60,6 +60,13 @@ def test_preview_confirm_inputs_and_safe_outcome_logging_are_explicit():
     assert "request_id" not in TRANSACTIONS.split(
         '"department_payout department_id={} confirm={} outcome={}"', 1
     )[1].split("switch (payout.status)", 1)[0]
+def test_apply_does_not_report_database_errors_as_missing_departments():
+    assert "execute_params_or_throw" in TRANSACTIONS
+    assert 'SELECT 1 FROM "department" WHERE departmentid = $1::integer' in TRANSACTIONS
+    assert "DepartmentPayoutStatus::DepartmentNotFound" in TRANSACTIONS
+    assert "catch (const pqxx::sql_error& error)" in TRANSACTIONS
+    assert "department payout database failure: SQLSTATE=" in TRANSACTIONS
+    assert 'R"({"error":"department payout failed"})"' in TRANSACTIONS
 
 
 def test_amount_and_request_id_are_validated():
