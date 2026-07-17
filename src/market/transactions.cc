@@ -366,11 +366,11 @@ namespace transactions {
                ),
                inserted AS (
                    INSERT INTO "transactions" (sender, receiver, amount, reason)
-                   SELECT $3,
+                   SELECT $3::character varying,
                           updated.username,
                           $2::integer,
                           'department payout: ' || d.departmentname ||
-                          '; issued by ' || $3 || '; request ' || $4
+                          '; issued by ' || $3::character varying || '; request ' || $4
                    FROM updated
                    CROSS JOIN department_row d
                    RETURNING transactionid

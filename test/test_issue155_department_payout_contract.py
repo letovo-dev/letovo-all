@@ -53,6 +53,10 @@ def test_reason_column_migration_runs_before_candidate_and_production_payouts():
         assert "pg_dump -U scv -d letovo_db -t public.transactions" in workflow
         assert workflow.index("pg_dump -U scv -d letovo_db -t public.transactions") < workflow.index('docker cp "$payout_migration"')
 
+def test_apply_casts_actor_parameter_to_transactions_sender_type():
+    assert "SELECT $3::character varying," in TRANSACTIONS
+    assert "; issued by ' || $3::character varying ||" in TRANSACTIONS
+
 
 def test_payout_does_not_read_or_debit_admin_balance():
     handler = TRANSACTIONS.split(
