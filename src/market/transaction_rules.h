@@ -5,6 +5,10 @@ namespace transactions {
 constexpr int kAdminBalanceLimit = 999999999;
 constexpr int kTransferCooldownSeconds = 5;
 
+inline bool is_transfer_cooldown_active(int seconds_remaining, bool sender_is_admin) {
+    return !sender_is_admin && seconds_remaining > 0;
+}
+
 inline bool can_transfer_amount(int sender_balance, int amount, bool sender_is_admin) {
     if (!sender_is_admin && amount < 0) {
         return false;

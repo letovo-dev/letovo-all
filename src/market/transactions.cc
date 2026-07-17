@@ -121,7 +121,9 @@ namespace transactions {
         result.amount = amount;
         bool sender_is_admin = auth::is_rights_by_username(transaction->sender, pool_ptr);
 
-        if (transfer_cooldown_seconds_remaining(transaction->sender, pool_ptr) > 0) {
+        if (is_transfer_cooldown_active(
+                transfer_cooldown_seconds_remaining(transaction->sender, pool_ptr),
+                sender_is_admin)) {
             result.status = TransactionStatus::Cooldown;
             return result;
         }
@@ -467,7 +469,9 @@ namespace transactions {
         if (!sender_is_admin && !has_whireable_participant(sender, reciver, pool_ptr)) {
             return {TransactionStatus::NotReceiver, ""};
         }
-        if (transfer_cooldown_seconds_remaining(sender, pool_ptr) > 0) {
+        if (is_transfer_cooldown_active(
+                transfer_cooldown_seconds_remaining(sender, pool_ptr),
+                sender_is_admin)) {
             return {TransactionStatus::Cooldown, ""};
         }
         
