@@ -1,0 +1,3016 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Letovo portal API (non-admin routes)",
+    "version": "1.0.0",
+    "description": "Исходная OpenAPI-инвентаризация маршрутов, доступных не только администраторам. Строго admin-only и development-пробы исключены. API-prefix: `/letovo-api`."
+  },
+  "servers": [
+    {
+      "url": "https://letovocorp.ru/letovo-api"
+    }
+  ],
+  "tags": [
+    {
+      "name": "achivements"
+    },
+    {
+      "name": "actives"
+    },
+    {
+      "name": "analytics"
+    },
+    {
+      "name": "auth"
+    },
+    {
+      "name": "authors_list"
+    },
+    {
+      "name": "calendar"
+    },
+    {
+      "name": "chat"
+    },
+    {
+      "name": "chats"
+    },
+    {
+      "name": "deals"
+    },
+    {
+      "name": "media"
+    },
+    {
+      "name": "new_message"
+    },
+    {
+      "name": "post"
+    },
+    {
+      "name": "social"
+    },
+    {
+      "name": "transactions"
+    },
+    {
+      "name": "user"
+    },
+    {
+      "name": "ws"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Bearer",
+        "description": "Session token in the backend-supported `Bearer` header."
+      },
+      "authSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "AuthSession",
+        "description": "Session cookie issued by `/auth/login`."
+      }
+    }
+  },
+  "paths": {
+    "/achivements/add": {
+      "post": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "POST /achivements/add",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/achivements/by_user": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/by_user",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/achivements/info/{achivement_id}": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/info/{achivement_id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "achivement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/achivements/no_dep": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/no_dep",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/achivements/pictures": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/pictures",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/achivements/qr/{achivement_id}": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/qr/{achivement_id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "achivement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/achivements/qr_code/{achivement_id}": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/qr_code/{achivement_id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "achivement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/achivements/tree/{tree_id}": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/tree/{tree_id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "tree_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/achivements/user/departments/{username}": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/user/departments/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/achivements/user/full/{username}": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/user/full/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/achivements/user/{username}": {
+      "get": {
+        "tags": [
+          "achivements"
+        ],
+        "summary": "GET /achivements/user/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/actives/active/{identifier}": {
+      "get": {
+        "tags": [
+          "actives"
+        ],
+        "summary": "GET /actives/active/{identifier}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/actives/all_actives": {
+      "get": {
+        "tags": [
+          "actives"
+        ],
+        "summary": "GET /actives/all_actives",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/actives/history/{identifier}": {
+      "get": {
+        "tags": [
+          "actives"
+        ],
+        "summary": "GET /actives/history/{identifier}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/actives/user_actives": {
+      "get": {
+        "tags": [
+          "actives"
+        ],
+        "summary": "GET /actives/user_actives",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/actives/user_history": {
+      "get": {
+        "tags": [
+          "actives"
+        ],
+        "summary": "GET /actives/user_history",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/analytics/activity/ping": {
+      "post": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "POST /analytics/activity/ping",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/amiadmin": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "GET /auth/amiadmin",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/auth/amiauthed": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "GET /auth/amiauthed",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/auth/amiuploader": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "GET /auth/amiuploader",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/auth/change_password": {
+      "put": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "PUT /auth/change_password",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/change_username": {
+      "put": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "PUT /auth/change_username",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/delete": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "DELETE /auth/delete",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/isactive/{username}": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "GET /auth/isactive/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/auth/isadmin/{username}": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "GET /auth/isadmin/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/auth/isuser/{username}": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "GET /auth/isuser/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "POST /auth/login",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "put": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "PUT /auth/logout",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reg": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "POST /auth/reg",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register_true": {
+      "put": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "PUT /auth/register_true",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/authors_list": {
+      "get": {
+        "tags": [
+          "authors_list"
+        ],
+        "summary": "GET /authors_list",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/calendar/day": {
+      "get": {
+        "tags": [
+          "calendar"
+        ],
+        "summary": "GET /calendar/day",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/chat/message/{id}": {
+      "delete": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "DELETE /chat/message/{id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/{username}": {
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "GET /chat/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/chats/": {
+      "get": {
+        "tags": [
+          "chats"
+        ],
+        "summary": "GET /chats/",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/deals/add_bid": {
+      "post": {
+        "tags": [
+          "deals"
+        ],
+        "summary": "POST /deals/add_bid",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deals/remove_bid": {
+      "delete": {
+        "tags": [
+          "deals"
+        ],
+        "summary": "DELETE /deals/remove_bid",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deals/users_bids": {
+      "get": {
+        "tags": [
+          "deals"
+        ],
+        "summary": "GET /deals/users_bids",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/media/get/{filename}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "GET /media/get/{filename}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/media/top-downloads": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "GET /media/top-downloads",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/new_message": {
+      "post": {
+        "tags": [
+          "new_message"
+        ],
+        "summary": "POST /new_message",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/add_page": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "POST /post/add_page",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/author/{username}": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "GET /post/author/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/post/delete": {
+      "delete": {
+        "tags": [
+          "post"
+        ],
+        "summary": "DELETE /post/delete",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/favourite": {
+      "post": {
+        "tags": [
+          "post"
+        ],
+        "summary": "POST /post/favourite",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/favourite/": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "GET /post/favourite/",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/post/favourite/{id}": {
+      "delete": {
+        "tags": [
+          "post"
+        ],
+        "summary": "DELETE /post/favourite/{id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/reveal_secret/{token}": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "GET /post/reveal_secret/{token}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/post/update_likes": {
+      "put": {
+        "tags": [
+          "post"
+        ],
+        "summary": "PUT /post/update_likes",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/{id}": {
+      "get": {
+        "tags": [
+          "post"
+        ],
+        "summary": "GET /post/{id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/social/authors": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/authors",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/social/bycat/{category}": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/bycat/{category}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/social/categories": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/categories",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/social/comments": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/comments",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "social"
+        ],
+        "summary": "POST /social/comments",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/dislike": {
+      "delete": {
+        "tags": [
+          "social"
+        ],
+        "summary": "DELETE /social/dislike",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "social"
+        ],
+        "summary": "POST /social/dislike",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/like": {
+      "delete": {
+        "tags": [
+          "social"
+        ],
+        "summary": "DELETE /social/like",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "social"
+        ],
+        "summary": "POST /social/like",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/media/pics/{post_id}": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/media/pics/{post_id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/social/new/{post_id}": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/new/{post_id}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/social/news": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/news",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/social/news/related": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/news/related",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/social/posts": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/posts",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/social/posts/author/{username}": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/posts/author/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/social/save": {
+      "delete": {
+        "tags": [
+          "social"
+        ],
+        "summary": "DELETE /social/save",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "social"
+        ],
+        "summary": "POST /social/save",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/social/saved": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/saved",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/social/search": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/search",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/social/titles": {
+      "get": {
+        "tags": [
+          "social"
+        ],
+        "summary": "GET /social/titles",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/transactions/balance": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "GET /transactions/balance",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/transactions/my": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "GET /transactions/my",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/transactions/prepare": {
+      "post": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "POST /transactions/prepare",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/send": {
+      "post": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "POST /transactions/send",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/all_avatars": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/all_avatars",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    },
+    "/user/create_role": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "POST /user/create_role",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/delete_role": {
+      "delete": {
+        "tags": [
+          "user"
+        ],
+        "summary": "DELETE /user/delete_role",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/department/name/{department}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/department/name/{department}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "department",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/user/department/roles": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/department/roles",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/user/department/roles/{department}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/department/roles/{department}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "department",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/user/department/start/{department}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/department/start/{department}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "department",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/user/full/{username}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/full/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/user/roles/{username}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/roles/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/user/set_avatar": {
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "summary": "PUT /user/set_avatar",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/unactive_roles/{username}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/unactive_roles/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/user/{username}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "GET /user/{username}",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/ws": {
+      "get": {
+        "tags": [
+          "ws"
+        ],
+        "summary": "GET /ws",
+        "description": "Маршрут доступен не только администраторам. Точные права и формат данных проверяются backend-обработчиком.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authentication or authorization failed"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerHeader": []
+          },
+          {
+            "authSession": []
+          }
+        ]
+      }
+    }
+  }
+}
