@@ -50,6 +50,8 @@ def test_reason_column_migration_runs_before_candidate_and_production_payouts():
         assert "docs/department_payout_migration.sql" in workflow
         assert "department_payout_migration.sql" in workflow
         assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
+        assert "pg_dump -U scv -d letovo_db -t public.transactions" in workflow
+        assert workflow.index("pg_dump -U scv -d letovo_db -t public.transactions") < workflow.index('docker cp "$payout_migration"')
 
 
 def test_payout_does_not_read_or_debit_admin_balance():
