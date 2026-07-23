@@ -210,6 +210,23 @@ async function assertAdminSession(page) {
   assert(adminJson.status === 't', `Configured e2e account is not admin: ${admin.text}`);
 }
 
+async function assertPublisherAuthorList(page) {
+  assert(
+    secondaryUsername,
+    'Publisher author-list verification requires LETOVO_E2E_SECONDARY_USERNAME',
+  );
+  const authors = await fetchAuthenticated(page, '/letovo-api/authors_list');
+  assert(authors.status === 200, `Authors API returned HTTP ${authors.status}: ${authors.text}`);
+  const authorsJson = parseJsonResponse(authors, 'Authors API');
+  assert(Array.isArray(authorsJson.result), `Authors API result is not an array: ${authors.text}`);
+
+  const usernames = new Set(authorsJson.result.map(author => author.username));
+  assert(
+    usernames.has(secondaryUsername),
+    `Admin authors list is missing the secondary publisher fixture: ${authors.text}`,
+  );
+}
+
 async function assertUploaderSession(page) {
   const uploader = await fetchAuthenticated(page, '/letovo-api/auth/amiuploader/');
   assert(uploader.status === 200, `Uploader API returned HTTP ${uploader.status}`);
@@ -565,6 +582,8 @@ async function checkAuthenticatedBrowserFlow(page) {
   await loginAs(page, username, password);
   await assertAuthenticatedSession(page);
   await checkAccountSwitchCacheIsolation(page);
+  await assertAdminSession(page);
+  await assertPublisherAuthorList(page);
 
   if (!requireExtended) {
     console.log('Skipping extended authenticated flow because LIVE_E2E_REQUIRE_EXTENDED is not true.');
@@ -580,7 +599,6 @@ async function checkAuthenticatedBrowserFlow(page) {
     'LIVE_E2E_REQUIRE_EXTENDED=true requires LETOVO_E2E_SECONDARY_USERNAME and LETOVO_E2E_SECONDARY_PASSWORD',
   );
 
-  await assertAdminSession(page);
   await assertUploaderSession(page);
   await checkMoneyTransfer(page, secondaryUsername);
   await editSmokeArticle(page);

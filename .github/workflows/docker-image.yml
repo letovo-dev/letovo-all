@@ -401,6 +401,8 @@ jobs:
             "$remote:$state_dir/child_avatar_access_migration.sql"
           scp -i ~/.ssh/live-e2e docs/department_payout_migration.sql \
             "$remote:$state_dir/department_payout_migration.sql"
+          scp -i ~/.ssh/live-e2e docs/publisher_authorization_migration.sql \
+            "$remote:$state_dir/publisher_authorization_migration.sql"
           ssh -i ~/.ssh/live-e2e "$remote" \
             "BACKEND_IMAGE='$BACKEND_CANDIDATE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_CANDIDATE_IMAGE' FRONTEND_IMAGE='$FRONTEND_CANDIDATE_IMAGE' UPLOADER_IMAGE='$UPLOADER_CANDIDATE_IMAGE' COMPOSE_FILE='$LETOVO_E2E_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_E2E_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
@@ -413,6 +415,7 @@ jobs:
           migration="$state_dir/avatar_upload_role_migration.sql"
           child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
           payout_migration="$state_dir/department_payout_migration.sql"
+          publisher_authorization_migration="$state_dir/publisher_authorization_migration.sql"
           backup_root="$HOME/backups/letovo-live-e2e-${RUN_ID}"
           role_backup="$backup_root/role.before-avatar-migration.sql"
           user_backup="$backup_root/user.before-child-avatar-migration.sql"
@@ -422,6 +425,7 @@ jobs:
           test -f "$migration"
           test -f "$child_avatar_migration"
           test -f "$payout_migration"
+          test -f "$publisher_authorization_migration"
           mkdir -p "$backup_root"
           docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t public.transactions > "$transactions_backup"
@@ -431,6 +435,12 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/department_payout_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/department_payout_migration.sql
+          docker cp "$publisher_authorization_migration" \
+            letovo-postgres-1:/tmp/publisher_authorization_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
+              -f /tmp/publisher_authorization_migration.sql
+          docker exec letovo-postgres-1 rm -f /tmp/publisher_authorization_migration.sql
 
           docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
           docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
