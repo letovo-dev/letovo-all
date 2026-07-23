@@ -60,6 +60,12 @@ jobs:
       - name: Inspect backend image
         run: docker image inspect letovo-server:${{ github.sha }} >/dev/null
 
+      - name: Run avatar policy regression with sanitizers
+        run: |
+          g++ -std=c++20 -fsanitize=address,undefined -fno-omit-frame-pointer \
+            test/avatar_policy_regression.cc -o "$RUNNER_TEMP/avatar-policy-regression"
+          "$RUNNER_TEMP/avatar-policy-regression"
+
       - name: Build registration backend image locally
         uses: docker/build-push-action@v5
         with:

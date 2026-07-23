@@ -27,11 +27,16 @@ def test_child_allowlist_and_fallback_match_approved_production_batch():
 
 def test_backend_enforces_child_policy_on_list_and_direct_selection():
     source = USER_DATA.read_text()
+    policy = POLICY.read_text()
 
     assert "COALESCE(u.userrights = 'child', false) AS is_child" in source
     assert "avatar_policy::is_approved_for_child(avatar)" in source
-    assert "if (access.is_child)" in source
-    assert "avatar_policy::is_approved_for_child(normalized)" in source
+    assert "avatar_policy::can_use_path(" in source
+    assert (
+        "const auto personal_path = personal_avatar_relative(username);" in source
+    )
+    assert "if (is_child)" in policy
+    assert "is_approved_for_child(normalized)" in policy
     assert "access.can_upload_personal" in source
     assert "user::avatar_access(username, pool_ptr)" in source
     assert "restinio::status_forbidden()" in source

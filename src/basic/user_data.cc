@@ -525,22 +525,15 @@ std::vector<std::string> all_avatars(const std::string &username, bool is_admin,
 
 bool can_use_avatar(const std::string &username, const std::string &avatar,
                     bool is_admin, const AvatarAccess &access) {
-  if (avatar.empty() || avatar.find("..") != std::string::npos ||
-      avatar.find('\\') != std::string::npos) return false;
-  const auto normalized = avatar_policy::normalize(avatar);
-  const auto shared = avatar_policy::normalize(
-      Config::giveMe().pages_config.user_avatars_path.relative);
-  const auto admin = avatar_policy::normalize(
-      Config::giveMe().pages_config.admin_avatars_path.relative);
-  const auto personal = avatar_policy::normalize(personal_avatar_relative(username));
-  if (access.is_child) {
-    if (!avatar_policy::is_approved_for_child(normalized)) return false;
-  } else if (normalized.rfind(shared, 0) != 0 &&
-             !(is_admin && normalized.rfind(admin, 0) == 0) &&
-             !(access.can_upload_personal &&
-               normalized.rfind(personal, 0) == 0)) {
+  const auto personal_path = personal_avatar_relative(username);
+  if (!avatar_policy::can_use_path(
+          avatar, Config::giveMe().pages_config.user_avatars_path.relative,
+          Config::giveMe().pages_config.admin_avatars_path.relative,
+          personal_path, is_admin, access.is_child,
+          access.can_upload_personal)) {
     return false;
   }
+  const auto normalized = avatar_policy::normalize(avatar);
   std::error_code ec;
   const auto root = std::filesystem::weakly_canonical(media_root(), ec);
   const auto file =
