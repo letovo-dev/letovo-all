@@ -512,7 +512,13 @@ jobs:
             -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${REGISTRATION_IMAGE}#" \
             -e "s#image: .*letovo.*front.*:.*#image: ${FRONTEND_IMAGE}#" \
             -e "s#LETOVO_BUILD_SHA: \".*\"#LETOVO_BUILD_SHA: \"${RELEASE_SHA}\"#" \
+            -e "/^    letovo-flask-uploader:/,/^    [[:alnum:]_-]\\+:/ s#- /mnt/server-media:/app/pages#- /srv/letovo/media:/app/pages#" \
+            -e "/^    letovo-flask-uploader:/,/^    [[:alnum:]_-]\\+:/ s#- \"8880:8880\"#- \"127.0.0.1:8880:8880\"#" \
             "$repo_compose" > "$candidate"
+
+          uploader_candidate_block="$(sed -n '/^    letovo-flask-uploader:/,/^    keycloak:/p' "$candidate")"
+          grep -F -- '- /srv/letovo/media:/app/pages' <<<"$uploader_candidate_block"
+          grep -F -- '- "127.0.0.1:8880:8880"' <<<"$uploader_candidate_block"
 
           docker run -d \
             --name "$smoke_name" \

@@ -57,6 +57,11 @@ def test_uploader_image_participates_in_production_deploy_and_rollback():
     assert "docker rm -f flask-uploader letovo-uploader" in workflow
     assert "letovo-flask-uploader" in workflow
     assert "http://127.0.0.1:8880/" in workflow
+    uploader_range = "/^    letovo-flask-uploader:/,/^    [[:alnum:]_-]\\\\+:/"
+    assert f"{uploader_range} s#- /mnt/server-media:/app/pages#- /srv/letovo/media:/app/pages#" in workflow
+    assert f'{uploader_range} s#- \\"8880:8880\\"#- \\"127.0.0.1:8880:8880\\"#' in workflow
+    assert "uploader_candidate_block=" in workflow
+    assert "grep -F -- '- /srv/letovo/media:/app/pages'" in workflow
     assert 'flask-uploader)" = "$UPLOADER_IMAGE"' in workflow
     assert '"$uploader_container")" = "$uploader_image"' in workflow
 
