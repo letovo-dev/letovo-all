@@ -50,10 +50,15 @@ def test_uploader_image_participates_in_production_deploy_and_rollback():
     assert "UPLOADER_IMAGE='$UPLOADER_RELEASE_IMAGE'" in workflow
     assert 'docker image inspect "$UPLOADER_IMAGE"' in workflow
     assert "UPLOADER_CAPABILITIES_URL=${{ steps.release.outputs.base_url }}/letovo-api/auth/amiuploader" in workflow
-    assert "flask-uploader={{.Config.Image}}" in workflow
+    assert "for candidate_name in letovo-uploader flask-uploader" in workflow
+    assert "uploader-container=%s" in workflow
+    assert "uploader-service=%s" in workflow
+    assert 'letovo-front "$uploader_service"' in workflow
+    assert "docker rm -f flask-uploader letovo-uploader" in workflow
     assert "letovo-flask-uploader" in workflow
+    assert "http://127.0.0.1:8880/" in workflow
     assert 'flask-uploader)" = "$UPLOADER_IMAGE"' in workflow
-    assert 'flask-uploader)" = "$uploader_image"' in workflow
+    assert '"$uploader_container")" = "$uploader_image"' in workflow
 
 
 def test_checked_in_compose_uses_published_uploader_image():

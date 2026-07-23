@@ -445,7 +445,21 @@ jobs:
           docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
           docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
           docker inspect -f 'letovo-front={{.Config.Image}}' letovo-front >> "$restore"
-          docker inspect -f 'flask-uploader={{.Config.Image}}' flask-uploader >> "$restore"
+          uploader_container=""
+          for candidate_name in letovo-uploader flask-uploader; do
+            if docker inspect "$candidate_name" >/dev/null 2>&1; then
+              uploader_container="$candidate_name"
+              break
+            fi
+          done
+          test -n "$uploader_container"
+          uploader_service="$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.service" }}' "$uploader_container")"
+          if [ -z "$uploader_service" ]; then
+            uploader_service="letovo-flask-uploader"
+          fi
+          docker inspect -f 'uploader-image={{.Config.Image}}' "$uploader_container" >> "$restore"
+          printf 'uploader-container=%s\n' "$uploader_container" >> "$restore"
+          printf 'uploader-service=%s\n' "$uploader_service" >> "$restore"
 
           docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t public.role > "$role_backup_tmp"
@@ -548,6 +562,9 @@ jobs:
           fi
           as_root nginx -s reload || as_root systemctl reload nginx
 
+          if [ "$uploader_container" != "flask-uploader" ]; then
+            docker rm -f "$uploader_container"
+          fi
           docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d jaeger otel-collector letovo-server letovo-registration-server letovo-front letovo-flask-uploader
           test "$(docker inspect -f '{{.State.Running}}' jaeger)" = "true"
           test "$(docker inspect -f '{{.State.Running}}' otel-collector)" = "true"
@@ -555,6 +572,19 @@ jobs:
           test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$REGISTRATION_IMAGE"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$FRONTEND_IMAGE"
           test "$(docker inspect -f '{{.Config.Image}}' flask-uploader)" = "$UPLOADER_IMAGE"
+
+          uploader_status=""
+          for _ in $(seq 1 30); do
+            uploader_status="$(curl --connect-timeout 2 --max-time 5 -sS -o /dev/null -w "%{http_code}" http://127.0.0.1:8880/ || true)"
+            if [ "$uploader_status" = "405" ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ "$uploader_status" != "405" ]; then
+            echo "Expected flask-uploader on 127.0.0.1:8880 to return 405 for GET /, got ${uploader_status:-no response}"
+            exit 1
+          fi
 
           backend_status=""
           for _ in $(seq 1 30); do
@@ -668,21 +698,26 @@ jobs:
           backend_image="$(awk -F= '$1 == "letovo-server" { print $2 }' "$restore" | tail -n 1)"
           registration_image="$(awk -F= '$1 == "letovo-registration-server" { print $2 }' "$restore" | tail -n 1)"
           frontend_image="$(awk -F= '$1 == "letovo-front" { print $2 }' "$restore" | tail -n 1)"
-          uploader_image="$(awk -F= '$1 == "flask-uploader" { print $2 }' "$restore" | tail -n 1)"
+          uploader_image="$(awk -F= '$1 == "uploader-image" { print $2 }' "$restore" | tail -n 1)"
+          uploader_container="$(awk -F= '$1 == "uploader-container" { print $2 }' "$restore" | tail -n 1)"
+          uploader_service="$(awk -F= '$1 == "uploader-service" { print $2 }' "$restore" | tail -n 1)"
           test -n "$backend_image"
           test -n "$registration_image"
           test -n "$frontend_image"
           test -n "$uploader_image"
+          test -n "$uploader_container"
+          test -n "$uploader_service"
           docker image inspect "$backend_image" >/dev/null
           docker image inspect "$registration_image" >/dev/null
           docker image inspect "$frontend_image" >/dev/null
           docker image inspect "$uploader_image" >/dev/null
 
-          docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d letovo-server letovo-registration-server letovo-front letovo-flask-uploader
+          docker rm -f flask-uploader letovo-uploader >/dev/null 2>&1 || true
+          docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d letovo-server letovo-registration-server letovo-front "$uploader_service"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$backend_image"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$registration_image"
           test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$frontend_image"
-          test "$(docker inspect -f '{{.Config.Image}}' flask-uploader)" = "$uploader_image"
+          test "$(docker inspect -f '{{.Config.Image}}' "$uploader_container")" = "$uploader_image"
           # Keep the backward-compatible schema migration. The durable role
           # dump is reserved for deliberate operator recovery, not blind rollback.
           rm -rf "$state_dir"
