@@ -55,6 +55,10 @@ def test_live_e2e_workflow_runs_after_deployable_images_are_published():
 
 def test_publisher_author_list_runs_on_default_candidate_and_production_smoke():
     script = _read(LIVE_SCRIPT)
+    publisher_assertion = script[
+        script.index("async function assertPublisherAuthorList") :
+        script.index("async function assertUploaderSession")
+    ]
     authenticated_flow = script[
         script.index("async function checkAuthenticatedBrowserFlow") :
         script.index("async function main")
@@ -66,8 +70,13 @@ def test_publisher_author_list_runs_on_default_candidate_and_production_smoke():
     assert authenticated_flow.index(
         "await assertPublisherAuthorList(page);"
     ) < authenticated_flow.index("if (!requireExtended)")
-    assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in _read(BUILD_WORKFLOW)
-    assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in _read(PRODUCTION_RELEASE_WORKFLOW)
+    assert "usernames.has(secondaryUsername)" in publisher_assertion
+    assert "Citizen_hearst" not in publisher_assertion
+    assert "Portal_Administration" not in publisher_assertion
+    for workflow_path in (BUILD_WORKFLOW, PRODUCTION_RELEASE_WORKFLOW):
+        workflow = _read(workflow_path)
+        assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
+        assert "LETOVO_E2E_SECONDARY_USERNAME: ${{ secrets.LETOVO_E2E_SECONDARY_USERNAME }}" in workflow
 
 
 def test_pr_build_publishes_candidate_images_before_live_e2e_gate():

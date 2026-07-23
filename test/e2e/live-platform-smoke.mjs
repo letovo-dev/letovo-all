@@ -211,18 +211,20 @@ async function assertAdminSession(page) {
 }
 
 async function assertPublisherAuthorList(page) {
+  assert(
+    secondaryUsername,
+    'Publisher author-list verification requires LETOVO_E2E_SECONDARY_USERNAME',
+  );
   const authors = await fetchAuthenticated(page, '/letovo-api/authors_list');
   assert(authors.status === 200, `Authors API returned HTTP ${authors.status}: ${authors.text}`);
   const authorsJson = parseJsonResponse(authors, 'Authors API');
   assert(Array.isArray(authorsJson.result), `Authors API result is not an array: ${authors.text}`);
 
   const usernames = new Set(authorsJson.result.map(author => author.username));
-  for (const expectedUsername of ['Citizen_hearst', 'Portal_Administration']) {
-    assert(
-      usernames.has(expectedUsername),
-      `Admin authors list is missing ${expectedUsername}: ${authors.text}`,
-    );
-  }
+  assert(
+    usernames.has(secondaryUsername),
+    `Admin authors list is missing the secondary publisher fixture: ${authors.text}`,
+  );
 }
 
 async function assertUploaderSession(page) {
