@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+ARG UPLOADER_CAPABILITIES_URL=https://letovocorp.ru/letovo-api/auth/amiuploader
+ENV UPLOADER_CAPABILITIES_URL=${UPLOADER_CAPABILITIES_URL}
+
 WORKDIR /app
 
 COPY . .

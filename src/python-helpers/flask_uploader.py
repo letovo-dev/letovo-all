@@ -22,7 +22,8 @@ def api_get_upload_capabilities(token: str, cookie: str = ""):
         return {"status": "t", "avatar_status": "t", "username": "local"}
     if not token and not cookie:
         return None
-    auth_url = config.get("auth_check_url", "https://letovocorp.ru/letovo-api/auth/amiuploader")
+    auth_url = os.environ.get("UPLOADER_CAPABILITIES_URL") or config.get(
+        "auth_check_url", "https://letovocorp.ru/letovo-api/auth/amiuploader")
     try:
         headers = {}
         if token:
