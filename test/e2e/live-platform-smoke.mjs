@@ -580,6 +580,8 @@ async function checkAuthenticatedBrowserFlow(page) {
   await loginAs(page, username, password);
   await assertAuthenticatedSession(page);
   await checkAccountSwitchCacheIsolation(page);
+  await assertAdminSession(page);
+  await assertPublisherAuthorList(page);
 
   if (!requireExtended) {
     console.log('Skipping extended authenticated flow because LIVE_E2E_REQUIRE_EXTENDED is not true.');
@@ -595,8 +597,6 @@ async function checkAuthenticatedBrowserFlow(page) {
     'LIVE_E2E_REQUIRE_EXTENDED=true requires LETOVO_E2E_SECONDARY_USERNAME and LETOVO_E2E_SECONDARY_PASSWORD',
   );
 
-  await assertAdminSession(page);
-  await assertPublisherAuthorList(page);
   await assertUploaderSession(page);
   await checkMoneyTransfer(page, secondaryUsername);
   await editSmokeArticle(page);
