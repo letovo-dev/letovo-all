@@ -763,7 +763,9 @@ void enable_auth(
                             .append_header(restinio::http_field::set_cookie,
                                            security::auth_session_cookie(token))
                             .append_header("Content-Type",
-                                           "application/json; charset=utf-8");
+                                           "application/json; charset=utf-8")
+                            .append_header("Cache-Control", "no-store, private")
+                            .append_header("Pragma", "no-cache");
 
         return responce.done();
       }
@@ -940,11 +942,15 @@ void am_i_authed(
           return req->create_response(restinio::status_ok())
               .set_body("{\"status\": \"t\"}")
               .append_header("Content-Type", "application/json; charset=utf-8")
+              .append_header("Cache-Control", "no-store, private")
+              .append_header("Pragma", "no-cache")
               .done();
         } else {
           return req->create_response(restinio::status_ok())
               .set_body("{\"status\": \"f\"}")
               .append_header("Content-Type", "application/json; charset=utf-8")
+              .append_header("Cache-Control", "no-store, private")
+              .append_header("Pragma", "no-cache")
               .done();
         }
       });
@@ -1072,6 +1078,8 @@ void logout(std::unique_ptr<restinio::router::express_router_t<>> &router,
         .append_header(restinio::http_field::set_cookie,
                        security::expired_auth_session_cookie())
         .append_header("Content-Type", "text/plain; charset=utf-8")
+        .append_header("Cache-Control", "no-store, private")
+        .append_header("Pragma", "no-cache")
         .done();
   });
 }
