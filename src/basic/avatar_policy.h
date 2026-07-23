@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <string>
 #include <string_view>
 
 namespace avatar_policy {
@@ -21,16 +22,39 @@ inline constexpr std::array<std::string_view, 30> approved_for_children = {
     "images/avatars/28.png", "images/avatars/29.png", "images/avatars/30.png",
 };
 
-inline std::string_view normalize(std::string_view path) {
+inline std::string normalize(std::string_view path) {
   while (!path.empty() && path.front() == '/')
     path.remove_prefix(1);
-  return path;
+  return std::string(path);
 }
 
 inline bool is_approved_for_child(std::string_view path) {
-  path = normalize(path);
+  const auto normalized = normalize(path);
   return std::find(approved_for_children.begin(), approved_for_children.end(),
-                   path) != approved_for_children.end();
+                   normalized) != approved_for_children.end();
+}
+
+inline bool can_use_path(std::string_view avatar, std::string_view shared_path,
+                         std::string_view admin_path,
+                         std::string_view personal_path, bool is_admin,
+                         bool is_child, bool can_upload_personal) {
+  if (avatar.empty() || avatar.find("..") != std::string_view::npos ||
+      avatar.find('\\') != std::string_view::npos) {
+    return false;
+  }
+
+  const auto normalized = normalize(avatar);
+  const auto shared = normalize(shared_path);
+  const auto admin = normalize(admin_path);
+  const auto personal = normalize(personal_path);
+
+  if (is_child) {
+    return is_approved_for_child(normalized);
+  }
+
+  return normalized.rfind(shared, 0) == 0 ||
+         (is_admin && normalized.rfind(admin, 0) == 0) ||
+         (can_upload_personal && normalized.rfind(personal, 0) == 0);
 }
 
 } // namespace avatar_policy
