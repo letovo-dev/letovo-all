@@ -626,6 +626,8 @@ void full_user_info(
             transactions::last_incoming_outgoing_payments_json(username, pool_ptr));
         return req->create_response()
             .append_header("Content-Type", "application/json; charset=utf-8")
+            .append_header("Cache-Control", "no-store, private")
+            .append_header("Pragma", "no-cache")
             .set_body(response_body)
             .done();
       });
