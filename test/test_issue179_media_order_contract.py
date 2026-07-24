@@ -19,6 +19,18 @@ def test_media_order_migration_backfills_and_enforces_position():
     assert "CREATE UNIQUE INDEX IF NOT EXISTS idx_post_media_post_id_position" in migration
 
 
+def test_bootstrap_schemas_enforce_unique_media_positions():
+    expected_index = (
+        "CREATE UNIQUE INDEX idx_post_media_post_id_position "
+        'ON public.post_media USING btree (post_id, "position");'
+    )
+
+    for schema_path in ("docs/schema.sql", "docs/psql_schema.sql"):
+        schema = read(schema_path)
+        assert '"position" integer NOT NULL' in schema
+        assert expected_index in schema
+
+
 def test_create_and_edit_write_array_order_instead_of_filename_order():
     source = read("src/letovo-soc-net/page_server.cc")
     upload_order = ["/images/z-last.jpg", "/images/a-first.jpg", "/images/m-middle.jpg"]
