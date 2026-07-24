@@ -235,11 +235,11 @@ namespace page {
         con->execute_params("DELETE FROM \"posts\" WHERE \"post_id\"=($1);", params, true);
         pool_ptr->returnConnection(std::move(con));
     }
-    void update_post(int post_id, bool is_secret, int likes, int dislikes, int saved_count, std::string title, std::string author, std::string text, std::string category, std::string post_path, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void update_post(int post_id, bool is_secret, int likes, int dislikes, std::string title, std::string author, std::string text, std::string category, std::string post_path, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         auto con = std::move(pool_ptr->getConnection());
-        std::vector<std::string> params = {std::to_string(is_secret), std::to_string(likes), std::to_string(dislikes), std::to_string(saved_count), title, author, text, category, post_path, std::to_string(post_id)};
+        std::vector<std::string> params = {std::to_string(is_secret), std::to_string(likes), std::to_string(dislikes), title, author, text, category, post_path, std::to_string(post_id)};
 
-        con->execute_params("UPDATE \"posts\" SET \"is_secret\"=($1), \"likes\"=($2), \"dislikes\"=($3), \"saved_count\"=($4), \"title\"=($5), \"author\"=($6), \"text\"=($7), \"category_name\"=($8), \"post_path\"=($9) WHERE \"post_id\"=($10);", params, true);
+        con->execute_params("UPDATE \"posts\" SET \"is_secret\"=($1), \"likes\"=($2), \"dislikes\"=($3), \"title\"=($4), \"author\"=($5), \"text\"=($6), \"category_name\"=($7), \"post_path\"=($8) WHERE \"post_id\"=($9);", params, true);
         normalize_article_categories(con);
         pool_ptr->returnConnection(std::move(con));
     }
@@ -703,8 +703,7 @@ namespace page::server {
                 auto is_secret = new_body.HasMember("is_secret") ? json_bool_value(new_body["is_secret"]) : std::optional<bool>(row_bool_or_false(old_post[0], "is_secret"));
                 auto likes = new_body.HasMember("likes") ? json_int_value(new_body["likes"]) : std::optional<int>(row_int_or_zero(old_post[0], "likes"));
                 auto dislikes = new_body.HasMember("dislikes") ? json_int_value(new_body["dislikes"]) : std::optional<int>(row_int_or_zero(old_post[0], "dislikes"));
-                auto saved_count = new_body.HasMember("saved_count") ? json_int_value(new_body["saved_count"]) : std::optional<int>(row_int_or_zero(old_post[0], "saved_count"));
-                if (!is_secret.has_value() || !likes.has_value() || !dislikes.has_value() || !saved_count.has_value()) {
+                if (!is_secret.has_value() || !likes.has_value() || !dislikes.has_value()) {
                     return req->create_response(restinio::status_bad_request()).done();
                 }
 
@@ -720,7 +719,6 @@ namespace page::server {
                     *is_secret,
                     *likes,
                     *dislikes,
-                    *saved_count,
                     title,
                     author,
                     text,
