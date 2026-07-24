@@ -354,18 +354,30 @@ LEFT JOIN comment_preview cp ON cp.post_id = vp.post_id;
     void save_post(std::string post_id, std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
         std::vector<std::string> params = {post_id, username};
-        con->execute_params("INSERT INTO \"user_saved\" (\"post_id\", \"username\") VALUES ($1, $2);", params, true);
-        params = {post_id};
-        con->execute_params("UPDATE \"posts\" SET saved_count = saved_count + 1 WHERE post_id=($1);", params, true);
+        con->execute_params(
+            "WITH inserted AS ("
+            "INSERT INTO \"user_saved\" (\"post_id\", \"username\") VALUES ($1, $2) "
+            "ON CONFLICT DO NOTHING RETURNING \"post_id\""
+            ") "
+            "UPDATE \"posts\" SET \"saved_count\" = \"saved_count\" + 1 "
+            "WHERE \"post_id\" IN (SELECT \"post_id\" FROM inserted);",
+            params, true
+        );
         pool_ptr->returnConnection(std::move(con));
     }
 
     void delete_saved_post(std::string post_id, std::string username, std::shared_ptr<cp::ConnectionsManager> pool_ptr) {
         auto con = std::move(pool_ptr->getConnection());
         std::vector<std::string> params = {post_id, username};
-        con->execute_params("DELETE FROM \"user_saved\" WHERE post_id=($1) AND username=($2);", params, true);
-        params = {post_id};
-        con->execute_params("UPDATE \"posts\" SET saved_count = saved_count - 1 WHERE post_id=($1);", params, true);
+        con->execute_params(
+            "WITH deleted AS ("
+            "DELETE FROM \"user_saved\" WHERE \"post_id\"=($1) AND \"username\"=($2) "
+            "RETURNING \"post_id\""
+            ") "
+            "UPDATE \"posts\" SET \"saved_count\" = GREATEST(\"saved_count\" - 1, 0) "
+            "WHERE \"post_id\" IN (SELECT \"post_id\" FROM deleted);",
+            params, true
+        );
         pool_ptr->returnConnection(std::move(con));
     }
 
