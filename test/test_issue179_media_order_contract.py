@@ -49,3 +49,8 @@ def test_candidate_and_production_deploy_apply_media_order_migration():
         assert "docs/post_media_order_migration.sql" in workflow
         assert "post_media_order_migration.sql" in workflow
         assert "-f /tmp/post_media_order_migration.sql" in workflow
+        assert "pg_dump -U scv -d letovo_db -t public.post_media" in workflow
+        assert 'test -s "$post_media_backup' in workflow
+
+    production_workflow = read(".github/workflows/production-release.yml")
+    assert 'install -m 0600 "$post_media_backup_tmp" "$post_media_backup"' in production_workflow

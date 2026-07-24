@@ -433,6 +433,7 @@ jobs:
           role_backup="$backup_root/role.before-avatar-migration.sql"
           user_backup="$backup_root/user.before-child-avatar-migration.sql"
           transactions_backup="$backup_root/transactions.before-department-payout-migration.sql"
+          post_media_backup="$backup_root/post-media.before-order-migration.sql"
           child_avatar_preview="$backup_root/child-avatar-migration-preview.csv"
 
           test -f "$migration"
@@ -441,6 +442,9 @@ jobs:
           test -f "$publisher_authorization_migration"
           test -f "$post_media_order_migration"
           mkdir -p "$backup_root"
+          docker exec letovo-postgres-1 \
+            pg_dump -U scv -d letovo_db -t public.post_media > "$post_media_backup"
+          test -s "$post_media_backup"
           docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t public.transactions > "$transactions_backup"
           test -s "$transactions_backup"
