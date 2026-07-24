@@ -622,11 +622,14 @@ CREATE TABLE public.post_media (
     post_id character varying NOT NULL,
     media character varying,
     is_pic boolean,
-    is_secret boolean DEFAULT false
+    is_secret boolean DEFAULT false,
+    "position" integer NOT NULL
 );
 
 
 ALTER TABLE public.post_media OWNER TO scv;
+
+CREATE UNIQUE INDEX idx_post_media_post_id_position ON public.post_media USING btree (post_id, "position");
 
 --
 -- Name: posts; Type: TABLE; Schema: public; Owner: scv
