@@ -622,7 +622,8 @@ CREATE TABLE public.post_media (
     post_id character varying NOT NULL,
     media character varying,
     is_pic boolean,
-    is_secret boolean DEFAULT false
+    is_secret boolean DEFAULT false,
+    "position" integer NOT NULL
 );
 
 
