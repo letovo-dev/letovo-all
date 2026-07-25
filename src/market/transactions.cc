@@ -5,6 +5,107 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+namespace {
+
+const std::string kDepartmentPayoutRecipientsCte = R"SQL(
+               recipients AS MATERIALIZED (
+                   SELECT u.username
+                   FROM "user" u
+                   JOIN "roles" r ON r.roleid = u.role
+                   CROSS JOIN department_row d
+                   WHERE r.departmentid = d.departmentid
+                     AND u.active = true
+                     AND u.registered = true
+               ))SQL";
+
+const std::string kDepartmentPayoutPreviewPrefix = R"SQL(
+            WITH department_row AS (
+                SELECT d.departmentid, d.departmentname
+                FROM "department" d
+                WHERE d.departmentid = $1::integer
+            ),)SQL";
+
+const std::string kDepartmentPayoutPreviewSuffix = R"SQL(
+            SELECT d.departmentid,
+                   d.departmentname,
+                   COUNT(r.username)::integer AS recipient_count,
+                   (COUNT(r.username) * $2::bigint)::bigint AS total
+            FROM department_row d
+            LEFT JOIN recipients r ON true
+            GROUP BY d.departmentid, d.departmentname)SQL";
+
+const std::string kDepartmentPayoutApplyPrefix = R"SQL(
+            WITH request_lock AS (
+                SELECT pg_advisory_xact_lock(hashtext($4))
+            ),
+            department_row AS (
+                SELECT d.departmentid, d.departmentname
+                FROM "department" d
+                CROSS JOIN request_lock
+                WHERE d.departmentid = $1::integer
+            ),)SQL";
+
+const std::string kDepartmentPayoutApplySuffix = R"SQL(
+            , recipient_totals AS (
+                SELECT COUNT(*)::integer AS recipient_count FROM recipients
+            ),
+            balance_guard AS (
+                SELECT COALESCE(
+                    BOOL_AND(u.balance <= 2147483647 - $2::integer), false
+                ) AS safe
+                FROM "user" u JOIN recipients r ON r.username = u.username
+            ),
+            existing AS (
+                SELECT COUNT(*)::integer AS recipient_count,
+                       COALESCE(SUM(amount), 0)::bigint AS total
+                FROM "transactions"
+                WHERE reason LIKE ('%; request ' || $4)
+            ),
+            updated AS (
+                UPDATE "user" u
+                SET balance = u.balance + $2::integer
+                FROM recipients r, recipient_totals totals, existing prior,
+                     balance_guard guard
+                WHERE u.username = r.username
+                  AND prior.recipient_count = 0
+                  AND totals.recipient_count = $5::integer
+                  AND guard.safe
+                RETURNING u.username
+            ),
+            inserted AS (
+                INSERT INTO "transactions" (sender, receiver, amount, reason)
+                SELECT $3::character varying, updated.username, $2::integer,
+                       'department payout: ' || d.departmentname ||
+                       '; issued by ' || $3::character varying || '; request ' || $4
+                FROM updated CROSS JOIN department_row d
+                RETURNING transactionid
+            )
+            SELECT d.departmentid, d.departmentname,
+                   totals.recipient_count AS eligible_count,
+                   CASE WHEN prior.recipient_count > 0
+                        THEN prior.recipient_count
+                        ELSE totals.recipient_count END AS recipient_count,
+                   CASE WHEN prior.recipient_count > 0
+                        THEN prior.total
+                        ELSE totals.recipient_count::bigint * $2::bigint END AS total,
+                   (SELECT COUNT(*)::integer FROM inserted) AS inserted_count,
+                   (prior.recipient_count > 0) AS duplicate
+            FROM department_row d
+            CROSS JOIN recipient_totals totals
+            CROSS JOIN existing prior)SQL";
+
+std::string department_payout_preview_sql() {
+    return kDepartmentPayoutPreviewPrefix + kDepartmentPayoutRecipientsCte +
+        kDepartmentPayoutPreviewSuffix;
+}
+
+std::string department_payout_apply_sql() {
+    return kDepartmentPayoutApplyPrefix + kDepartmentPayoutRecipientsCte +
+        kDepartmentPayoutApplySuffix;
+}
+
+} // namespace
+
 namespace transactions {
 
     RegisteredTransaction::RegisteredTransaction() {
@@ -275,21 +376,7 @@ namespace transactions {
         std::vector<std::string> params = {
             std::to_string(department_id), std::to_string(amount)};
         pqxx::result rows = con->execute_params(
-            R"(SELECT d.departmentid,
-                      d.departmentname,
-                      COUNT(u.username)::integer AS recipient_count,
-                      (COUNT(u.username) * $2::bigint)::bigint AS total
-               FROM "department" d
-               LEFT JOIN "roles" r
-                 ON r.departmentid = d.departmentid
-                AND r.roleid BETWEEN 1 AND 28
-               LEFT JOIN "user" u
-                 ON u.role = r.roleid
-                AND u.active = true
-                AND u.registered = true
-               WHERE d.departmentid = $1::integer
-               GROUP BY d.departmentid, d.departmentname)",
-            params);
+            department_payout_preview_sql(), params);
         pool_ptr->returnConnection(std::move(con));
 
         if (rows.empty()) {
@@ -319,79 +406,7 @@ namespace transactions {
             std::to_string(department_id), std::to_string(amount), actor,
             request_id, std::to_string(expected_recipient_count)};
         pqxx::result rows = con->execute_params_or_throw(
-            R"(WITH request_lock AS (
-                   SELECT pg_advisory_xact_lock(hashtext($4))
-               ),
-               department_row AS (
-                   SELECT d.departmentid, d.departmentname
-                   FROM "department" d
-                   CROSS JOIN request_lock
-                   WHERE d.departmentid = $1::integer
-               ),
-               recipients AS MATERIALIZED (
-                   SELECT u.username
-                   FROM "user" u
-                   JOIN "roles" r ON r.roleid = u.role
-                   CROSS JOIN department_row d
-                   WHERE r.departmentid = d.departmentid
-                     AND r.roleid BETWEEN 1 AND 28
-                     AND u.active = true
-                     AND u.registered = true
-               ),
-               recipient_totals AS (
-                   SELECT COUNT(*)::integer AS recipient_count
-                   FROM recipients
-               ),
-               balance_guard AS (
-                   SELECT COALESCE(
-                       BOOL_AND(u.balance <= 2147483647 - $2::integer), false
-                   ) AS safe
-                   FROM "user" u
-                   JOIN recipients r ON r.username = u.username
-               ),
-               existing AS (
-                   SELECT COUNT(*)::integer AS recipient_count,
-                          COALESCE(SUM(amount), 0)::bigint AS total
-                   FROM "transactions"
-                   WHERE reason LIKE ('%; request ' || $4)
-               ),
-               updated AS (
-                   UPDATE "user" u
-                   SET balance = u.balance + $2::integer
-                   FROM recipients r, recipient_totals totals, existing prior,
-                        balance_guard guard
-                   WHERE u.username = r.username
-                     AND prior.recipient_count = 0
-                     AND totals.recipient_count = $5::integer
-                     AND guard.safe
-                   RETURNING u.username
-               ),
-               inserted AS (
-                   INSERT INTO "transactions" (sender, receiver, amount, reason)
-                   SELECT $3::character varying,
-                          updated.username,
-                          $2::integer,
-                          'department payout: ' || d.departmentname ||
-                          '; issued by ' || $3::character varying || '; request ' || $4
-                   FROM updated
-                   CROSS JOIN department_row d
-                   RETURNING transactionid
-               )
-               SELECT d.departmentid,
-                      d.departmentname,
-                      totals.recipient_count AS eligible_count,
-                      CASE WHEN prior.recipient_count > 0
-                           THEN prior.recipient_count
-                           ELSE totals.recipient_count END AS recipient_count,
-                      CASE WHEN prior.recipient_count > 0
-                           THEN prior.total
-                           ELSE totals.recipient_count::bigint * $2::bigint END AS total,
-                      (SELECT COUNT(*)::integer FROM inserted) AS inserted_count,
-                      (prior.recipient_count > 0) AS duplicate
-               FROM department_row d
-               CROSS JOIN recipient_totals totals
-               CROSS JOIN existing prior)",
-            params, true);
+            department_payout_apply_sql(), params, true);
 
         if (rows.empty()) {
             std::vector<std::string> department_params = {

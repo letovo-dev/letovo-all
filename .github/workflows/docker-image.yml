@@ -28,6 +28,20 @@ jobs:
   backend-pr:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: letovo_issue193
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d letovo_issue193"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout code with submodules
         uses: actions/checkout@v4
@@ -65,6 +79,13 @@ jobs:
           g++ -std=c++20 -fsanitize=address,undefined -fno-omit-frame-pointer \
             test/avatar_policy_regression.cc -o "$RUNNER_TEMP/avatar-policy-regression"
           "$RUNNER_TEMP/avatar-policy-regression"
+
+      - name: Run department payout PostgreSQL regression
+        env:
+          LETOVO_POSTGRES_DSN: postgresql://postgres@127.0.0.1:5432/letovo_issue193
+        run: |
+          python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
+          python3 -m pytest -q test/test_issue193_department_payout_postgres.py
 
       - name: Build registration backend image locally
         uses: docker/build-push-action@v5

@@ -17,8 +17,11 @@ def test_admin_only_endpoint_is_registered():
     assert "transactions::server::department_payout(router" in SERVER
 
 
-def test_recipient_policy_is_server_side_and_bounded_to_child_roles():
-    assert "r.roleid BETWEEN 1 AND 28" in TRANSACTIONS
+def test_recipient_policy_is_server_side_and_role_id_independent():
+    assert "r.roleid BETWEEN" not in TRANSACTIONS
+    assert "kDepartmentPayoutRecipientsCte" in TRANSACTIONS
+    assert "department_payout_preview_sql()" in TRANSACTIONS
+    assert "department_payout_apply_sql()" in TRANSACTIONS
     assert "u.active = true" in TRANSACTIONS
     assert "u.registered = true" in TRANSACTIONS
     assert "recipient" not in HEADER.split("struct DepartmentPayoutResult", 1)[0]
