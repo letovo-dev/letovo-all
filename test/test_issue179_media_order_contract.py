@@ -15,6 +15,8 @@ def test_media_order_migration_backfills_and_enforces_position():
     assert "ROW_NUMBER() OVER (" in migration
     assert "PARTITION BY post_id" in migration
     assert "ORDER BY media NULLS LAST" in migration
+    assert "CREATE OR REPLACE FUNCTION public.assign_post_media_position()" in migration
+    assert "CREATE TRIGGER assign_post_media_position" in migration
     assert 'ALTER COLUMN "position" SET NOT NULL' in migration
     assert "CREATE UNIQUE INDEX IF NOT EXISTS idx_post_media_post_id_position" in migration
 
@@ -28,6 +30,8 @@ def test_bootstrap_schemas_enforce_unique_media_positions():
     for schema_path in ("docs/schema.sql", "docs/psql_schema.sql"):
         schema = read(schema_path)
         assert '"position" integer NOT NULL' in schema
+        assert "CREATE FUNCTION public.assign_post_media_position()" in schema
+        assert "CREATE TRIGGER assign_post_media_position" in schema
         assert expected_index in schema
 
 

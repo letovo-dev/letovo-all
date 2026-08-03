@@ -631,7 +631,30 @@ ALTER TABLE public.post_media OWNER TO scv;
 
 CREATE UNIQUE INDEX idx_post_media_post_id_position ON public.post_media USING btree (post_id, "position");
 
+CREATE FUNCTION public.assign_post_media_position() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    PERFORM 1
+    FROM public.posts
+    WHERE post_id::text = NEW.post_id
+    FOR UPDATE;
+
+    IF NEW."position" IS NULL THEN
+        SELECT COALESCE(MAX(pm."position"), -1) + 1
+        INTO NEW."position"
+        FROM public.post_media AS pm
+        WHERE pm.post_id = NEW.post_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION public.assign_post_media_position() OWNER TO scv;
+
 --
+CREATE TRIGGER assign_post_media_position BEFORE INSERT ON public.post_media FOR EACH ROW EXECUTE FUNCTION public.assign_post_media_position();
 -- Name: posts; Type: TABLE; Schema: public; Owner: scv
 --
 

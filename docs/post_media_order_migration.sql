@@ -26,4 +26,31 @@ ALTER TABLE public.post_media
 CREATE UNIQUE INDEX IF NOT EXISTS idx_post_media_post_id_position
     ON public.post_media (post_id, "position");
 
+CREATE OR REPLACE FUNCTION public.assign_post_media_position()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    -- Keep the legacy writer and the ordered writer serialized per post.
+    PERFORM 1
+    FROM public.posts
+    WHERE post_id::text = NEW.post_id
+    FOR UPDATE;
+
+    IF NEW."position" IS NULL THEN
+        SELECT COALESCE(MAX(pm."position"), -1) + 1
+        INTO NEW."position"
+        FROM public.post_media AS pm
+        WHERE pm.post_id = NEW.post_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS assign_post_media_position ON public.post_media;
+CREATE TRIGGER assign_post_media_position
+BEFORE INSERT ON public.post_media
+FOR EACH ROW
+EXECUTE FUNCTION public.assign_post_media_position();
 COMMIT;
