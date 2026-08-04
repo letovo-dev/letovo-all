@@ -133,7 +133,7 @@ namespace social {
         if(!include_secret) {
             query += " and COALESCE(p.is_secret, false) = false";
         }
-        query += ";";
+        query += " ORDER BY \"post_media\".\"position\" ASC;";
         result = con->execute_params(query, params);
         
         pool_ptr->returnConnection(std::move(con));
@@ -174,7 +174,7 @@ media_rows AS (
                    'is_secret', pm.is_secret,
                    'post_id', pm.post_id
                )
-               ORDER BY pm.media
+               ORDER BY pm."position"
            ) AS media
     FROM "post_media" pm
     JOIN visible_posts vp ON vp.post_id::text = pm.post_id

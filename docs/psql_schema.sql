@@ -529,10 +529,34 @@ CREATE TABLE public.post_media (
     post_id character varying NOT NULL,
     media character varying,
     is_pic boolean,
-    is_secret boolean DEFAULT false
+    is_secret boolean DEFAULT false,
+    "position" integer NOT NULL
 );
 
+CREATE UNIQUE INDEX idx_post_media_post_id_position ON public.post_media USING btree (post_id, "position");
 
+CREATE FUNCTION public.assign_post_media_position() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    PERFORM 1
+    FROM public.posts
+    WHERE post_id::text = NEW.post_id
+    FOR UPDATE;
+
+    IF NEW."position" IS NULL THEN
+        SELECT COALESCE(MAX(pm."position"), -1) + 1
+        INTO NEW."position"
+        FROM public.post_media AS pm
+        WHERE pm.post_id = NEW.post_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+CREATE TRIGGER assign_post_media_position BEFORE INSERT ON public.post_media FOR EACH ROW EXECUTE FUNCTION public.assign_post_media_position();
 --
 -- Name: camp_dates; Type: TABLE; Schema: public; Owner: -
 --

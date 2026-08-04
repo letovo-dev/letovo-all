@@ -367,6 +367,8 @@ jobs:
             "$remote:$state_dir/department_payout_migration.sql"
           scp -i ~/.ssh/letovo-production-release docs/publisher_authorization_migration.sql \
             "$remote:$state_dir/publisher_authorization_migration.sql"
+          scp -i ~/.ssh/letovo-production-release docs/post_media_order_migration.sql \
+            "$remote:$state_dir/post_media_order_migration.sql"
           ssh -i ~/.ssh/letovo-production-release "$remote" \
             "BACKEND_IMAGE='$BACKEND_RELEASE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_RELEASE_IMAGE' FRONTEND_IMAGE='$FRONTEND_RELEASE_IMAGE' UPLOADER_IMAGE='$UPLOADER_RELEASE_IMAGE' RELEASE_SHA='${{ steps.release.outputs.release_sha }}' COMPOSE_FILE='$LETOVO_PROD_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_PROD_DEPLOY_PROJECT' NGINX_SITE='$LETOVO_PROD_NGINX_SITE' RUN_ID='${{ github.run_id }}' EXPECTED_CHILD_AVATAR_COUNT='$CHILD_AVATAR_EXPECTED_COUNT' EXPECTED_CHILD_AVATAR_SHA256='$CHILD_AVATAR_EXPECTED_SHA256' bash -s" <<'REMOTE'
           set -euo pipefail
@@ -388,6 +390,7 @@ jobs:
           child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
           payout_migration="$state_dir/department_payout_migration.sql"
           publisher_authorization_migration="$state_dir/publisher_authorization_migration.sql"
+          post_media_order_migration="$state_dir/post_media_order_migration.sql"
           nginx_candidate="$state_dir/nginx-site.candidate"
           compose_dir="$(dirname "$COMPOSE_FILE")"
           otel_config="$compose_dir/otel-collector-config.yaml"
@@ -400,6 +403,8 @@ jobs:
           user_backup_tmp="$state_dir/user.before-child-avatar-migration.sql"
           transactions_backup="$backup_root/transactions.before-department-payout-migration.sql"
           transactions_backup_tmp="$state_dir/transactions.before-department-payout-migration.sql"
+          post_media_backup="$backup_root/post-media.before-order-migration.sql"
+          post_media_backup_tmp="$state_dir/post-media.before-order-migration.sql"
           child_avatar_preview="$backup_root/child-avatar-migration-preview.csv"
           child_avatar_preview_tmp="$state_dir/child-avatar-migration-preview.csv"
 
@@ -422,7 +427,12 @@ jobs:
           test -f "$child_avatar_migration"
           test -f "$payout_migration"
           test -f "$publisher_authorization_migration"
+          test -f "$post_media_order_migration"
           as_root mkdir -p "$backup_root"
+          docker exec letovo-postgres-1 \
+            pg_dump -U scv -d letovo_db -t public.post_media > "$post_media_backup_tmp"
+          test -s "$post_media_backup_tmp"
+          as_root install -m 0600 "$post_media_backup_tmp" "$post_media_backup"
           docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t public.transactions > "$transactions_backup_tmp"
           test -s "$transactions_backup_tmp"
@@ -438,6 +448,12 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/publisher_authorization_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/publisher_authorization_migration.sql
+          docker cp "$post_media_order_migration" \
+            letovo-postgres-1:/tmp/post_media_order_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
+              -f /tmp/post_media_order_migration.sql
+          docker exec letovo-postgres-1 rm -f /tmp/post_media_order_migration.sql
           docker rm -f "$smoke_name" >/dev/null 2>&1 || true
           cleanup_smoke() {
             docker rm -f "$smoke_name" >/dev/null 2>&1 || true
