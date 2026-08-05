@@ -1,0 +1,95 @@
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+TRANSACTIONS = (ROOT / "src/market/transactions.cc").read_text()
+HEADER = (ROOT / "src/market/transactions.h").read_text()
+SERVER = (ROOT / "src/server.cpp").read_text()
+SCHEMA = (ROOT / "docs/schema.sql").read_text()
+MIGRATION = (ROOT / "docs/department_payout_migration.sql").read_text()
+BUILD_WORKFLOW = (ROOT / ".github/workflows/docker-image.yml").read_text()
+RELEASE_WORKFLOW = (ROOT / ".github/workflows/production-release.yml").read_text()
+
+
+def test_admin_only_endpoint_is_registered():
+    assert '"/transactions/department-payout"' in TRANSACTIONS
+    assert "auth::is_admin(token, pool_ptr)" in TRANSACTIONS
+    assert "transactions::server::department_payout(router" in SERVER
+
+
+def test_recipient_policy_is_server_side_and_role_id_independent():
+    assert "r.roleid BETWEEN" not in TRANSACTIONS
+    assert "kDepartmentPayoutRecipientsCte" in TRANSACTIONS
+    assert "department_payout_preview_sql()" in TRANSACTIONS
+    assert "department_payout_apply_sql()" in TRANSACTIONS
+    assert "u.active = true" in TRANSACTIONS
+    assert "u.registered = true" in TRANSACTIONS
+    assert "recipient" not in HEADER.split("struct DepartmentPayoutResult", 1)[0]
+
+
+def test_preview_and_apply_share_count_contract():
+    assert "preview_department_payout" in HEADER
+    assert "expected_recipient_count" in HEADER
+    assert "totals.recipient_count = $5::integer" in TRANSACTIONS
+    assert "DepartmentPayoutStatus::PreviewChanged" in TRANSACTIONS
+
+
+def test_apply_is_atomic_auditable_and_idempotent():
+    assert "pg_advisory_xact_lock(hashtext($4))" in TRANSACTIONS
+    assert 'UPDATE "user" u' in TRANSACTIONS
+    assert 'INSERT INTO "transactions" (sender, receiver, amount, reason)' in TRANSACTIONS
+    assert "department payout: " in TRANSACTIONS
+    assert "; issued by " in TRANSACTIONS
+    assert "; request " in TRANSACTIONS
+    assert "prior.recipient_count = 0" in TRANSACTIONS
+    assert "BOOL_AND(u.balance <= 2147483647 - $2::integer)" in TRANSACTIONS
+    assert "params, true" in TRANSACTIONS
+    assert "reason character varying DEFAULT 'wire transfer'" in SCHEMA
+
+
+def test_reason_column_migration_runs_before_candidate_and_production_payouts():
+    assert "ADD COLUMN IF NOT EXISTS reason character varying NOT NULL DEFAULT 'wire transfer'" in MIGRATION
+    for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
+        assert "docs/department_payout_migration.sql" in workflow
+        assert "department_payout_migration.sql" in workflow
+        assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
+        assert "pg_dump -U scv -d letovo_db -t public.transactions" in workflow
+        assert workflow.index("pg_dump -U scv -d letovo_db -t public.transactions") < workflow.index('docker cp "$payout_migration"')
+
+def test_apply_casts_actor_parameter_to_transactions_sender_type():
+    assert "SELECT $3::character varying," in TRANSACTIONS
+    assert "; issued by ' || $3::character varying ||" in TRANSACTIONS
+
+
+def test_payout_does_not_read_or_debit_admin_balance():
+    handler = TRANSACTIONS.split(
+        '"/transactions/department-payout"', 1
+    )[1].split('"/transactions/prepare"', 1)[0]
+    assert "get_balance(" not in handler
+    assert 'SET balance = u.balance + $2::integer' in TRANSACTIONS
+    assert "SET balance = u.balance -" not in TRANSACTIONS.split(
+        "DepartmentPayoutResult apply_department_payout", 1
+    )[1].split("prepare_transaction", 1)[0]
+
+
+def test_preview_confirm_inputs_and_safe_outcome_logging_are_explicit():
+    assert "department_id, amount, actor" in TRANSACTIONS
+    assert 'body["expected_recipient_count"].GetInt()' in TRANSACTIONS
+    assert '"department_payout department_id={} confirm={} outcome={}"' in TRANSACTIONS
+    assert "department_payout_status_name(status)" in TRANSACTIONS
+    assert "request_id" not in TRANSACTIONS.split(
+        '"department_payout department_id={} confirm={} outcome={}"', 1
+    )[1].split("switch (payout.status)", 1)[0]
+def test_apply_does_not_report_database_errors_as_missing_departments():
+    assert "execute_params_or_throw" in TRANSACTIONS
+    assert 'SELECT 1 FROM "department" WHERE departmentid = $1::integer' in TRANSACTIONS
+    assert "DepartmentPayoutStatus::DepartmentNotFound" in TRANSACTIONS
+    assert "catch (const pqxx::sql_error& error)" in TRANSACTIONS
+    assert "department payout database failure: SQLSTATE=" in TRANSACTIONS
+    assert 'R"({"error":"department payout failed"})"' in TRANSACTIONS
+
+
+def test_amount_and_request_id_are_validated():
+    assert "amount <= 0" in TRANSACTIONS
+    assert "valid_payout_request_id" in TRANSACTIONS
+    assert "expected_recipient_count" in TRANSACTIONS

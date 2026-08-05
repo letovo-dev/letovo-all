@@ -10,6 +10,7 @@ const waitTimeoutMs = Number(process.env.LIVE_E2E_WAIT_TIMEOUT_SECONDS || 600) *
 const pollIntervalMs = 10_000;
 const requireAuth = process.env.LIVE_E2E_REQUIRE_AUTH === 'true';
 const requireExtended = process.env.LIVE_E2E_REQUIRE_EXTENDED === 'true';
+const requireAccountSwitch = process.env.LIVE_E2E_REQUIRE_ACCOUNT_SWITCH === 'true';
 const requireOtel = process.env.LIVE_E2E_REQUIRE_OTEL === 'true';
 const expectedBackendSha = process.env.LIVE_E2E_EXPECTED_BACKEND_SHA || '';
 const expectedFrontendSha = process.env.LIVE_E2E_EXPECTED_FRONTEND_SHA || '';
@@ -115,10 +116,55 @@ async function fetchAuthenticated(page, path, options = {}) {
         },
       });
       const text = await response.text();
-      return { status: response.status, text };
+      return {
+        status: response.status,
+        text,
+        cacheControl: response.headers.get('cache-control'),
+        pragma: response.headers.get('pragma'),
+      };
     },
     { path, options },
   );
+}
+
+async function fillLoginForm(page, login, loginPassword) {
+  const loginInput = page.locator('#form_login');
+  const passwordInput = page.locator('#form_password');
+  const button = page.getByRole('button', { name: 'Войти' });
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await loginInput.fill(login);
+    await passwordInput.fill(loginPassword);
+    if (await button.isEnabled()) return button;
+    await page.waitForTimeout(250);
+  }
+
+  throw new Error('Login form did not become enabled after hydration');
+}
+
+async function submitLogin(page, login, loginPassword) {
+  await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#form_login').waitFor({ state: 'visible' });
+  await page.locator('#form_password').waitFor({ state: 'visible' });
+  const loginButton = await fillLoginForm(page, login, loginPassword);
+
+  const [loginResponse] = await Promise.all([
+    page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname.endsWith('/auth/login');
+    }, { timeout: 60_000 }),
+    loginButton.click(),
+  ]);
+  assert(
+    loginResponse.status() === 200,
+    `Login API ${loginResponse.url()} returned HTTP ${loginResponse.status()}`,
+  );
+  assert(
+    loginResponse.headers()['cache-control']?.includes('no-store'),
+    'Login response must disable private response caching',
+  );
+
+  await page.waitForURL(/\/(user|registration)(\/|$)/, { timeout: 20_000 });
 }
 
 async function loginAs(page, login, loginPassword) {
@@ -129,24 +175,7 @@ async function loginAs(page, login, loginPassword) {
     window.sessionStorage.clear();
   });
   await page.context().clearCookies();
-  await page.goto(`${baseUrl}/login`, { waitUntil: 'domcontentloaded' });
-  await page.locator('#form_login').waitFor({ state: 'visible' });
-  await page.locator('#form_password').waitFor({ state: 'visible' });
-  await page.locator('#form_login').fill(login);
-  await page.locator('#form_password').fill(loginPassword);
-
-  const loginResponsePromise = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return url.pathname.endsWith('/auth/login');
-  }, { timeout: 60_000 });
-  await page.getByRole('button', { name: 'Войти' }).click();
-  const loginResponse = await loginResponsePromise;
-  assert(
-    loginResponse.status() === 200,
-    `Login API ${loginResponse.url()} returned HTTP ${loginResponse.status()}`,
-  );
-
-  await page.waitForURL(/\/(user|registration)(\/|$)/, { timeout: 20_000 });
+  await submitLogin(page, login, loginPassword);
 }
 
 async function apiLoginAs(context, login, loginPassword) {
@@ -168,6 +197,10 @@ async function assertAuthenticatedSession(page) {
     sessionJson.status === 't',
     `Session API did not confirm authenticated state: ${session.text}`,
   );
+  assert(
+    session.cacheControl?.includes('no-store'),
+    'Auth-check response must disable private response caching',
+  );
 }
 
 async function assertAdminSession(page) {
@@ -175,6 +208,23 @@ async function assertAdminSession(page) {
   assert(admin.status === 200, `Admin API returned HTTP ${admin.status}`);
   const adminJson = parseJsonResponse(admin, 'Admin API');
   assert(adminJson.status === 't', `Configured e2e account is not admin: ${admin.text}`);
+}
+
+async function assertPublisherAuthorList(page) {
+  assert(
+    secondaryUsername,
+    'Publisher author-list verification requires LETOVO_E2E_SECONDARY_USERNAME',
+  );
+  const authors = await fetchAuthenticated(page, '/letovo-api/authors_list');
+  assert(authors.status === 200, `Authors API returned HTTP ${authors.status}: ${authors.text}`);
+  const authorsJson = parseJsonResponse(authors, 'Authors API');
+  assert(Array.isArray(authorsJson.result), `Authors API result is not an array: ${authors.text}`);
+
+  const usernames = new Set(authorsJson.result.map(author => author.username));
+  assert(
+    usernames.has(secondaryUsername),
+    `Admin authors list is missing the secondary publisher fixture: ${authors.text}`,
+  );
 }
 
 async function assertUploaderSession(page) {
@@ -447,6 +497,78 @@ async function checkPublicBrowserFlow(page) {
   });
 }
 
+async function assertNoPreviousAccountCache(page, marker) {
+  const leaked = await page.evaluate((forbiddenMarker) => {
+    const accountStoreKeys = ['userStore', 'chat-store', 'comments-store', 'articles-store'];
+    return accountStoreKeys.filter((key) =>
+      (window.localStorage.getItem(key) || '').includes(forbiddenMarker),
+    );
+  }, marker);
+  assert(leaked.length === 0, `Previous-account marker remained in: ${leaked.join(', ')}`);
+}
+
+async function checkAccountSwitchCacheIsolation(page) {
+  if (!secondaryUsername || !secondaryPassword) {
+    assert(
+      !requireAccountSwitch,
+      'LIVE_E2E_REQUIRE_ACCOUNT_SWITCH=true requires secondary e2e credentials',
+    );
+    console.log('Skipping account-switch cache flow because secondary credentials are not configured.');
+    return;
+  }
+
+  const marker = `issue-176-${Date.now()}-${username}`;
+  await page.evaluate((accountMarker) => {
+    for (const key of ['userStore', 'chat-store', 'comments-store', 'articles-store']) {
+      const persisted = JSON.parse(window.localStorage.getItem(key) || '{"state":{},"version":0}');
+      persisted.state = { ...(persisted.state || {}), issue176AccountMarker: accountMarker };
+      window.localStorage.setItem(key, JSON.stringify(persisted));
+    }
+  }, marker);
+
+  const logoutButton = page.getByRole('button', { name: 'Выйти' }).first();
+  await logoutButton.waitFor({ state: 'visible' });
+  const [logoutResponse] = await Promise.all([
+    page.waitForResponse((response) => new URL(response.url()).pathname.endsWith('/auth/logout')),
+    logoutButton.click(),
+  ]);
+  assert(logoutResponse.status() === 200, `Logout API returned HTTP ${logoutResponse.status()}`);
+  assert(
+    logoutResponse.headers()['cache-control']?.includes('no-store'),
+    'Logout response must disable private response caching',
+  );
+  await page.waitForURL(/\/login(?:\?|$)/, { timeout: 20_000 });
+  await assertNoPreviousAccountCache(page, marker);
+
+  await page.goBack({ waitUntil: 'domcontentloaded' }).catch(() => null);
+  await assertNoPreviousAccountCache(page, marker);
+  await page.goForward({ waitUntil: 'domcontentloaded' }).catch(() => null);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await assertNoPreviousAccountCache(page, marker);
+
+  await submitLogin(page, secondaryUsername, secondaryPassword);
+  await assertAuthenticatedSession(page);
+  await assertNoPreviousAccountCache(page, marker);
+
+  const currentUsername = await page.evaluate(() => {
+    const persisted = JSON.parse(window.localStorage.getItem('userStore') || '{"state":{}}');
+    return persisted.state?.store?.userData?.username || '';
+  });
+  assert(
+    currentUsername === secondaryUsername,
+    `Expected switched account ${secondaryUsername}, found ${currentUsername || '<empty>'}`,
+  );
+
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.goBack({ waitUntil: 'domcontentloaded' }).catch(() => null);
+  await page.goForward({ waitUntil: 'domcontentloaded' }).catch(() => null);
+  await assertNoPreviousAccountCache(page, marker);
+
+  // Restore the primary account expected by the remaining extended smoke checks.
+  await loginAs(page, username, password);
+  await assertAuthenticatedSession(page);
+}
+
 async function checkAuthenticatedBrowserFlow(page) {
   if (!username || !password) {
     assert(
@@ -459,6 +581,9 @@ async function checkAuthenticatedBrowserFlow(page) {
 
   await loginAs(page, username, password);
   await assertAuthenticatedSession(page);
+  await checkAccountSwitchCacheIsolation(page);
+  await assertAdminSession(page);
+  await assertPublisherAuthorList(page);
 
   if (!requireExtended) {
     console.log('Skipping extended authenticated flow because LIVE_E2E_REQUIRE_EXTENDED is not true.');
@@ -474,7 +599,6 @@ async function checkAuthenticatedBrowserFlow(page) {
     'LIVE_E2E_REQUIRE_EXTENDED=true requires LETOVO_E2E_SECONDARY_USERNAME and LETOVO_E2E_SECONDARY_PASSWORD',
   );
 
-  await assertAdminSession(page);
   await assertUploaderSession(page);
   await checkMoneyTransfer(page, secondaryUsername);
   await editSmokeArticle(page);

@@ -308,6 +308,47 @@ def test_prepared_transfer_ids_obey_send_cooldown():
     assert second_send_response.text == "transfer cooldown active"
 
 
+def test_admin_transactions_bypass_prepare_and_send_cooldown(admin_user, sender_user):
+    """Admins can prepare and send immediate transfers, including pre-created IDs."""
+    headers = {"Bearer": admin_user["token"]}
+    payload = {"receiver": sender_user["login"], "amount": 0}
+
+    prepared_ids = []
+    for _ in range(2):
+        response = requests.post(
+            f"{BASE_URL}/transactions/prepare",
+            headers=headers,
+            json=payload,
+            verify=False,
+        )
+        assert response.status_code == 200, response.text
+        prepared_ids.append(response.text)
+
+    first_send = requests.post(
+        f"{BASE_URL}/transactions/send",
+        headers=headers,
+        json={"tr_id": prepared_ids[0]},
+        verify=False,
+    )
+    assert first_send.status_code == 200, first_send.text
+
+    prepare_during_cooldown = requests.post(
+        f"{BASE_URL}/transactions/prepare",
+        headers=headers,
+        json=payload,
+        verify=False,
+    )
+    assert prepare_during_cooldown.status_code == 200, prepare_during_cooldown.text
+
+    second_send = requests.post(
+        f"{BASE_URL}/transactions/send",
+        headers=headers,
+        json={"tr_id": prepared_ids[1]},
+        verify=False,
+    )
+    assert second_send.status_code == 200, second_send.text
+
+
 def test_prepare_negative_transaction_as_admin(admin_user, sender_user):
     """Admins can prepare negative transactions without receiver balance checks."""
     response = requests.post(
@@ -320,10 +361,7 @@ def test_prepare_negative_transaction_as_admin(admin_user, sender_user):
         verify=False
     )
 
-    assert response.status_code in [200, 429]
-    if response.status_code == 429:
-        assert response.headers.get("Retry-After") == "5"
-        return
+    assert response.status_code == 200, response.text
     assert response.text
 
 

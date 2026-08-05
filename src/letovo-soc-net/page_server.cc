@@ -235,24 +235,82 @@ namespace page {
         con->execute_params("DELETE FROM \"posts\" WHERE \"post_id\"=($1);", params, true);
         pool_ptr->returnConnection(std::move(con));
     }
-    void update_post(int post_id, bool is_secret, int likes, int dislikes, int saved_count, std::string title, std::string author, std::string text, std::string category, std::string post_path, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void update_post(int post_id, bool is_secret, int likes, int dislikes, std::string title, std::string author, std::string text, std::string category, std::string post_path, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
         auto con = std::move(pool_ptr->getConnection());
-        std::vector<std::string> params = {std::to_string(is_secret), std::to_string(likes), std::to_string(dislikes), std::to_string(saved_count), title, author, text, category, post_path, std::to_string(post_id)};
+        std::vector<std::string> params = {std::to_string(is_secret), std::to_string(likes), std::to_string(dislikes), title, author, text, category, post_path, std::to_string(post_id)};
 
-        con->execute_params("UPDATE \"posts\" SET \"is_secret\"=($1), \"likes\"=($2), \"dislikes\"=($3), \"saved_count\"=($4), \"title\"=($5), \"author\"=($6), \"text\"=($7), \"category_name\"=($8), \"post_path\"=($9) WHERE \"post_id\"=($10);", params, true);
+        con->execute_params("UPDATE \"posts\" SET \"is_secret\"=($1), \"likes\"=($2), \"dislikes\"=($3), \"title\"=($4), \"author\"=($5), \"text\"=($6), \"category_name\"=($7), \"post_path\"=($8) WHERE \"post_id\"=($9);", params, true);
         normalize_article_categories(con);
         pool_ptr->returnConnection(std::move(con));
     }
 
-    void add_media(int post_id, std::vector<std::string> &media_paths, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr) {
+    void add_media(int post_id, std::vector<std::string> &media_paths, std::shared_ptr<cp::ConnectionsManager> pool_ptr, std::shared_ptr<restinio::shared_ostream_logger_t> logger_ptr, bool replace_existing) {
         auto con = std::move(pool_ptr->getConnection());
-        std::vector<std::string> params(2);
-        for (const auto& media_path : media_paths) {
-            params[0] = std::to_string(post_id);
-            params[1] = media_path;
-            // could commit after cycle, but idk how
-            con->execute_params("INSERT INTO \"post_media\" (\"post_id\", \"media\") VALUES ($1, $2);", params, true);
+        std::vector<std::string> params = {std::to_string(post_id)};
+
+        if (media_paths.empty()) {
+            if (replace_existing) {
+                con->execute_params(R"SQL(
+WITH locked_post AS (
+    SELECT "post_id" FROM "posts" WHERE "post_id"=($1)::int FOR UPDATE
+)
+DELETE FROM "post_media"
+USING locked_post
+WHERE "post_media"."post_id"=locked_post."post_id"::text;
+)SQL", params, true);
+            }
+            pool_ptr->returnConnection(std::move(con));
+            return;
         }
+
+        std::string values;
+        params.reserve(media_paths.size() + 1);
+        for (std::size_t i = 0; i < media_paths.size(); ++i) {
+            if (!values.empty()) {
+                values += ", ";
+            }
+            values += fmt::format("((${})::varchar, {})", i + 2, i);
+            params.emplace_back(media_paths[i]);
+        }
+
+        const std::string query = replace_existing
+            ? fmt::format(R"SQL(
+WITH locked_post AS (
+    SELECT "post_id" FROM "posts" WHERE "post_id"=($1)::int FOR UPDATE
+),
+deleted AS (
+    DELETE FROM "post_media"
+    USING locked_post
+    WHERE "post_media"."post_id"=locked_post."post_id"::text
+),
+input_media("media", "position") AS (
+    VALUES {}
+)
+INSERT INTO "post_media" ("post_id", "media", "position")
+SELECT locked_post."post_id"::text, input_media."media", input_media."position"
+FROM input_media
+CROSS JOIN locked_post
+ORDER BY input_media."position";
+)SQL", values)
+            : fmt::format(R"SQL(
+WITH locked_post AS (
+    SELECT "post_id" FROM "posts" WHERE "post_id"=($1)::int FOR UPDATE
+),
+input_media("media", "offset") AS (
+    VALUES {}
+),
+first_position AS (
+    SELECT COALESCE(MAX("post_media"."position"), -1) + 1 AS "position"
+    FROM locked_post
+    LEFT JOIN "post_media" ON "post_media"."post_id"=locked_post."post_id"::text
+)
+INSERT INTO "post_media" ("post_id", "media", "position")
+SELECT ($1), input_media."media", first_position."position" + input_media."offset"
+FROM input_media
+CROSS JOIN first_position
+ORDER BY input_media."offset";
+)SQL", values);
+        con->execute_params(query, params, true);
         pool_ptr->returnConnection(std::move(con));
     }
 
@@ -703,8 +761,7 @@ namespace page::server {
                 auto is_secret = new_body.HasMember("is_secret") ? json_bool_value(new_body["is_secret"]) : std::optional<bool>(row_bool_or_false(old_post[0], "is_secret"));
                 auto likes = new_body.HasMember("likes") ? json_int_value(new_body["likes"]) : std::optional<int>(row_int_or_zero(old_post[0], "likes"));
                 auto dislikes = new_body.HasMember("dislikes") ? json_int_value(new_body["dislikes"]) : std::optional<int>(row_int_or_zero(old_post[0], "dislikes"));
-                auto saved_count = new_body.HasMember("saved_count") ? json_int_value(new_body["saved_count"]) : std::optional<int>(row_int_or_zero(old_post[0], "saved_count"));
-                if (!is_secret.has_value() || !likes.has_value() || !dislikes.has_value() || !saved_count.has_value()) {
+                if (!is_secret.has_value() || !likes.has_value() || !dislikes.has_value()) {
                     return req->create_response(restinio::status_bad_request()).done();
                 }
 
@@ -720,7 +777,6 @@ namespace page::server {
                     *is_secret,
                     *likes,
                     *dislikes,
-                    *saved_count,
                     title,
                     author,
                     text,
@@ -730,10 +786,10 @@ namespace page::server {
                 );
                 logger_ptr->info([post_id] { return fmt::format("post {} database row updated", *post_id); });
 
-                std::vector<std::string> media_paths;
-                page::med_to_vec(new_body, media_paths);
-                if (!media_paths.empty()) {
-                    page::add_media(*post_id, media_paths, pool_ptr, logger_ptr);
+                if (new_body.HasMember("media") && new_body["media"].IsArray()) {
+                    std::vector<std::string> media_paths;
+                    page::med_to_vec(new_body, media_paths);
+                    page::add_media(*post_id, media_paths, pool_ptr, logger_ptr, true);
                     logger_ptr->info([post_id] { return fmt::format("post {} media updated", *post_id); });
                 }
 

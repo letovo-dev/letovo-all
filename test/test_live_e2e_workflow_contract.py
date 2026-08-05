@@ -53,6 +53,32 @@ def test_live_e2e_workflow_runs_after_deployable_images_are_published():
     assert "github.event.workflow_run.head_sha" in workflow
 
 
+def test_publisher_author_list_runs_on_default_candidate_and_production_smoke():
+    script = _read(LIVE_SCRIPT)
+    publisher_assertion = script[
+        script.index("async function assertPublisherAuthorList") :
+        script.index("async function assertUploaderSession")
+    ]
+    authenticated_flow = script[
+        script.index("async function checkAuthenticatedBrowserFlow") :
+        script.index("async function main")
+    ]
+
+    assert authenticated_flow.index("await assertAdminSession(page);") < authenticated_flow.index(
+        "if (!requireExtended)"
+    )
+    assert authenticated_flow.index(
+        "await assertPublisherAuthorList(page);"
+    ) < authenticated_flow.index("if (!requireExtended)")
+    assert "usernames.has(secondaryUsername)" in publisher_assertion
+    assert "Citizen_hearst" not in publisher_assertion
+    assert "Portal_Administration" not in publisher_assertion
+    for workflow_path in (BUILD_WORKFLOW, PRODUCTION_RELEASE_WORKFLOW):
+        workflow = _read(workflow_path)
+        assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
+        assert "LETOVO_E2E_SECONDARY_USERNAME: ${{ secrets.LETOVO_E2E_SECONDARY_USERNAME }}" in workflow
+
+
 def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     workflow = _read(BUILD_WORKFLOW)
 
@@ -78,6 +104,13 @@ def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
     assert "LETOVO_E2E_DEPLOY_SSH_KEY" in workflow
     assert "LETOVO_E2E_DEPLOY_PROJECT" in workflow
     assert "Deploy PR candidate images to live e2e" in workflow
+    assert "scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql" in workflow
+    assert "scp -i ~/.ssh/live-e2e docs/child_avatar_access_migration.sql" in workflow
+    assert "pg_dump -U scv -d letovo_db -t public.role" in workflow
+    assert "user.before-child-avatar-migration.sql" in workflow
+    assert "child-avatar-migration-preview.csv" in workflow
+    assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
+    assert "avatar_upload_role_migration.sql" in workflow
     assert "docker compose -p \"$PROJECT_NAME\" -f \"$candidate\" up -d letovo-server letovo-registration-server letovo-front" in workflow
     assert "Restore live deployment images" in workflow
 
@@ -98,6 +131,12 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     workflow = _read(PRODUCTION_RELEASE_WORKFLOW)
 
     assert "workflow_dispatch:" in workflow
+    assert "child_avatar_migration_mode:" in workflow
+    assert "preview-child-avatar-migration:" in workflow
+    assert "inputs.child_avatar_migration_mode == 'preview'" in workflow
+    assert "inputs.child_avatar_migration_mode == 'apply'" in workflow
+    assert "child_avatar_expected_count:" in workflow
+    assert "child_avatar_expected_sha256:" in workflow
     assert "target_ref:" not in workflow
     assert "ref: main" in workflow
     assert "default: https://letovocorp.ru" in workflow
@@ -132,6 +171,13 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "scp -i ~/.ssh/letovo-production-release docs/otel-collector-config.yaml" in workflow
     assert "scp -i ~/.ssh/letovo-production-release frontend/front-env.env" in workflow
     assert "scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release docs/avatar_upload_role_migration.sql" in workflow
+    assert "scp -i ~/.ssh/letovo-production-release docs/child_avatar_access_migration.sql" in workflow
+    assert "pg_dump -U scv -d letovo_db -t public.role" in workflow
+    assert "user.before-child-avatar-migration.sql" in workflow
+    assert "child-avatar-migration-preview.csv" in workflow
+    assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow
+    assert "role.before-avatar-migration.sql" in workflow
     assert "otel-collector-config.yaml.before-release" in workflow
     assert "letovo-front.env.before-release" in workflow
     assert "nginx-site.before-release" in workflow
@@ -194,6 +240,9 @@ def test_live_e2e_uses_condition_polling_and_browser_level_checks():
     assert "page.goto(`${baseUrl}/login`" in script
     assert "page.locator('#form_login')" in script
     assert "page.locator('#form_password')" in script
+    assert "async function fillLoginForm" in script
+    assert "await button.isEnabled()" in script
+    assert "Login form did not become enabled after hydration" in script
     assert "page.getByRole('button', { name: 'Войти' })" in script
     assert "url.pathname.endsWith('/auth/login')" in script
     assert "JSON.parse(response.text)" in script

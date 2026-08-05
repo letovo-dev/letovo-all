@@ -134,13 +134,15 @@ services:
             max-file: "10"
 
     letovo-flask-uploader:
-        image: flask-uploader:latest
+        image: ghcr.io/letovo-dev/letovo-flask-uploader:latest
         container_name: flask-uploader
         restart: unless-stopped
         volumes:
           - /mnt/server-media:/app/pages
         ports:
           - "8880:8880"
+        labels:
+          - "com.centurylinklabs.watchtower.enable=true"
         logging:
           driver: json-file
           options:

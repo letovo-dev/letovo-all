@@ -318,3 +318,72 @@ def test_update_post_rejects_malformed_post_id_without_upstream_close(admin_toke
     )
 
     assert response.status_code == 400
+
+
+def test_saved_count_survives_reload_duplicate_requests_and_post_edit(admin_token):
+    page_id = _create_test_article(admin_token, "issue 181 saved count")
+    headers = {"Bearer": admin_token}
+    save_payload = {"post_id": str(page_id)}
+
+    # Start from a known state even when a persistent test database is reused.
+    response = requests.delete(
+        f"{BASE_URL}/social/save",
+        json=save_payload,
+        headers=headers,
+        verify=False,
+    )
+    assert response.status_code == 200
+
+    response = requests.post(
+        f"{BASE_URL}/social/save",
+        json=save_payload,
+        headers=headers,
+        verify=False,
+    )
+    assert response.status_code == 200
+    response = requests.get(f"{BASE_URL}/post/{page_id}", verify=False)
+    assert response.status_code == 200
+    assert response.json()["result"][0]["saved_count"] == "1"
+
+    # A duplicate save must not increment the denormalized counter again.
+    response = requests.post(
+        f"{BASE_URL}/social/save",
+        json=save_payload,
+        headers=headers,
+        verify=False,
+    )
+    assert response.status_code == 200
+    response = requests.get(f"{BASE_URL}/post/{page_id}", verify=False)
+    assert response.json()["result"][0]["saved_count"] == "1"
+
+    # A stale editor payload must not overwrite the server-owned counter.
+    response = requests.put(
+        f"{BASE_URL}/post/update",
+        json={
+            "post_id": str(page_id),
+            "saved_count": 0,
+            "title": "issue 181 saved count edited",
+        },
+        headers=headers,
+        verify=False,
+    )
+    assert response.status_code == 200
+    response = requests.get(f"{BASE_URL}/post/{page_id}", verify=False)
+    assert response.json()["result"][0]["saved_count"] == "1"
+
+    response = requests.delete(
+        f"{BASE_URL}/social/save",
+        json=save_payload,
+        headers=headers,
+        verify=False,
+    )
+    assert response.status_code == 200
+    response = requests.delete(
+        f"{BASE_URL}/social/save",
+        json=save_payload,
+        headers=headers,
+        verify=False,
+    )
+    assert response.status_code == 200
+    response = requests.get(f"{BASE_URL}/post/{page_id}", verify=False)
+    assert response.json()["result"][0]["saved_count"] == "0"

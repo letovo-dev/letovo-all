@@ -19,36 +19,58 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: is_publishable_identity(text); Type: FUNCTION; Schema: public; Owner: scv
+--
+
+CREATE FUNCTION public.is_publishable_identity(target_username text) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO pg_catalog, public
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public."user" AS target
+    WHERE target.username = target_username
+      AND target.active IS TRUE
+      AND target.registered IS TRUE
+      AND target.userrights IN ('admin', 'moder', 'author', 'public_author')
+  );
+$$;
+
+ALTER FUNCTION public.is_publishable_identity(target_username text) OWNER TO scv;
+
+--
 -- Name: can_publish_as(text, text); Type: FUNCTION; Schema: public; Owner: scv
 --
 
 CREATE FUNCTION public.can_publish_as(publisher_username text, target_username text) RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
+    SET search_path TO pg_catalog, public
     AS $$
 DECLARE
-  pub_rights TEXT;
-  tgt_rights TEXT;
+  publisher_rights text;
+  target_rights text;
+  target_is_active boolean;
+  target_is_registered boolean;
 BEGIN
-  -- достаём права первого
   SELECT userrights
-    INTO pub_rights
-    FROM "user"
+    INTO publisher_rights
+    FROM public."user"
    WHERE username = publisher_username;
 
-  -- достаём права второго
-  SELECT userrights
-    INTO tgt_rights
-    FROM "user"
+  SELECT userrights, active, registered
+    INTO target_rights, target_is_active, target_is_registered
+    FROM public."user"
    WHERE username = target_username;
 
-  -- логика проверки
-  IF pub_rights = 'admin' AND tgt_rights LIKE '%author%' THEN
-    RETURN TRUE;
-  ELSIF pub_rights = 'moder' AND tgt_rights = 'public_author' THEN
-    RETURN TRUE;
-  ELSE
-    RETURN FALSE;
+  IF publisher_rights = 'admin' THEN
+    RETURN public.is_publishable_identity(target_username);
+  ELSIF publisher_rights = 'moder' THEN
+    RETURN target_rights = 'public_author'
+      AND target_is_active IS TRUE
+      AND target_is_registered IS TRUE;
   END IF;
+
+  RETURN FALSE;
 END;
 $$;
 
@@ -88,29 +110,23 @@ ALTER TABLE public."user" OWNER TO scv;
 --
 
 CREATE FUNCTION public.get_users_by_role(requester_username text) RETURNS SETOF public."user"
-    LANGUAGE plpgsql STABLE
+    LANGUAGE sql STABLE
+    SET search_path TO pg_catalog, public
     AS $$
-BEGIN
-  RETURN QUERY
-    SELECT u.*
-    FROM "user" AS u
-    JOIN "user" AS r
-      ON r.username = requester_username
-    WHERE
-      (
-        r.userrights = 'admin'
-        AND u.userrights LIKE '%author%'
-      )
-      OR
-      (
-        r.userrights = 'moder'
-        AND u.userrights = 'public_author'
-      )
-      OR
-      (
-        r.username = u.username
-      );
-END;
+  SELECT target.*
+  FROM public."user" AS target
+  JOIN public."user" AS requester
+    ON requester.username = requester_username
+  WHERE target.active IS TRUE
+    AND target.registered IS TRUE
+    AND (
+      (requester.userrights = 'admin'
+        AND public.is_publishable_identity(target.username))
+      OR (requester.userrights = 'moder'
+        AND target.userrights = 'public_author')
+      OR requester.username = target.username
+    )
+  ORDER BY target.username;
 $$;
 
 
@@ -606,13 +622,39 @@ CREATE TABLE public.post_media (
     post_id character varying NOT NULL,
     media character varying,
     is_pic boolean,
-    is_secret boolean DEFAULT false
+    is_secret boolean DEFAULT false,
+    "position" integer NOT NULL
 );
 
 
 ALTER TABLE public.post_media OWNER TO scv;
 
+CREATE UNIQUE INDEX idx_post_media_post_id_position ON public.post_media USING btree (post_id, "position");
+
+CREATE FUNCTION public.assign_post_media_position() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    PERFORM 1
+    FROM public.posts
+    WHERE post_id::text = NEW.post_id
+    FOR UPDATE;
+
+    IF NEW."position" IS NULL THEN
+        SELECT COALESCE(MAX(pm."position"), -1) + 1
+        INTO NEW."position"
+        FROM public.post_media AS pm
+        WHERE pm.post_id = NEW.post_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION public.assign_post_media_position() OWNER TO scv;
+
 --
+CREATE TRIGGER assign_post_media_position BEFORE INSERT ON public.post_media FOR EACH ROW EXECUTE FUNCTION public.assign_post_media_position();
 -- Name: posts; Type: TABLE; Schema: public; Owner: scv
 --
 
@@ -681,7 +723,8 @@ CREATE TABLE public.role (
     admin boolean,
     moder boolean,
     main_page boolean,
-    whireable boolean DEFAULT false
+    whireable boolean DEFAULT false,
+    ava_upload boolean DEFAULT false NOT NULL
 );
 
 
@@ -733,7 +776,8 @@ CREATE TABLE public.transactions (
     amount bigint NOT NULL,
     sender character varying,
     receiver character varying,
-    transactiontime timestamp without time zone DEFAULT now() NOT NULL
+    transactiontime timestamp without time zone DEFAULT now() NOT NULL,
+    reason character varying DEFAULT 'wire transfer'::character varying NOT NULL
 );
 
 
