@@ -190,12 +190,11 @@ namespace achivements {
                               AND COALESCE(EXTRACT(YEAR FROM upo.datetime)::int, 0) = grp.year_val
                               AND COALESCE(
                                   (
-                                      SELECT c.chapter
-                                      FROM "calendar" c
+                                      SELECT cd.name
+                                      FROM "camp_dates" cd
                                       WHERE upo.datetime IS NOT NULL
-                                        AND upo.datetime >= c.start
-                                        AND upo.datetime <= c."end"
-                                      ORDER BY c.start
+                                        AND upo.datetime::date BETWEEN cd.start_date AND cd.end_date
+                                      ORDER BY cd.start_date
                                       LIMIT 1
                                   ),
                                   ''::text
@@ -213,12 +212,11 @@ namespace achivements {
                               AND COALESCE(EXTRACT(YEAR FROM ubr.datetime)::int, 0) = grp.year_val
                               AND COALESCE(
                                   (
-                                      SELECT c.chapter
-                                      FROM "calendar" c
+                                      SELECT cd.name
+                                      FROM "camp_dates" cd
                                       WHERE ubr.datetime IS NOT NULL
-                                        AND ubr.datetime >= c.start
-                                        AND ubr.datetime <= c."end"
-                                      ORDER BY c.start
+                                        AND ubr.datetime::date BETWEEN cd.start_date AND cd.end_date
+                                      ORDER BY cd.start_date
                                       LIMIT 1
                                   ),
                                   ''::text
@@ -257,12 +255,11 @@ namespace achivements {
                     INNER JOIN "achivements" ach ON ua.achivement_id = ach.achivement_id
                     INNER JOIN "department" d ON d.departmentid = ach.departmentid
                     LEFT JOIN LATERAL (
-                        SELECT c.chapter
-                        FROM "calendar" c
+                        SELECT cd.name AS chapter
+                        FROM "camp_dates" cd
                         WHERE ua.datetime IS NOT NULL
-                          AND ua.datetime >= c.start
-                          AND ua.datetime <= c."end"
-                        ORDER BY c.start
+                          AND ua.datetime::date BETWEEN cd.start_date AND cd.end_date
+                        ORDER BY cd.start_date
                         LIMIT 1
                     ) cal ON true
                     LEFT JOIN LATERAL (
@@ -302,10 +299,10 @@ namespace achivements {
         auto con = std::move(pool_ptr->getConnection());
 
         pqxx::result result = con->execute(
-            R"(SELECT chapter, start, "end", (CURRENT_DATE - start::date) + 1 AS day_of_segment
-               FROM "calendar"
-               WHERE NOW() >= start AND NOW() <= "end"
-               ORDER BY start
+            R"(SELECT name AS chapter, start_date AS start, end_date AS "end", (CURRENT_DATE - start_date) + 1 AS day_of_segment
+               FROM "camp_dates"
+               WHERE CURRENT_DATE BETWEEN start_date AND end_date
+               ORDER BY start_date
                LIMIT 1;)");
 
         pool_ptr->returnConnection(std::move(con));
