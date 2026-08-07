@@ -199,6 +199,7 @@ def upload_file():
     if extension == "mov":
         if not VIDEO_MOV_ENABLED:
             return _video_error(415, "mov_upload_disabled", "Загрузка MOV временно отключена.")
+        return _save_normalized_mov(file)
     filename = hashlib.md5(file.filename.encode() + str(datetime.now()).encode()).hexdigest() + "." + extension
     category = config["supported"].get(extension, "other")
     file_path = os.path.join(ROOT_PATH, config["paths"][category])
