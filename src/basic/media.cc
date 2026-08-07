@@ -185,6 +185,7 @@ std::unordered_map<std::string, std::string> content_types = {
     {".mp4", "video/mp4"},
     {".mkv", "video/x-matroska"},
     {".webm", "video/webm"},
+    {".ogg", "video/ogg"},
     {".mp3", "audio/mpeg"},
     {".mp4", "video/mp4"},
     {".mkv", "video/x-matroska"},
@@ -192,7 +193,7 @@ std::unordered_map<std::string, std::string> content_types = {
 };
 
 std::unordered_set<std::string> allowed_no_token = {
-    ".png", ".jpg", ".jpeg", ".gif", ".mp4", ".mp3", ".mkv", ".webm", ".svg",
+    ".png", ".jpg", ".jpeg", ".gif", ".mp4", ".mp3", ".mkv", ".webm", ".ogg", ".svg",
 };
 
 std::string save_file(std::string path, std::string file_name,

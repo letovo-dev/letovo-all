@@ -119,6 +119,11 @@ jobs:
       - name: Inspect uploader image
         run: docker image inspect letovo-flask-uploader:${{ github.sha }} >/dev/null
 
+      - name: Verify uploader video tools
+        run: |
+          docker run --rm letovo-flask-uploader:${{ github.sha }} ffmpeg -version
+          docker run --rm letovo-flask-uploader:${{ github.sha }} ffprobe -version
+
   publish-pr-candidate:
     if: github.event_name == 'pull_request'
     needs: [backend-pr, frontend-verify]
