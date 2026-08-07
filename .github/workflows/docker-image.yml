@@ -90,7 +90,7 @@ jobs:
       - name: Run uploader unit tests
         run: |
           python3 -m pip install --disable-pip-version-check -r src/python-helpers/requirements.txt pytest
-          python3 -m pytest -q test/test_flask_uploader.py
+          python3 -m pytest -q test/test_flask_uploader.py test/test_migrate_mov_media.py
 
       - name: Build registration backend image locally
         uses: docker/build-push-action@v5

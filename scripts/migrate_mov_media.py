@@ -5,7 +5,7 @@ First run --dry-run; then use an explicit durable backup location:
   migrate_mov_media.py --dsn "$DATABASE_URL" --media-root /srv/letovo/media --dry-run
   migrate_mov_media.py --dsn "$DATABASE_URL" --media-root /srv/letovo/media --backup-dir /srv/letovo/mov-backup --apply
 """
-import argparse, hashlib, json, os, shutil, subprocess, sys
+import argparse, hashlib, json, os, shutil, subprocess, sys, uuid
 from pathlib import Path
 
 
@@ -28,6 +28,13 @@ def probe(path, require_mp4=False):
         raise ValueError("remux result is not MP4")
 
 
+def create_backup_run(backup_root):
+    """Create an immutable per-run backup directory under an operator-owned root."""
+    run_dir = backup_root / ("run-" + uuid.uuid4().hex)
+    run_dir.mkdir(parents=True, exist_ok=False)
+    return run_dir
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dsn", required=True); parser.add_argument("--media-root", required=True, type=Path)
@@ -42,9 +49,10 @@ def main():
             with db.cursor() as cursor:
                 cursor.execute("SELECT post_id, media FROM post_media WHERE media LIKE '/docs/%.mov' ORDER BY post_id, media FOR UPDATE")
                 rows = cursor.fetchall()
+                backup_run = None
                 if args.apply:
-                    args.backup_dir.mkdir(parents=True, exist_ok=True)
-                    (args.backup_dir / "post_media_rows.json").write_text(json.dumps([{"post_id": row[0], "media": row[1]} for row in rows], ensure_ascii=False, indent=2))
+                    backup_run = create_backup_run(args.backup_dir)
+                    (backup_run / "post_media_rows.json").write_text(json.dumps([{"post_id": row[0], "media": row[1]} for row in rows], ensure_ascii=False, indent=2))
                 for post_id, media in rows:
                     source = args.media_root / media.lstrip("/")
                     target_rel = "/videos/uploaded/" + hashlib.sha256(media.encode()).hexdigest() + ".mp4"
@@ -54,7 +62,7 @@ def main():
                         if not source.is_file(): raise ValueError("source file is missing")
                         probe(source)
                         if args.dry_run: entry["status"] = "would-remux"; report.append(entry); continue
-                        backup = args.backup_dir / "files" / source.relative_to(args.media_root)
+                        backup = backup_run / "files" / source.relative_to(args.media_root)
                         backup.parent.mkdir(parents=True, exist_ok=True)
                         if not backup.exists(): shutil.copy2(source, backup)
                         target.parent.mkdir(parents=True, exist_ok=True)
@@ -63,7 +71,7 @@ def main():
                         probe(part, require_mp4=True); os.replace(part, target); created.append(target)
                         cursor.execute("UPDATE post_media SET media = %s WHERE post_id = %s AND media = %s", (target_rel, post_id, media))
                         if cursor.rowcount != 1: raise ValueError("post_media row changed during migration")
-                        entry["status"] = "remuxed"
+                        entry["status"] = "remuxed"; entry["backup_run"] = str(backup_run)
                     except (OSError, ValueError, json.JSONDecodeError) as error:
                         entry.update(status="failed", error=str(error)); raise RuntimeError(json.dumps(entry, ensure_ascii=False))
                     finally:
