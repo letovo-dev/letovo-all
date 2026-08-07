@@ -87,6 +87,11 @@ jobs:
           python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
           python3 -m pytest -q test/test_issue193_department_payout_postgres.py test/test_issue179_media_order_postgres.py
 
+      - name: Run uploader unit tests
+        run: |
+          python3 -m pip install --disable-pip-version-check -r src/python-helpers/requirements.txt pytest
+          python3 -m pytest -q test/test_flask_uploader.py
+
       - name: Build registration backend image locally
         uses: docker/build-push-action@v5
         with:

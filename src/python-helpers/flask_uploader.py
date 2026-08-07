@@ -1,4 +1,5 @@
 import flask
+from werkzeug.exceptions import RequestEntityTooLarge
 import json, os
 import logging
 import subprocess
@@ -34,7 +35,8 @@ VIDEO_PROBE_TIMEOUT = _video_setting("probe_timeout_seconds", 30)
 VIDEO_REMUX_TIMEOUT = _video_setting("remux_timeout_seconds", 300)
 VIDEO_MOV_ENABLED = _video_setting("mov_input_enabled", True)
 VIDEO_JOBS = threading.BoundedSemaphore(_video_setting("max_concurrent_jobs", 2))
-app.config['MAX_CONTENT_LENGTH'] = max(100 * 1024 * 1024 * 10, VIDEO_MAX_BYTES + 1024 * 1024)
+# Allow only the small multipart envelope beyond the configured media limit.
+app.config['MAX_CONTENT_LENGTH'] = VIDEO_MAX_BYTES + 1024 * 1024
 
 
 def _video_error(status, code, message):
@@ -57,6 +59,8 @@ def _validate_video_probe(probe, require_mp4=False):
     formats = set(str(probe.get("format", {}).get("format_name", "")).split(","))
     if not ({"mov", "mp4"} & formats):
         return 415, "unsupported_video_container", "Видео должно быть в контейнере MOV/MP4."
+    if require_mp4 and probe.get("format", {}).get("tags", {}).get("major_brand") not in {"isom", "iso2", "mp41", "mp42", "avc1"}:
+        return 415, "invalid_remuxed_video", "Обработанное видео не является MP4."
     streams = probe.get("streams")
     if not isinstance(streams, list):
         return 415, "invalid_video", "Видео не удалось распознать."
@@ -172,23 +176,29 @@ def _detect_image_extension(data: bytes):
         return "webp"
     return None
 
+@app.errorhandler(RequestEntityTooLarge)
+def request_too_large(_error):
+    return _video_error(413, "upload_too_large", "Размер файла превышает допустимый лимит.")
+
+
 @app.route('/', methods=['POST'])
 def upload_file():
+    # Do not trigger Werkzeug multipart parsing/spooling before authorization and
+    # the declared-size limit have been evaluated.
+    token = flask.request.headers.get('Bearer', None)
+    if not api_check_admin(token, flask.request.headers.get('Cookie', '')):
+        return "Forbidden", 403
+    if flask.request.content_length and flask.request.content_length > VIDEO_MAX_BYTES + 1024 * 1024:
+        return _video_error(413, "video_too_large", "Размер видео превышает допустимый лимит.")
     if 'file' not in flask.request.files:
         return "No file part", 400
     file = flask.request.files['file']
     if file.filename == '':
         return "No selected file", 400
-    token = flask.request.headers.get('Bearer', None)
-    if not api_check_admin(token, flask.request.headers.get('Cookie', '')):
-        return "Forbidden", 403
     extension = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ""
     if extension == "mov":
         if not VIDEO_MOV_ENABLED:
             return _video_error(415, "mov_upload_disabled", "Загрузка MOV временно отключена.")
-        if flask.request.content_length and flask.request.content_length > VIDEO_MAX_BYTES + 1024 * 1024:
-            return _video_error(413, "video_too_large", "Размер видео превышает допустимый лимит.")
-        return _save_normalized_mov(file)
     filename = hashlib.md5(file.filename.encode() + str(datetime.now()).encode()).hexdigest() + "." + extension
     category = config["supported"].get(extension, "other")
     file_path = os.path.join(ROOT_PATH, config["paths"][category])

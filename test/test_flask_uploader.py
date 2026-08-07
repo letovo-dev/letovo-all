@@ -94,7 +94,7 @@ def mov_probe(codec="h264", pix_fmt="yuv420p", audio="aac", profile="LC"):
     streams = [{"codec_type": "video", "codec_name": codec, "pix_fmt": pix_fmt, "width": 848, "height": 464}]
     if audio:
         streams.append({"codec_type": "audio", "codec_name": audio, "profile": profile})
-    return {"format": {"format_name": "mov,mp4,m4a,3gp,3g2,mj2", "duration": "11.77"}, "streams": streams}
+    return {"format": {"format_name": "mov,mp4,m4a,3gp,3g2,mj2", "duration": "11.77", "tags": {"major_brand": "isom"}}, "streams": streams}
 
 
 def test_mov_is_remuxed_to_mp4_and_never_published_as_mov(client, monkeypatch):
