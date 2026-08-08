@@ -20,3 +20,27 @@ def test_backup_manifests_are_immutable_across_reruns(tmp_path):
     assert current != previous
     assert manifest.read_text() == '[{"post_id": 2838, "media": "/docs/original.mov"}]'
     assert current_manifest.read_text() == "[]"
+
+
+def test_migration_rejects_traversal_and_symlink_escape(tmp_path):
+    media_root = tmp_path / "media"
+    docs = media_root / "docs"
+    docs.mkdir(parents=True)
+    outside = tmp_path / "outside.mov"
+    outside.write_bytes(b"outside")
+    (docs / "linked.mov").symlink_to(outside)
+    for media in ("/docs/../../outside.mov", "/docs/linked.mov", "/tmp/odd.mov"):
+        try:
+            migration.safe_source(media_root, media)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"unsafe path accepted: {media}")
+
+
+def test_backup_path_stays_inside_immutable_run(tmp_path):
+    run = migration.create_backup_run(tmp_path / "backups")
+    source = tmp_path / "media" / "docs" / "safe.mov"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"safe")
+    assert migration.safe_backup_path(run, (tmp_path / "media").resolve(), source.resolve()).is_relative_to(run.resolve())

@@ -35,6 +35,33 @@ def create_backup_run(backup_root):
     return run_dir
 
 
+def _contained(path, root):
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def safe_source(media_root, media):
+    media_root = media_root.resolve()
+    docs_root = (media_root / "docs").resolve()
+    if not isinstance(media, str) or not media.startswith("/docs/"):
+        raise ValueError("media path is outside /docs")
+    source = (media_root / media.lstrip("/")).resolve()
+    if not _contained(source, docs_root):
+        raise ValueError("media path escapes media/docs")
+    return source, media_root
+
+
+def safe_backup_path(backup_run, media_root, source):
+    backup_run = backup_run.resolve()
+    target = (backup_run / "files" / source.relative_to(media_root)).resolve()
+    if not _contained(target, backup_run):
+        raise ValueError("backup path escapes backup run")
+    return target
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dsn", required=True); parser.add_argument("--media-root", required=True, type=Path)
@@ -54,7 +81,7 @@ def main():
                     backup_run = create_backup_run(args.backup_dir)
                     (backup_run / "post_media_rows.json").write_text(json.dumps([{"post_id": row[0], "media": row[1]} for row in rows], ensure_ascii=False, indent=2))
                 for post_id, media in rows:
-                    source = args.media_root / media.lstrip("/")
+                    source, resolved_media_root = safe_source(args.media_root, media)
                     target_rel = "/videos/uploaded/" + hashlib.sha256(media.encode()).hexdigest() + ".mp4"
                     target = args.media_root / target_rel.lstrip("/"); part = target.with_suffix(".mp4.part")
                     entry = {"post_id": post_id, "source": media, "target": target_rel}
@@ -62,7 +89,7 @@ def main():
                         if not source.is_file(): raise ValueError("source file is missing")
                         probe(source)
                         if args.dry_run: entry["status"] = "would-remux"; report.append(entry); continue
-                        backup = backup_run / "files" / source.relative_to(args.media_root)
+                        backup = safe_backup_path(backup_run, resolved_media_root, source)
                         backup.parent.mkdir(parents=True, exist_ok=True)
                         if not backup.exists(): shutil.copy2(source, backup)
                         target.parent.mkdir(parents=True, exist_ok=True)
