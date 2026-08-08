@@ -87,3 +87,51 @@ def test_generic_upload_accepts_legacy_auth_response(monkeypatch, tmp_path):
         "/", data={"file": (io.BytesIO(PNG), "legacy.png")},
         headers={"Bearer": "legacy"})
     assert response.status_code == 200
+
+
+
+def mov_probe(codec="h264", pix_fmt="yuv420p", audio="aac", profile="LC"):
+    streams = [{"codec_type": "video", "codec_name": codec, "pix_fmt": pix_fmt, "width": 848, "height": 464}]
+    if audio:
+        streams.append({"codec_type": "audio", "codec_name": audio, "profile": profile})
+    return {"format": {"format_name": "mov,mp4,m4a,3gp,3g2,mj2", "duration": "11.77", "tags": {"major_brand": "isom"}}, "streams": streams}
+
+
+def test_mov_is_remuxed_to_mp4_and_never_published_as_mov(client, monkeypatch):
+    c, root = client
+    monkeypatch.setattr(uploader, "api_check_admin", lambda *args: True)
+    monkeypatch.setattr(uploader, "_probe", lambda *args: mov_probe())
+
+    def fake_run(args, **kwargs):
+        assert isinstance(args, list) and kwargs["shell"] is False
+        if args[0] == "ffmpeg":
+            Path(args[-1]).write_bytes(b"remuxed")
+        return type("Result", (), {"returncode": 0, "stdout": "{}"})()
+
+    monkeypatch.setattr(uploader.subprocess, "run", fake_run)
+    response = c.post("/", data={"file": (io.BytesIO(b"mov data"), "camera.mov")}, headers={"Bearer": "x"})
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["normalized"] is True and body["file"].endswith(".mp4")
+    assert (root / body["file"].lstrip("/")).is_file()
+    assert not list(root.rglob("*.mov"))
+    assert not list(root.rglob("*.part"))
+
+
+def test_mov_rejects_unsupported_codec_without_publishing(client, monkeypatch):
+    c, root = client
+    monkeypatch.setattr(uploader, "api_check_admin", lambda *args: True)
+    monkeypatch.setattr(uploader, "_probe", lambda *args: mov_probe(codec="hevc"))
+    response = c.post("/", data={"file": (io.BytesIO(b"mov data"), "camera.mov")}, headers={"Bearer": "x"})
+    assert response.status_code == 415
+    assert response.get_json()["code"] == "unsupported_video_codec"
+    assert not list(root.rglob("*.mov")) and not list(root.rglob("*.mp4"))
+
+
+def test_unauthorized_mov_does_not_start_processing(client, monkeypatch):
+    c, root = client
+    monkeypatch.setattr(uploader, "api_check_admin", lambda *args: False)
+    monkeypatch.setattr(uploader, "_probe", lambda *args: pytest.fail("must not probe"))
+    response = c.post("/", data={"file": (io.BytesIO(b"mov data"), "camera.mov")}, headers={"Bearer": "x"})
+    assert response.status_code == 403
+    assert not root.exists() or not list(root.rglob("*"))

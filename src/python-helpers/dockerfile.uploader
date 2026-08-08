@@ -6,7 +6,10 @@ ENV UPLOADER_CAPABILITIES_URL=${UPLOADER_CAPABILITIES_URL}
 WORKDIR /app
 
 COPY . .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8880
 
