@@ -33,7 +33,7 @@ SELECT
   r.rang,
   r.payment,
   COUNT(DISTINCT ur.username) AS historical_assignments,
-  COUNT(*) FILTER (WHERE u.active AND u.registered) AS active_registered_assignments
+  COUNT(DISTINCT ur.username) FILTER (WHERE u.active AND u.registered) AS active_registered_assignments
 FROM public.roles r
 LEFT JOIN public.useroles ur ON ur.roleid = r.roleid
 LEFT JOIN public."user" u ON u.username = ur.username

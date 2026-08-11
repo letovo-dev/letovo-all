@@ -41,7 +41,7 @@ def test_roles_natural_key_migration_is_non_destructive_and_reports_usage():
 
     assert "UNIQUE NULLS NOT DISTINCT (rolename, departmentid, rang, payment)" in migration
     assert "RAISE EXCEPTION" in migration
-    assert 'COUNT(*) FILTER (WHERE u.active AND u.registered)' in migration
+    assert 'COUNT(DISTINCT ur.username) FILTER (WHERE u.active AND u.registered)' in migration
     assert "DELETE" not in migration.upper()
 
 
@@ -53,3 +53,5 @@ def test_roles_migration_is_wired_to_candidate_and_production_deployments():
         assert "docs/roles_natural_key_migration.sql" in workflow
         assert 'roles_migration="$state_dir/roles_natural_key_migration.sql"' in workflow
         assert "-f /tmp/roles_natural_key_migration.sql" in workflow
+        assert "pg_dump -U scv -d letovo_db -t public.roles" in workflow
+        assert "roles.before-natural-key-migration.sql" in workflow

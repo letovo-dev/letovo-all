@@ -402,6 +402,8 @@ jobs:
           backup_root="$(dirname "$(dirname "$COMPOSE_FILE")")/backups/production-release-${RUN_ID}"
           role_backup="$backup_root/role.before-avatar-migration.sql"
           role_backup_tmp="$state_dir/role.before-avatar-migration.sql"
+          roles_backup="$backup_root/roles.before-natural-key-migration.sql"
+          roles_backup_tmp="$state_dir/roles.before-natural-key-migration.sql"
           user_backup="$backup_root/user.before-child-avatar-migration.sql"
           user_backup_tmp="$state_dir/user.before-child-avatar-migration.sql"
           transactions_backup="$backup_root/transactions.before-department-payout-migration.sql"
@@ -495,10 +497,14 @@ jobs:
             pg_dump -U scv -d letovo_db -t public.role > "$role_backup_tmp"
           test -s "$role_backup_tmp"
           docker exec letovo-postgres-1 \
+            pg_dump -U scv -d letovo_db -t public.roles > "$roles_backup_tmp"
+          test -s "$roles_backup_tmp"
+          docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t 'public."user"' > "$user_backup_tmp"
           test -s "$user_backup_tmp"
           as_root mkdir -p "$backup_root"
           as_root install -m 0600 "$role_backup_tmp" "$role_backup"
+          as_root install -m 0600 "$roles_backup_tmp" "$roles_backup"
           as_root install -m 0600 "$user_backup_tmp" "$user_backup"
           docker cp "$child_avatar_migration" \
             letovo-postgres-1:/tmp/child_avatar_access_migration.sql
