@@ -432,6 +432,8 @@ jobs:
           ssh -i ~/.ssh/live-e2e "$remote" "mkdir -p '$state_dir'"
           scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql \
             "$remote:$state_dir/avatar_upload_role_migration.sql"
+          scp -i ~/.ssh/live-e2e docs/roles_natural_key_migration.sql \
+            "$remote:$state_dir/roles_natural_key_migration.sql"
           scp -i ~/.ssh/live-e2e docs/child_avatar_access_migration.sql \
             "$remote:$state_dir/child_avatar_access_migration.sql"
           scp -i ~/.ssh/live-e2e docs/department_payout_migration.sql \
@@ -450,18 +452,21 @@ jobs:
           restore="$state_dir/restore.env"
           candidate="$state_dir/docker-compose.yaml"
           migration="$state_dir/avatar_upload_role_migration.sql"
+          roles_migration="$state_dir/roles_natural_key_migration.sql"
           child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
           payout_migration="$state_dir/department_payout_migration.sql"
           publisher_authorization_migration="$state_dir/publisher_authorization_migration.sql"
           post_media_order_migration="$state_dir/post_media_order_migration.sql"
           backup_root="$HOME/backups/letovo-live-e2e-${RUN_ID}"
           role_backup="$backup_root/role.before-avatar-migration.sql"
+          roles_backup="$backup_root/roles.before-natural-key-migration.sql"
           user_backup="$backup_root/user.before-child-avatar-migration.sql"
           transactions_backup="$backup_root/transactions.before-department-payout-migration.sql"
           post_media_backup="$backup_root/post-media.before-order-migration.sql"
           child_avatar_preview="$backup_root/child-avatar-migration-preview.csv"
 
           test -f "$migration"
+          test -f "$roles_migration"
           test -f "$child_avatar_migration"
           test -f "$payout_migration"
           test -f "$publisher_authorization_migration"
@@ -500,6 +505,9 @@ jobs:
             pg_dump -U scv -d letovo_db -t public.role > "$role_backup"
           test -s "$role_backup"
           docker exec letovo-postgres-1 \
+            pg_dump -U scv -d letovo_db -t public.roles > "$roles_backup"
+          test -s "$roles_backup"
+          docker exec letovo-postgres-1 \
             pg_dump -U scv -d letovo_db -t 'public."user"' > "$user_backup"
           test -s "$user_backup"
           docker cp "$child_avatar_migration" \
@@ -515,6 +523,11 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
+          docker cp "$roles_migration" letovo-postgres-1:/tmp/roles_natural_key_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
+              -f /tmp/roles_natural_key_migration.sql
+          docker exec letovo-postgres-1 rm -f /tmp/roles_natural_key_migration.sql
           docker cp "$child_avatar_preview" \
             letovo-postgres-1:/tmp/child_avatar_approved_preview.csv
           docker exec letovo-postgres-1 \

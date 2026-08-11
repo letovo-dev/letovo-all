@@ -156,6 +156,10 @@ bool parse_admin_create_user_request(const rapidjson::Document &body,
     request.role_rights.moder = json_bool_or_default(rights, "moder", false);
     request.role_rights.main_page =
         json_bool_or_default(rights, "main_page", false);
+    request.role_rights.whireable =
+        json_bool_or_default(rights, "whireable", false);
+    request.role_rights.ava_upload =
+        json_bool_or_default(rights, "ava_upload", false);
   }
 
   return true;
@@ -172,9 +176,14 @@ std::string validate_admin_create_user_request(
   if (request.role_id <= 0) {
     return "role_id must be a positive integer";
   }
-  if (request.userrights != "user" && request.userrights != "moder" &&
+  if (request.userrights != "user" && request.userrights != "child" &&
+      request.userrights != "author" && request.userrights != "moder" &&
       request.userrights != "public_author" && request.userrights != "admin") {
-    return "userrights must be user, moder, public_author, or admin";
+    return "userrights must be user, child, author, moder, public_author, or "
+           "admin";
+  }
+  if (request.userrights == "child" && request.role_rights.ava_upload) {
+    return "child accounts cannot upload personal avatars";
   }
   return "";
 }
@@ -486,6 +495,8 @@ bool admin_create_user(const AdminCreateUserRequest &request,
       request.role_rights.admin ? "true" : "false",
       request.role_rights.moder ? "true" : "false",
       request.role_rights.main_page ? "true" : "false",
+      request.role_rights.whireable ? "true" : "false",
+      request.role_rights.ava_upload ? "true" : "false",
   };
 
   cp::SafeCon con{pool_ptr};
@@ -517,11 +528,10 @@ created_user AS (
   RETURNING username, display_name, userrights, role, active, registered, chattable
 ),
 created_permission AS (
-  INSERT INTO role (username, write_posts, admin, moder, main_page, ava_upload)
+  INSERT INTO role (username, write_posts, admin, moder, main_page, whireable, ava_upload)
   SELECT
     created_user.username, ($12)::boolean, ($13)::boolean,
-    ($14)::boolean, ($15)::boolean,
-    COALESCE(created_user.userrights <> 'child', false)
+    ($14)::boolean, ($15)::boolean, ($16)::boolean, ($17)::boolean
   FROM created_user
   -- RETURNING created_user.username
   RETURNING username
@@ -995,22 +1005,38 @@ void am_i_uploader(
           logger_ptr->error([] { return "token is empty"; });
           return req->create_response(restinio::status_unauthorized()).done();
         }
-        std::string username = auth::get_username(token, pool_ptr);
-        if (username.empty()) return req->create_response(restinio::status_unauthorized()).done();
-        const bool generic = auth::is_rights_by_username(username, pool_ptr, "moder") ||
-                             auth::is_rights_by_username(username, pool_ptr, "admin");
+        std::string actor = auth::get_username(token, pool_ptr);
+        if (actor.empty())
+          return req->create_response(restinio::status_unauthorized()).done();
+        const bool actor_is_admin = auth::is_admin(token, pool_ptr);
+        std::string username = actor;
+        if (req->header().has_field("X-Avatar-Username")) {
+          const std::string requested_username =
+              req->header().get_field("X-Avatar-Username");
+          if (!std::regex_match(requested_username, kAdminUsernameRegex) ||
+              (!actor_is_admin && requested_username != actor)) {
+            return req->create_response(restinio::status_forbidden()).done();
+          }
+          username = requested_username;
+        }
+        const bool generic =
+            auth::is_rights_by_username(actor, pool_ptr, "moder") ||
+            auth::is_rights_by_username(actor, pool_ptr, "admin");
         cp::SafeCon con{pool_ptr};
         std::vector<std::string> avatar_params = {username};
         const auto avatar_rows = con->execute_params(
-            "SELECT 1 FROM \"user\" u LEFT JOIN \"role\" r ON r.username=u.username "
-            "WHERE u.username=($1) AND u.active=true AND u.userrights <> 'child' AND "
-            "(COALESCE(r.ava_upload,false)=true OR COALESCE(r.admin,false)=true OR COALESCE(r.moder,false)=true);",
+            "SELECT 1 FROM \"user\" u LEFT JOIN \"role\" r ON "
+            "r.username=u.username "
+            "WHERE u.username=($1) AND u.active=true AND u.userrights <> "
+            "'child' AND "
+            "(COALESCE(r.ava_upload,false)=true OR "
+            "COALESCE(r.admin,false)=true OR COALESCE(r.moder,false)=true);",
             avatar_params);
         const bool avatar = !avatar_rows.empty();
         return req->create_response(restinio::status_ok())
-              .set_body(uploader_capabilities_json(generic, avatar, username))
-              .append_header("Content-Type", "application/json; charset=utf-8")
-              .done();
+            .set_body(uploader_capabilities_json(generic, avatar, username))
+            .append_header("Content-Type", "application/json; charset=utf-8")
+            .done();
       });
 }
 
