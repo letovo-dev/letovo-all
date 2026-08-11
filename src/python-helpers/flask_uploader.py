@@ -17,7 +17,7 @@ with open(os.path.join(current_path, 'UploaderConfig.json'), 'r') as f:
     config = json.load(f)
 MAX_AVATAR_SIZE = int(config.get("max_avatar_size", 5 * 1024 * 1024))
 
-def api_get_upload_capabilities(token: str, cookie: str = ""):
+def api_get_upload_capabilities(token: str, cookie: str = "", target_username: str = ""):
     if not config["check_admin"]:
         return {"status": "t", "avatar_status": "t", "username": "local"}
     if not token and not cookie:
@@ -30,6 +30,8 @@ def api_get_upload_capabilities(token: str, cookie: str = ""):
             headers["Bearer"] = token
         if cookie:
             headers["Cookie"] = cookie
+        if target_username:
+            headers["X-Avatar-Username"] = target_username
         r = requests.get(auth_url, headers=headers, timeout=5)
         if r.status_code != 200:
             return None
@@ -85,8 +87,9 @@ def upload_avatar():
     if file.filename == '':
         return "No selected file", 400
     token = flask.request.headers.get('Bearer', None)
+    target_username = flask.request.form.get('username', '')
     capabilities = api_get_upload_capabilities(
-        token, flask.request.headers.get('Cookie', ''))
+        token, flask.request.headers.get('Cookie', ''), target_username)
     if (capabilities is None or capabilities.get("avatar_status") != "t" or
             not isinstance(capabilities.get("username"), str) or not capabilities["username"]):
         return "Forbidden", 403

@@ -1209,6 +1209,10 @@ ALTER TABLE ONLY public.role
 ALTER TABLE ONLY public.roles
     ADD CONSTRAINT roles_unique UNIQUE (roleid);
 
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_natural_key_unique
+    UNIQUE NULLS NOT DISTINCT (rolename, departmentid, rang, payment);
+
 
 --
 -- Name: user unuque_username; Type: CONSTRAINT; Schema: public; Owner: scv

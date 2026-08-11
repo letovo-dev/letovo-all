@@ -432,6 +432,8 @@ jobs:
           ssh -i ~/.ssh/live-e2e "$remote" "mkdir -p '$state_dir'"
           scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql \
             "$remote:$state_dir/avatar_upload_role_migration.sql"
+          scp -i ~/.ssh/live-e2e docs/roles_natural_key_migration.sql \
+            "$remote:$state_dir/roles_natural_key_migration.sql"
           scp -i ~/.ssh/live-e2e docs/child_avatar_access_migration.sql \
             "$remote:$state_dir/child_avatar_access_migration.sql"
           scp -i ~/.ssh/live-e2e docs/department_payout_migration.sql \
@@ -450,6 +452,7 @@ jobs:
           restore="$state_dir/restore.env"
           candidate="$state_dir/docker-compose.yaml"
           migration="$state_dir/avatar_upload_role_migration.sql"
+          roles_migration="$state_dir/roles_natural_key_migration.sql"
           child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
           payout_migration="$state_dir/department_payout_migration.sql"
           publisher_authorization_migration="$state_dir/publisher_authorization_migration.sql"
@@ -462,6 +465,7 @@ jobs:
           child_avatar_preview="$backup_root/child-avatar-migration-preview.csv"
 
           test -f "$migration"
+          test -f "$roles_migration"
           test -f "$child_avatar_migration"
           test -f "$payout_migration"
           test -f "$publisher_authorization_migration"
@@ -515,6 +519,11 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
+          docker cp "$roles_migration" letovo-postgres-1:/tmp/roles_natural_key_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
+              -f /tmp/roles_natural_key_migration.sql
+          docker exec letovo-postgres-1 rm -f /tmp/roles_natural_key_migration.sql
           docker cp "$child_avatar_preview" \
             letovo-postgres-1:/tmp/child_avatar_approved_preview.csv
           docker exec letovo-postgres-1 \

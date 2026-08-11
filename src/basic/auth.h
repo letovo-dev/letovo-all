@@ -33,6 +33,8 @@ struct AdminRoleRights {
   bool admin = false;
   bool moder = false;
   bool main_page = false;
+  bool whireable = false;
+  bool ava_upload = false;
 };
 
 struct AdminCreateUserRequest {

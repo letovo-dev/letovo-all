@@ -24,14 +24,14 @@ def auth(avatar="t", generic="f", username="alice"):
 
 def test_avatar_permission_does_not_grant_generic_upload(client, monkeypatch):
     c, _ = client
-    monkeypatch.setattr(uploader, "api_get_upload_capabilities", lambda token, cookie="": auth())
+    monkeypatch.setattr(uploader, "api_get_upload_capabilities", lambda token, cookie="", target_username="": auth())
     assert c.post("/", data={"file": (io.BytesIO(PNG), "x.png")}, headers={"Bearer": "x"}).status_code == 403
     assert c.post("/avatar", data={"file": (io.BytesIO(PNG), "x.png")}, headers={"Bearer": "x"}).status_code == 200
 
 
 def test_avatar_generated_owner_path_and_magic_validation(client, monkeypatch):
     c, root = client
-    monkeypatch.setattr(uploader, "api_get_upload_capabilities", lambda token, cookie="": auth())
+    monkeypatch.setattr(uploader, "api_get_upload_capabilities", lambda token, cookie="", target_username="": auth())
     response = c.post("/avatar", data={"file": (io.BytesIO(PNG), "../../evil.png")}, headers={"Bearer": "x"})
     path = response.get_json()["file"]
     key = hashlib.sha256(b"alice").hexdigest()
@@ -43,7 +43,7 @@ def test_avatar_generated_owner_path_and_magic_validation(client, monkeypatch):
 
 def test_avatar_rejects_bad_extension_and_oversize(client, monkeypatch):
     c, _ = client
-    monkeypatch.setattr(uploader, "api_get_upload_capabilities", lambda token, cookie="": auth())
+    monkeypatch.setattr(uploader, "api_get_upload_capabilities", lambda token, cookie="", target_username="": auth())
     assert c.post("/avatar", data={"file": (io.BytesIO(PNG), "x.svg")}, headers={"Bearer": "x"}).status_code == 400
     huge = PNG + b"x" * uploader.MAX_AVATAR_SIZE
     assert c.post("/avatar", data={"file": (io.BytesIO(huge), "x.png")}, headers={"Bearer": "x"}).status_code == 413
@@ -66,6 +66,26 @@ def test_cookie_auth_is_forwarded_to_backend(monkeypatch):
     monkeypatch.setattr(uploader.requests, "get", fake_get)
     assert uploader.api_get_upload_capabilities(None, "letovo_session=secret") == auth()
     assert captured == {"Cookie": "letovo_session=secret"}
+
+
+def test_admin_target_username_is_verified_by_backend_and_owns_upload(client, monkeypatch):
+    c, _ = client
+    captured = {}
+
+    def capabilities(token, cookie="", target_username=""):
+        captured["target_username"] = target_username
+        return auth(username=target_username)
+
+    monkeypatch.setattr(uploader, "api_get_upload_capabilities", capabilities)
+    response = c.post(
+        "/avatar",
+        data={"file": (io.BytesIO(PNG), "avatar.png"), "username": "new_user"},
+        headers={"Bearer": "admin-token"},
+    )
+    assert response.status_code == 200
+    assert captured == {"target_username": "new_user"}
+    key = hashlib.sha256(b"new_user").hexdigest()
+    assert response.get_json()["file"].startswith(f"/images/personal_avatars/{key}/")
 
 
 def test_generic_upload_accepts_legacy_auth_response(monkeypatch, tmp_path):

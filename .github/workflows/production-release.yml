@@ -361,6 +361,8 @@ jobs:
           scp -i ~/.ssh/letovo-production-release scripts/patch_nginx_otel.py "$remote:$state_dir/patch_nginx_otel.py"
           scp -i ~/.ssh/letovo-production-release docs/avatar_upload_role_migration.sql \
             "$remote:$state_dir/avatar_upload_role_migration.sql"
+          scp -i ~/.ssh/letovo-production-release docs/roles_natural_key_migration.sql \
+            "$remote:$state_dir/roles_natural_key_migration.sql"
           scp -i ~/.ssh/letovo-production-release docs/child_avatar_access_migration.sql \
             "$remote:$state_dir/child_avatar_access_migration.sql"
           scp -i ~/.ssh/letovo-production-release docs/department_payout_migration.sql \
@@ -387,6 +389,7 @@ jobs:
           repo_otel="$state_dir/otel-collector-config.yaml.from-repo"
           repo_front_env="$state_dir/letovo-front.env.from-repo"
           migration="$state_dir/avatar_upload_role_migration.sql"
+          roles_migration="$state_dir/roles_natural_key_migration.sql"
           child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
           payout_migration="$state_dir/department_payout_migration.sql"
           publisher_authorization_migration="$state_dir/publisher_authorization_migration.sql"
@@ -424,6 +427,7 @@ jobs:
           test -f "$repo_otel"
           test -f "$repo_front_env"
           test -f "$migration"
+          test -f "$roles_migration"
           test -f "$child_avatar_migration"
           test -f "$payout_migration"
           test -f "$publisher_authorization_migration"
@@ -521,6 +525,11 @@ jobs:
             psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
               -f /tmp/avatar_upload_role_migration.sql
           docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
+          docker cp "$roles_migration" letovo-postgres-1:/tmp/roles_natural_key_migration.sql
+          docker exec letovo-postgres-1 \
+            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
+              -f /tmp/roles_natural_key_migration.sql
+          docker exec letovo-postgres-1 rm -f /tmp/roles_natural_key_migration.sql
           docker cp "$child_avatar_preview_tmp" \
             letovo-postgres-1:/tmp/child_avatar_approved_preview.csv
           docker exec letovo-postgres-1 \

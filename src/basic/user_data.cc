@@ -1037,7 +1037,17 @@ void set_avatar(std::unique_ptr<restinio::router::express_router_t<>> &router,
     }
 
     if (new_body.HasMember("avatar")) {
-      std::string username = auth::get_username(token, pool_ptr);
+      std::string actor = auth::get_username(token, pool_ptr);
+      std::string username = actor;
+      if (new_body.HasMember("username")) {
+        if (!new_body["username"].IsString()) {
+          return req->create_response(restinio::status_bad_request()).done();
+        }
+        username = new_body["username"].GetString();
+        if (username != actor && !auth::is_admin(token, pool_ptr)) {
+          return req->create_response(restinio::status_forbidden()).done();
+        }
+      }
       std::string avatar = new_body["avatar"].GetString();
       if (!user::can_use_avatar(username, avatar,
                                 auth::is_admin(token, pool_ptr),
