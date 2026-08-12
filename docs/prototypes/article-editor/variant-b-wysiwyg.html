@@ -196,21 +196,32 @@
 
         function insertHtml(html) {
           editable.focus();
-          document.execCommand('insertHTML', false, html);
+          // Вставляем только через санитайзер: адрес приходит из prompt, ему нельзя доверять.
+          document.execCommand('insertHTML', false, window.ArticleMarkdown.sanitizeHtml(html));
           syncMarkdown();
+        }
+
+        function askUrl(message) {
+          var url = prompt(message, 'https://');
+          if (!url) return null;
+          if (!/^(https?|mailto|tel):/i.test(url) && /^[a-z][a-z0-9+.-]*:/i.test(url)) {
+            alert('Такой адрес вставить нельзя: разрешены http(s), mailto, tel и относительные пути.');
+            return null;
+          }
+          return url;
         }
 
         var ACTIONS = {
           link: function () {
-            var url = prompt('Адрес ссылки', 'https://');
+            var url = askUrl('Адрес ссылки');
             if (url) exec('createLink', url);
           },
           image: function () {
-            var url = prompt('Адрес картинки (сначала загрузите файл в разделе «Файлы»)', 'https://');
+            var url = askUrl('Адрес картинки (сначала загрузите файл в разделе «Файлы»)');
             if (url) insertHtml('<img src="' + url + '" alt="Изображение статьи">');
           },
           video: function () {
-            var url = prompt('Адрес видео (.mp4)', 'https://');
+            var url = askUrl('Адрес видео (.mp4)');
             if (url) {
               insertHtml(
                 '<video controls playsinline width="100%" style="max-width:800px;height:auto" src="' +

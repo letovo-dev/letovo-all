@@ -29,6 +29,10 @@ open docs/prototypes/article-editor/index.html       # macOS
 | `shared/editor-chrome.css` | Палитра, шрифт и элементы управления сайта из `globals.scss` |
 | `shared/markdown.js` | Мини-рендерер Markdown → HTML и обратный сериализатор HTML → Markdown |
 | `shared/sample-article.js` | Общий fixture: заголовки, списки, таблица, цитата, код, картинка, видео, secret/download-ссылки |
+| `tests/prototype-tests.html` | Самопроверки: рендер, санитизация сырого HTML, round-trip HTML → Markdown |
+
+Проверки запускаются открытием `tests/prototype-tests.html` в браузере — сверху будет
+«Все проверки пройдены» или список упавших.
 
 ## Что макеты решают из issue
 
@@ -54,9 +58,11 @@ open docs/prototypes/article-editor/index.html       # macOS
 
 ## Ограничения макетов
 
-- `shared/markdown.js` — намеренно маленький парсер (примерно 250 строк) для показа, а не замена
-  продового пайплайна. В реализации остаются `remark-gfm` + `rehype-raw` + `rehype-sanitize`;
-  сырой HTML в макете пропускается по короткому списку тегов.
+- `shared/markdown.js` — намеренно маленький парсер для показа, а не замена продового пайплайна.
+  В реализации остаются `remark-gfm` + `rehype-raw` + `rehype-sanitize`. Сырой HTML из статьи
+  в макете проходит через собственный санитайзер (`sanitizeHtml`): фрагмент разбирается целиком,
+  вычищаются неизвестные теги, любые `on*`-обработчики, `javascript:`-адреса и `style` с
+  `url()`/`expression`; разрешённый список тегов и атрибутов повторяет схему из `ReactMd.tsx`.
 - Вложенные списки, сноски и HTML-атрибуты в макете упрощены.
 - Вариант B использует `document.execCommand` — для прототипа этого достаточно, но в реализации
   нужен нормальный редактор (например, TipTap/ProseMirror) с сериализацией в Markdown.
