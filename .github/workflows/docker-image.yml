@@ -349,6 +349,10 @@ jobs:
         working-directory: frontend
         run: npm run test:image-lightbox
 
+      - name: Verify article editor modes
+        working-directory: frontend
+        run: npm run test:article-editor-modes
+
       - name: Build frontend
         working-directory: frontend
         env:
