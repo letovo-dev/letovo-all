@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вариант A — Markdown-редактор статьи (макет)</title>
+    <link rel="stylesheet" href="shared/editor-chrome.css" />
+    <link rel="stylesheet" href="shared/article-preview.css" />
+    <style>
+      .markdown-input {
+        width: 100%;
+        min-height: 520px;
+        padding: 16px;
+        border: none;
+        resize: vertical;
+        color: var(--foreground);
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 14px;
+        line-height: 1.65;
+        tab-size: 2;
+      }
+
+      .markdown-input:focus {
+        outline: none;
+        background: #fffdfc;
+      }
+
+      .editor-panel .panel-body {
+        padding: 0;
+      }
+
+      .cheatsheet {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        padding: 10px 16px;
+        border-top: 1px solid var(--graphics7);
+        font-size: 12px;
+        color: var(--grey);
+      }
+
+      .cheatsheet code {
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: var(--secondaryGray);
+        color: var(--graphics10);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-head">
+      <h1>Редактор статьи</h1>
+      <span class="variant-badge">Вариант A · Markdown</span>
+      <span class="spacer"></span>
+      <a class="back-link" href="index.html">← к сравнению вариантов</a>
+    </header>
+
+    <main class="editor-layout">
+      <div>
+        <section class="panel" style="margin-bottom: 20px">
+          <div class="panel-head">Параметры статьи</div>
+          <div class="panel-body">
+            <div class="meta-grid">
+              <div class="field">
+                <label for="a-title">Название статьи</label>
+                <input id="a-title" type="text" maxlength="200" />
+              </div>
+              <div class="field">
+                <label for="a-category">Категория</label>
+                <select id="a-category">
+                  <option>Учебный процесс</option>
+                  <option>Новости</option>
+                  <option>Инструкции</option>
+                  <option>Правила</option>
+                </select>
+              </div>
+              <div class="field">
+                <label id="a-type-label">Тип статьи</label>
+                <div class="radio-row" role="radiogroup" aria-labelledby="a-type-label">
+                  <label><input type="radio" name="a-secret" value="f" checked /> Статья</label>
+                  <label><input type="radio" name="a-secret" value="t" /> Тайна</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel editor-panel">
+          <div class="panel-head">
+            Текст статьи
+            <span class="hint">Markdown · панель форматирования вставляет разметку за вас</span>
+          </div>
+
+          <div class="toolbar" id="a-toolbar" role="toolbar" aria-label="Форматирование">
+            <button type="button" data-action="h1" title="Заголовок 1">H1</button>
+            <button type="button" data-action="h2" title="Заголовок 2">H2</button>
+            <button type="button" data-action="h3" title="Заголовок 3">H3</button>
+            <span class="sep"></span>
+            <button type="button" data-action="bold" title="Жирный (Ctrl+B)"><b>Ж</b></button>
+            <button type="button" data-action="italic" title="Курсив (Ctrl+I)"><i>К</i></button>
+            <button type="button" data-action="strike" title="Зачёркнутый"><s>З</s></button>
+            <button type="button" data-action="code" title="Код">&lt;/&gt;</button>
+            <span class="sep"></span>
+            <button type="button" data-action="ul" title="Маркированный список">• Список</button>
+            <button type="button" data-action="ol" title="Нумерованный список">1. Список</button>
+            <button type="button" data-action="quote" title="Цитата">❝</button>
+            <button type="button" data-action="table" title="Таблица">Таблица</button>
+            <span class="sep"></span>
+            <button type="button" data-action="link" title="Ссылка">Ссылка</button>
+            <button type="button" data-action="image" title="Картинка">Картинка</button>
+            <button type="button" data-action="video" title="Видео">Видео</button>
+            <button type="button" data-action="hr" title="Разделитель">—</button>
+          </div>
+
+          <div class="panel-body">
+            <label class="visually-hidden" for="a-markdown">Markdown-текст статьи</label>
+            <textarea id="a-markdown" class="markdown-input" spellcheck="true"></textarea>
+            <div class="cheatsheet">
+              <span><code>**жирный**</code></span>
+              <span><code>*курсив*</code></span>
+              <span><code># заголовок</code></span>
+              <span><code>- пункт списка</code></span>
+              <span><code>[текст](ссылка)</code></span>
+              <span><code>![подпись](адрес-файла)</code> — картинка или видео</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn primary">Сохранить и опубликовать</button>
+            <button type="button" class="btn">Загрузить .md</button>
+            <button type="button" class="btn">Скачать .md</button>
+            <span class="note">Макет: кнопки ничего не отправляют на сервер.</span>
+          </div>
+        </section>
+      </div>
+
+      <div class="preview-column">
+        <div class="preview-toolbar">
+          <strong>Так статья будет выглядеть на сайте</strong>
+          <span class="spacer"></span>
+          <button type="button" class="btn" data-width="desktop" id="a-desktop">Десктоп</button>
+          <button type="button" class="btn" data-width="mobile" id="a-mobile">Мобильный</button>
+        </div>
+        <div class="preview-frame">
+          <div class="article-shell is-scroll-panel is-desktop" id="a-shell">
+            <div class="mdContent" id="a-preview"></div>
+          </div>
+        </div>
+        <p class="preview-note">
+          Превью использует те же стили и ту же ширину контейнера, что и страница
+          <code>/articles</code>: картинки уходят в край, таблицы скроллятся, «secret link»
+          выглядит как обычный текст.
+        </p>
+      </div>
+    </main>
+
+    <script src="shared/markdown.js"></script>
+    <script src="shared/sample-article.js"></script>
+    <script>
+      (function () {
+        var textarea = document.getElementById('a-markdown');
+        var preview = document.getElementById('a-preview');
+        var shell = document.getElementById('a-shell');
+        var titleInput = document.getElementById('a-title');
+
+        titleInput.value = window.SAMPLE_ARTICLE.title;
+        textarea.value = window.SAMPLE_ARTICLE.markdown;
+
+        function render() {
+          preview.innerHTML = window.ArticleMarkdown.render(textarea.value);
+        }
+
+        textarea.addEventListener('input', render);
+        render();
+
+        /** Обёртка/префикс вокруг выделения в textarea. */
+        function surround(before, after) {
+          var start = textarea.selectionStart;
+          var end = textarea.selectionEnd;
+          var selected = textarea.value.slice(start, end);
+          textarea.setRangeText(before + selected + after, start, end, 'end');
+          if (!selected) {
+            var caret = start + before.length;
+            textarea.setSelectionRange(caret, caret);
+          }
+          textarea.focus();
+          render();
+        }
+
+        function prefixLines(prefix) {
+          var start = textarea.selectionStart;
+          var end = textarea.selectionEnd;
+          var lineStart = textarea.value.lastIndexOf('\n', start - 1) + 1;
+          var block = textarea.value.slice(lineStart, end) || '';
+          var counter = 0;
+          var updated = block
+            .split('\n')
+            .map(function (line) {
+              counter++;
+              return (prefix === '1. ' ? counter + '. ' : prefix) + line.replace(/^([-*+]|\d+\.|>|#{1,6})\s*/, '');
+            })
+            .join('\n');
+          textarea.setRangeText(updated, lineStart, end || lineStart, 'end');
+          textarea.focus();
+          render();
+        }
+
+        function insertBlock(text) {
+          var pos = textarea.selectionEnd;
+          var prefix = textarea.value.slice(0, pos).endsWith('\n') ? '' : '\n\n';
+          textarea.setRangeText(prefix + text + '\n', pos, pos, 'end');
+          textarea.focus();
+          render();
+        }
+
+        var ACTIONS = {
+          h1: function () { prefixLines('# '); },
+          h2: function () { prefixLines('## '); },
+          h3: function () { prefixLines('### '); },
+          bold: function () { surround('**', '**'); },
+          italic: function () { surround('*', '*'); },
+          strike: function () { surround('~~', '~~'); },
+          code: function () { surround('`', '`'); },
+          ul: function () { prefixLines('- '); },
+          ol: function () { prefixLines('1. '); },
+          quote: function () { prefixLines('> '); },
+          hr: function () { insertBlock('---'); },
+          table: function () {
+            insertBlock('| Заголовок | Заголовок |\n| --- | --- |\n| Ячейка | Ячейка |');
+          },
+          link: function () {
+            var url = prompt('Адрес ссылки', 'https://');
+            if (url) surround('[', '](' + url + ')');
+          },
+          image: function () {
+            var url = prompt('Адрес картинки (сначала загрузите файл в разделе «Файлы»)', 'https://');
+            if (url) insertBlock('![Подпись к картинке](' + url + ')');
+          },
+          video: function () {
+            var url = prompt('Адрес видео (.mp4)', 'https://');
+            if (url) insertBlock('![Видео](' + url + ')');
+          },
+        };
+
+        document.getElementById('a-toolbar').addEventListener('click', function (event) {
+          var button = event.target.closest('button[data-action]');
+          if (button && ACTIONS[button.dataset.action]) ACTIONS[button.dataset.action]();
+        });
+
+        textarea.addEventListener('keydown', function (event) {
+          if (!(event.ctrlKey || event.metaKey)) return;
+          var key = event.key.toLowerCase();
+          if (key === 'b') { event.preventDefault(); ACTIONS.bold(); }
+          if (key === 'i') { event.preventDefault(); ACTIONS.italic(); }
+        });
+
+        document.getElementById('a-desktop').addEventListener('click', function () {
+          shell.classList.add('is-desktop');
+        });
+        document.getElementById('a-mobile').addEventListener('click', function () {
+          shell.classList.remove('is-desktop');
+        });
+      })();
+    </script>
+  </body>
+</html>

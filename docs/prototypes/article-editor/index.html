@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Редактор статей — два макета на выбор</title>
+    <link rel="stylesheet" href="shared/editor-chrome.css" />
+    <style>
+      .intro {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 32px 28px 0;
+      }
+
+      .intro h2 {
+        margin: 0 0 8px;
+        font-size: 24px;
+        color: var(--foreground);
+      }
+
+      .intro p {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--graphics10);
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 8px 28px 40px;
+      }
+
+      .card .panel-body p {
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .card ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--graphics10);
+      }
+
+      .card .actions {
+        justify-content: flex-start;
+      }
+
+      table.compare {
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto 60px;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: #fff;
+      }
+
+      table.compare th,
+      table.compare td {
+        padding: 10px 14px;
+        border: 1px solid var(--graphics7);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      table.compare th {
+        background: var(--secondaryGray);
+        font-weight: 600;
+      }
+
+      .compare-wrap {
+        padding: 0 28px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-head">
+      <h1>Редактор статей</h1>
+      <span class="variant-badge">Макеты для выбора</span>
+    </header>
+
+    <section class="intro">
+      <h2>Два варианта редактора — выберите тот, в котором удобнее писать</h2>
+      <p>
+        Оба макета открываются прямо в браузере, ничего устанавливать не нужно. В обоих —
+        оформление сайта и одна и та же демонстрационная статья, чтобы сравнение было честным.
+        Главное отличие — способ набора текста; формат хранения статьи (<code>.md</code>) в обоих
+        вариантах одинаковый.
+      </p>
+      <p>
+        Попробуйте в каждом варианте: изменить заголовок, добавить список, вставить таблицу и
+        картинку, переключить превью в «Мобильный». Затем скажите, какой вариант делать
+        по-настоящему.
+      </p>
+    </section>
+
+    <div class="cards">
+      <section class="panel card">
+        <div class="panel-head">Вариант A · Markdown с панелью форматирования</div>
+        <div class="panel-body">
+          <p>
+            Текст слева, готовая статья справа. Разметку можно не запоминать: кнопки на панели
+            вставляют её сами, но при желании её видно и можно править руками.
+          </p>
+          <ul>
+            <li>Полный контроль над разметкой, включая вставку видео и HTML.</li>
+            <li>Превью — точная копия страницы статьи.</li>
+            <li>Нужно привыкнуть к тому, что текст и результат — в разных колонках.</li>
+          </ul>
+        </div>
+        <div class="actions">
+          <a class="btn primary" href="variant-a-markdown.html">Открыть вариант A</a>
+        </div>
+      </section>
+
+      <section class="panel card">
+        <div class="panel-head">Вариант B · Визуальный редактор</div>
+        <div class="panel-body">
+          <p>
+            Вы пишете сразу в статье: как в документе. Отдельного превью нет — редактируемая
+            область и есть страница статьи.
+          </p>
+          <ul>
+            <li>Не нужно знать разметку вообще.</li>
+            <li>Markdown всё равно сохраняется — его можно посмотреть в свёрнутом блоке.</li>
+            <li>Сложные конструкции (сырой HTML, тонкая правка таблиц) делать неудобнее.</li>
+          </ul>
+        </div>
+        <div class="actions">
+          <a class="btn primary" href="variant-b-wysiwyg.html">Открыть вариант B</a>
+        </div>
+      </section>
+    </div>
+
+    <div class="compare-wrap">
+      <table class="compare">
+        <thead>
+          <tr>
+            <th>Что сравниваем</th>
+            <th>Вариант A</th>
+            <th>Вариант B</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Порог входа</td>
+            <td>Нужно понимать, что такое разметка (кнопки помогают)</td>
+            <td>Как в текстовом документе</td>
+          </tr>
+          <tr>
+            <td>Совпадение с сайтом</td>
+            <td>Превью справа — те же стили и ширина, что на <code>/articles</code></td>
+            <td>Редактирование прямо в макете статьи</td>
+          </tr>
+          <tr>
+            <td>Сложное оформление</td>
+            <td>Любое: HTML, видео, вложенные списки</td>
+            <td>Базовое; сложное придётся править в разметке</td>
+          </tr>
+          <tr>
+            <td>Старые статьи</td>
+            <td>Открываются и сохраняются без изменений</td>
+            <td>Открываются; при пересохранении разметка нормализуется</td>
+          </tr>
+          <tr>
+            <td>Формат хранения</td>
+            <td><code>.md</code></td>
+            <td><code>.md</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

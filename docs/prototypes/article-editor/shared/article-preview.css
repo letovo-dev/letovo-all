@@ -1,0 +1,209 @@
+/**
+ * Геометрия и типографика опубликованной статьи.
+ *
+ * Правила перенесены 1-в-1 из продовых стилей
+ * frontend/src/pages_fsd/articles/Articles.module.scss (.wrap, .mdContent,
+ * .secretLink, .downloadLink, .tableWrapper).
+ *
+ * Смысл макета: preview в редакторе использует ровно эти же правила и ровно ту же
+ * ширину контейнера, что и страница /articles, — значит preview совпадает с
+ * тем, что увидит читатель. В реальной реализации этот файл должен стать
+ * общим `article-content` слоем, который импортируют и /articles, и редактор.
+ */
+
+/* --- Контейнер статьи (.wrap на /articles) --- */
+.article-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  margin: 0 auto;
+  overflow: visible;
+
+  /* Мобильная геометрия — как на /articles до 961px */
+  width: min(390px, 100%);
+  padding-right: 25px;
+  padding-bottom: 55px;
+}
+
+.article-shell.is-desktop {
+  width: 519px;
+  padding-right: 0;
+  padding-bottom: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 35px;
+  background: transparent;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.article-shell.is-desktop::-webkit-scrollbar {
+  display: none;
+}
+
+/* На /articles панель статьи — область фиксированной высоты со своим скроллом. */
+.article-shell.is-scroll-panel.is-desktop {
+  height: calc(100vh - 190px);
+}
+
+/* --- Содержимое статьи (.mdContent) --- */
+.mdContent {
+  line-height: 1.6;
+  font-size: 16px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto 30px;
+  padding: 15px 35px 0;
+  background: #fff;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.mdContent h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.mdContent p {
+  margin: 10px 0;
+  color: #555;
+}
+
+/* Картинки уходят «в край» статьи — на 35px за паддинги контейнера */
+.mdContent img {
+  display: block;
+  width: calc(100% + 70px);
+  max-width: calc(100% + 70px);
+  height: auto;
+  margin: 0 -35px;
+  border-radius: 0;
+  transition: opacity 0.5s ease-in-out;
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 2;
+  cursor: zoom-in; /* на проде обёрнуто в ImageLightbox */
+}
+
+.mdContent video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 10px 0;
+  border-radius: 8px;
+  transition: opacity 0.5s ease-in-out;
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.mdContent a {
+  color: #1677ff;
+  text-decoration: underline;
+  pointer-events: auto;
+}
+
+.mdContent a:hover {
+  color: #0958d9;
+  text-decoration: underline;
+}
+
+.mdContent .secretLink,
+.mdContent .secretLink:hover {
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+}
+
+.mdContent .downloadLink {
+  color: #1677ff;
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mdContent .downloadLink::before {
+  content: '\1F4E5';
+  font-size: 0.9em;
+}
+
+.mdContent .tableWrapper {
+  max-width: 100%;
+  margin: 16px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mdContent table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #d9d9d9;
+}
+
+.mdContent th,
+.mdContent td {
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  text-align: left;
+  vertical-align: top;
+}
+
+.mdContent th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+/* Элементы, которых нет в проде явно, но которые встречаются в статьях */
+.mdContent blockquote {
+  margin: 16px 0;
+  padding: 8px 0 8px 16px;
+  border-left: 3px solid var(--orange);
+  color: #555;
+  font-style: italic;
+}
+
+.mdContent pre {
+  margin: 16px 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #f5f5f5;
+  font-size: 13px;
+}
+
+.mdContent code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #f0f0f0;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.mdContent pre code {
+  padding: 0;
+  background: none;
+}
+
+.mdContent ul,
+.mdContent ol {
+  margin: 10px 0;
+  padding-left: 22px;
+  color: #555;
+}
+
+.mdContent li {
+  margin: 4px 0;
+}
+
+.mdContent hr {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid var(--graphics8);
+}

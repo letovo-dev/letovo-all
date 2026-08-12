@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вариант B — Визуальный редактор статьи (макет)</title>
+    <link rel="stylesheet" href="shared/editor-chrome.css" />
+    <link rel="stylesheet" href="shared/article-preview.css" />
+    <style>
+      /* Область редактирования — это и есть статья: те же стили, что на /articles. */
+      .wysiwyg-frame {
+        display: flex;
+        justify-content: center;
+        padding: 20px 0;
+        background: var(--secondaryGray);
+      }
+
+      .wysiwyg [contenteditable] {
+        min-height: 520px;
+        outline: none;
+      }
+
+      .wysiwyg [contenteditable]:focus-visible {
+        box-shadow: inset 0 0 0 2px rgba(251, 71, 36, 0.25);
+      }
+
+      .wysiwyg [contenteditable] img {
+        cursor: default;
+      }
+
+      /* Видео внутри редактируемой области не должно перехватывать клики курсора. */
+      .wysiwyg [contenteditable] video {
+        pointer-events: auto;
+      }
+
+      .storage-note {
+        font-size: 12px;
+        color: var(--grey);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-head">
+      <h1>Редактор статьи</h1>
+      <span class="variant-badge">Вариант B · Визуальный</span>
+      <span class="spacer"></span>
+      <a class="back-link" href="index.html">← к сравнению вариантов</a>
+    </header>
+
+    <main class="editor-layout">
+      <div>
+        <section class="panel" style="margin-bottom: 20px">
+          <div class="panel-head">Параметры статьи</div>
+          <div class="panel-body">
+            <div class="meta-grid">
+              <div class="field">
+                <label for="b-title">Название статьи</label>
+                <input id="b-title" type="text" maxlength="200" />
+              </div>
+              <div class="field">
+                <label for="b-category">Категория</label>
+                <select id="b-category">
+                  <option>Учебный процесс</option>
+                  <option>Новости</option>
+                  <option>Инструкции</option>
+                  <option>Правила</option>
+                </select>
+              </div>
+              <div class="field">
+                <label id="b-type-label">Тип статьи</label>
+                <div class="radio-row" role="radiogroup" aria-labelledby="b-type-label">
+                  <label><input type="radio" name="b-secret" value="f" checked /> Статья</label>
+                  <label><input type="radio" name="b-secret" value="t" /> Тайна</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel wysiwyg">
+          <div class="panel-head">
+            Текст статьи
+            <span class="hint">Пишите прямо в статье — разметку набирать не нужно</span>
+          </div>
+
+          <div class="toolbar" id="b-toolbar" role="toolbar" aria-label="Форматирование">
+            <button type="button" data-cmd="formatBlock" data-value="h1" title="Заголовок 1">H1</button>
+            <button type="button" data-cmd="formatBlock" data-value="h2" title="Заголовок 2">H2</button>
+            <button type="button" data-cmd="formatBlock" data-value="h3" title="Заголовок 3">H3</button>
+            <button type="button" data-cmd="formatBlock" data-value="p" title="Обычный текст">Текст</button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="bold" title="Жирный (Ctrl+B)"><b>Ж</b></button>
+            <button type="button" data-cmd="italic" title="Курсив (Ctrl+I)"><i>К</i></button>
+            <button type="button" data-cmd="strikeThrough" title="Зачёркнутый"><s>З</s></button>
+            <span class="sep"></span>
+            <button type="button" data-cmd="insertUnorderedList" title="Маркированный список">• Список</button>
+            <button type="button" data-cmd="insertOrderedList" title="Нумерованный список">1. Список</button>
+            <button type="button" data-cmd="formatBlock" data-value="blockquote" title="Цитата">❝</button>
+            <button type="button" data-action="table" title="Таблица">Таблица</button>
+            <span class="sep"></span>
+            <button type="button" data-action="link" title="Ссылка">Ссылка</button>
+            <button type="button" data-action="image" title="Картинка">Картинка</button>
+            <button type="button" data-action="video" title="Видео">Видео</button>
+            <button type="button" data-cmd="removeFormat" title="Убрать форматирование">Очистить</button>
+          </div>
+
+          <div class="wysiwyg-frame">
+            <div class="article-shell is-scroll-panel is-desktop" id="b-shell">
+              <div
+                class="mdContent"
+                id="b-editable"
+                contenteditable="true"
+                role="textbox"
+                aria-multiline="true"
+                aria-label="Текст статьи"
+                spellcheck="true"
+              ></div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn primary">Сохранить и опубликовать</button>
+            <button type="button" class="btn" id="b-desktop">Десктоп</button>
+            <button type="button" class="btn" id="b-mobile">Мобильный</button>
+            <span class="note">Макет: кнопки ничего не отправляют на сервер.</span>
+          </div>
+
+          <div class="panel-body">
+            <p class="callout">
+              Редактируемая область — это и есть страница статьи: та же ширина, те же шрифты и
+              отступы, что на <code>/articles</code>. Отдельного превью нет, потому что вы уже
+              видите результат.
+            </p>
+            <details class="source-dump">
+              <summary>Показать Markdown, который уйдёт в файл статьи</summary>
+              <pre id="b-markdown"></pre>
+            </details>
+            <p class="storage-note">
+              Формат хранения не меняется: статья по-прежнему сохраняется как <code>.md</code>,
+              поэтому старые статьи открываются, а новые остаются совместимыми с текущим API.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <div class="preview-column">
+        <div class="preview-toolbar">
+          <strong>Что изменится для редактора</strong>
+        </div>
+        <div class="panel" style="max-width: 519px">
+          <div class="panel-body">
+            <p style="margin-top: 0; font-size: 14px; line-height: 1.6">
+              <strong>Плюсы.</strong> Не нужно знать разметку: выделил текст — нажал кнопку.
+              Результат виден сразу и точно совпадает с сайтом.
+            </p>
+            <p style="font-size: 14px; line-height: 1.6">
+              <strong>Ограничения.</strong> Сложные конструкции (вставка сырого HTML, тонкая
+              правка таблицы) в визуальном режиме делать неудобнее, чем текстом. Копирование из
+              Word может приносить лишнее оформление — его придётся вычищать кнопкой «Очистить».
+            </p>
+            <p style="font-size: 14px; line-height: 1.6; margin-bottom: 0">
+              <strong>Что важно проверить.</strong> Вставьте текст из Word или Google Docs,
+              попробуйте список внутри списка, добавьте картинку и таблицу — и посмотрите в
+              «Показать Markdown», что сохранится в файл.
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="shared/markdown.js"></script>
+    <script src="shared/sample-article.js"></script>
+    <script>
+      (function () {
+        var editable = document.getElementById('b-editable');
+        var shell = document.getElementById('b-shell');
+        var dump = document.getElementById('b-markdown');
+        var titleInput = document.getElementById('b-title');
+
+        titleInput.value = window.SAMPLE_ARTICLE.title;
+        // Стартуем с того же .md-фикстуры: доказывает, что существующие статьи открываются.
+        editable.innerHTML = window.ArticleMarkdown.render(window.SAMPLE_ARTICLE.markdown);
+
+        function syncMarkdown() {
+          dump.textContent = window.ArticleMarkdown.toMarkdown(editable);
+        }
+
+        editable.addEventListener('input', syncMarkdown);
+        syncMarkdown();
+
+        function exec(command, value) {
+          editable.focus();
+          document.execCommand(command, false, value);
+          syncMarkdown();
+        }
+
+        function insertHtml(html) {
+          editable.focus();
+          document.execCommand('insertHTML', false, html);
+          syncMarkdown();
+        }
+
+        var ACTIONS = {
+          link: function () {
+            var url = prompt('Адрес ссылки', 'https://');
+            if (url) exec('createLink', url);
+          },
+          image: function () {
+            var url = prompt('Адрес картинки (сначала загрузите файл в разделе «Файлы»)', 'https://');
+            if (url) insertHtml('<img src="' + url + '" alt="Изображение статьи">');
+          },
+          video: function () {
+            var url = prompt('Адрес видео (.mp4)', 'https://');
+            if (url) {
+              insertHtml(
+                '<video controls playsinline width="100%" style="max-width:800px;height:auto" src="' +
+                  url +
+                  '" aria-label="Video"></video><p><br></p>',
+              );
+            }
+          },
+          table: function () {
+            insertHtml(
+              '<div class="tableWrapper"><table><thead><tr><th>Заголовок</th><th>Заголовок</th></tr></thead>' +
+                '<tbody><tr><td>Ячейка</td><td>Ячейка</td></tr></tbody></table></div><p><br></p>',
+            );
+          },
+        };
+
+        document.getElementById('b-toolbar').addEventListener('click', function (event) {
+          var button = event.target.closest('button');
+          if (!button) return;
+          if (button.dataset.action) {
+            ACTIONS[button.dataset.action]();
+          } else if (button.dataset.cmd) {
+            exec(button.dataset.cmd, button.dataset.value);
+          }
+        });
+
+        // Вставка из Word/Docs: берём только текст, чтобы не тащить чужие стили.
+        editable.addEventListener('paste', function (event) {
+          var text = (event.clipboardData || window.clipboardData).getData('text/plain');
+          if (text) {
+            event.preventDefault();
+            document.execCommand('insertText', false, text);
+            syncMarkdown();
+          }
+        });
+
+        document.getElementById('b-desktop').addEventListener('click', function () {
+          shell.classList.add('is-desktop');
+        });
+        document.getElementById('b-mobile').addEventListener('click', function () {
+          shell.classList.remove('is-desktop');
+        });
+      })();
+    </script>
+  </body>
+</html>
