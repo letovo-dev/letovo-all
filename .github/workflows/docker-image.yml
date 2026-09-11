@@ -50,11 +50,40 @@ jobs:
           ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
           persist-credentials: false
 
+      - name: Install Python test dependencies
+        run: python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
+
+      - name: Verify backend builder contract
+        run: python3 -m pytest -q test/test_issue215_backend_builder_contract.py
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Build backend builder for review
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile.builder
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: letovo-backend-builder:review-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Inspect backend builder dependencies
+        run: |
+          docker run --rm letovo-backend-builder:review-${{ github.sha }} sh -ec '
+            test -f /opt/letovo/cmake/jwt-cpp-config.cmake
+            test -f /opt/letovo/lib/cmake/llhttp/llhttp-config.cmake
+            test -f /opt/letovo/lib/cmake/opentelemetry-cpp/opentelemetry-cpp-config.cmake
+            test -f /opt/letovo/share/cmake/nlohmann_json/nlohmann_jsonConfig.cmake
+            test -f /usr/include/boost/format.hpp
+            command -v ninja
+          '
 
       - name: Build backend image locally
         uses: docker/build-push-action@v5
@@ -84,7 +113,6 @@ jobs:
         env:
           LETOVO_POSTGRES_DSN: postgresql://postgres@127.0.0.1:5432/letovo_issue193
         run: |
-          python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
           python3 -m pytest -q test/test_issue193_department_payout_postgres.py test/test_issue179_media_order_postgres.py
 
       - name: Build registration backend image locally
