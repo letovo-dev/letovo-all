@@ -67,6 +67,11 @@ def test_builder_is_published_only_by_trusted_main_workflow():
     assert "platforms: linux/amd64" in workflow
     assert "push: true" not in validate_job
     assert "push: true" in publish_job
+    assert "docker buildx imagetools inspect" in publish_job
+    assert "if: steps.existing.outputs.exists != 'true'" in publish_job
+    assert "manifest unknown|not found" in publish_job
+    assert "EXISTING_DIGEST" in publish_job
+    assert "BUILT_DIGEST" in publish_job
     assert "sha256sum src/backend-builder.env src/Dockerfile.builder | sha256sum" in workflow
     assert "ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ steps.lock.outputs.revision }}" in workflow
     assert "builder_image=" in workflow

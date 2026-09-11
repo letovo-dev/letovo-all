@@ -1,5 +1,5 @@
 # ------ Stage 1: build -------
-ARG BUILDER_IMAGE=ghcr.io/letovo-dev/letovo-backend-builder@sha256:2e504e6ae88819621fa055128f0e83a15ea47be27fd66febbb53ed4e784cbd2c
+ARG BUILDER_IMAGE=ghcr.io/letovo-dev/letovo-backend-builder@sha256:840cdc0a3236c763de27e3cc055321c56b546a1190829a58b1ea7d7ce6a49794
 FROM ${BUILDER_IMAGE} AS builder
 
 WORKDIR /app
