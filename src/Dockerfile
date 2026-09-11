@@ -1,29 +1,6 @@
 # ------ Stage 1: build -------
-FROM ubuntu:24.04 AS builder
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Устанавливаем инструменты и dev-пакеты для сборки
-RUN apt update && apt install -y \
-        build-essential \
-        cmake \
-        pkg-config \
-        git \
-        wget \
-        curl \
-        libcurl4-openssl-dev \
-        libfmt-dev \
-        librestinio-dev \
-        libasio-dev \
-        rapidjson-dev \
-        libprotobuf-dev \
-        protobuf-compiler \
-        libpqxx-dev \
-        libpq-dev \
-        libssl-dev \
-        libqrencode-dev \
-        libpng-dev \
-    && rm -rf /var/lib/apt/lists/*
+ARG BUILDER_IMAGE=ghcr.io/letovo-dev/letovo-backend-builder@sha256:2e504e6ae88819621fa055128f0e83a15ea47be27fd66febbb53ed4e784cbd2c
+FROM ${BUILDER_IMAGE} AS builder
 
 WORKDIR /app
 COPY . .
@@ -39,7 +16,8 @@ ENV MAIN_FILE=${MAIN_FILE}
 ENV BUILD_FILES=${BUILD_FILES}
 
 # Собираем проект
-RUN mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j"$(nproc)"
+RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/letovo \
+    && cmake --build build --parallel "$(nproc)"
 RUN cp /app/build/server_starter /app/server_starter && strip /app/server_starter || true
 
 # ------ Stage 2: runtime -------
