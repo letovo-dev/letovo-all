@@ -18,7 +18,7 @@
 - Pre-start unavailable/busy may fall back once; any failure after `LETOVO_REMOTE_STARTED` must fail closed.
 - Remote execution timeout is 1800 seconds; controller timeout is 60 minutes; SSH readiness timeout is at most 15 seconds.
 - Mac receives no GHCR write token, GitHub token, submodule key, deploy key, or production secret.
-- Source archives contain regular files/directories only and never `.git`, `certs`, absolute paths, `..`, symlinks, devices, FIFOs, or sockets.
+- Source archives and extraction contain regular files/directories only and never `.git`, `certs`, absolute paths, `..`, symlinks, devices, FIFOs, or sockets. Packing validates and omits only the exact four tracked `src/configs` runtime links to `/mnt/server-configs`; the build recreates them in the per-run source tree.
 - Expected images are exactly backend, registration, frontend, and uploader; profile is exactly `candidate` or `production`.
 - Publisher verifies repository, run ID, run attempt, source SHA, frontend gitlink, profile, platform, archive checksum, local image ID, and complete image set before push.
 - Publisher scripts contain no `docker build`/`docker buildx build`; build scripts contain no GHCR login or push.
@@ -44,9 +44,9 @@
 
 - [ ] Write failing pytest cases proving archive allowlisting/path rejection, complete manifest validation, checksum/SHA/profile/platform/run/image-set rejection, and the no-build-in-publisher/no-push-in-builder invariant.
 - [ ] Run `python3 -m pytest -q -p no:cacheprovider test/test_issue214_ci_bundle.py`; verify failures are caused by missing scripts.
-- [ ] Implement `source_archive.py` with `argparse`, `pathlib`, and `tarfile`; include only `src`, `frontend`, `test`, `scripts/export_backend_builder.sh`, and the migration files named in the spec, rejecting every symlink and non-regular entry before archive creation and extraction.
+- [ ] Implement `source_archive.py` with `argparse`, `pathlib`, and `tarfile`; include only `src`, `frontend`, `test`, `scripts/export_backend_builder.sh`, and the migration files named in the spec. Validate and omit only the exact four tracked runtime config symlinks; reject any other symlink or target mismatch and every non-regular archive/extraction entry.
 - [ ] Implement `image_manifest.py` with `json`, `hashlib`, and `subprocess`; require schema version 1, exact metadata fields, four unique image records, lowercase SHA-256 values, `linux/amd64`, and `docker image inspect` ID/architecture equality after load.
-- [ ] Implement `build-bundle.sh`: validate metadata; run sanitizer in the pinned builder, PostgreSQL 16 regressions in a unique container/database, existing frontend checks/build/route scan, build each profile image once with `--platform linux/amd64 --load`, inspect it, `docker save | zstd -1`, create reports/manifest, and never push.
+- [ ] Implement `build-bundle.sh`: validate metadata; recreate the four runtime config symlinks in the per-run source tree; run sanitizer in the pinned builder, PostgreSQL 16 regressions in a unique container/database, existing frontend checks/build/route scan, build each profile image once with `--platform linux/amd64 --load`, inspect it, `docker save | zstd -1`, create reports/manifest, and never push.
 - [ ] Implement `publish-bundle.sh`: run static validation, verify archive checksums, stream each archive through `zstd -dc | docker load`, verify image ID/architecture, tag only the expected candidate/SHA or main/release tags, push, inspect registry digest, and append `registry-digests.json`; never build.
 - [ ] Run the focused pytest file and `bash -n scripts/ci/build-bundle.sh scripts/ci/publish-bundle.sh`; expect pass.
 - [ ] Commit with message `ci: add verified build artifact contract`.
@@ -135,4 +135,3 @@
 - [ ] Run manual pilot unavailable and busy modes; verify one hosted fallback. Run injected post-start failure; verify red with no fallback. Verify wrong checksum/SHA/platform/image-set tests remain red.
 - [ ] Read back final repository workflow/variable/secret names, bastion loopback listener, Mac launchd state, no GHCR credential inside disposable worker, and no leftover run VM/state.
 - [ ] Post timings, artifact sizes, fault evidence, PRs, and rollback command to issue #214 and close it only after all evidence is green.
-

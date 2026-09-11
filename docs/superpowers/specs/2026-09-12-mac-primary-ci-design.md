@@ -19,8 +19,12 @@ disabled, offline, or busy falls back once to the same hosted build path.
   fetches the public frontend repository from the trusted HTTPS URL at the
   exact gitlink. `certs` is never initialized or transferred.
 - Only allowlisted regular files below `src`, `frontend`, `test`, selected
-  migration files, and trusted CI inputs enter the source archive. Symlinks,
-  special files, absolute paths, `..`, `.git`, and secret material are rejected.
+  migration files, and trusted CI inputs enter the source archive. Archive and
+  extraction never contain symlinks. Packing validates and omits only the four
+  exact `src/configs/{ServerConfig,SqlConnectionConfig,PagesConfig,MarketConfig}.json`
+  links to `/mnt/server-configs/<same>.json`; any other symlink or target
+  mismatch is rejected, as are special files, absolute paths, `..`, `.git`, and
+  secret material.
 - Untrusted PR source executes only in a disposable Lima clone. The clone gets
   no GitHub, GHCR, deployment, SSH, or production secret. It is deleted after
   every run.
@@ -60,7 +64,8 @@ enabled. GitHub pins both bastion and Mac SSH host keys.
 
 The trusted `build-bundle.sh` is shared by Mac and hosted fallback. It:
 
-1. validates request metadata and the pinned backend builder digest;
+1. validates request metadata and the pinned backend builder digest, then
+   recreates the four validated runtime config links in the per-run source tree;
 2. runs the existing sanitizer and PostgreSQL regressions;
 3. runs frontend `npm ci`, the four existing frontend checks, production-style
    build, and forbidden-route scan;
@@ -104,4 +109,3 @@ controller. Missing or skipped work is an error, not success.
 - The Mac receives no GHCR write token or production/deployment secret.
 - A real normal Mac run, real hosted fallback, and executable fault-contract
   tests are recorded in the workflow summary and issue.
-
