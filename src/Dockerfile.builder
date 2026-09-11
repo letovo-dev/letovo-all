@@ -5,10 +5,13 @@ FROM ${BASE_IMAGE}
 ENV DEBIAN_FRONTEND=noninteractive
 COPY backend-builder.env /opt/letovo/backend-builder.env
 
+# The minimal base has no CA bundle yet; APT still verifies the Ubuntu-signed
+# snapshot metadata and package hashes before installing the pinned CA package.
 RUN set -eux; \
     . /opt/letovo/backend-builder.env; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends ${APT_PACKAGES}; \
+    printf 'Types: deb\nURIs: http://snapshot.ubuntu.com/ubuntu/%s\nSuites: noble noble-updates noble-security\nComponents: main universe\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\nCheck-Valid-Until: no\n' "$APT_SNAPSHOT" > /etc/apt/sources.list.d/ubuntu.sources; \
+    apt-get -o Acquire::https::Verify-Peer=false update; \
+    apt-get -o Acquire::https::Verify-Peer=false install -y --no-install-recommends ${APT_PACKAGES}; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
