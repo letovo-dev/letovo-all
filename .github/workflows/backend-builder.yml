@@ -96,7 +96,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Reuse published dependency lock
+        id: existing
+        env:
+          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ steps.lock.outputs.revision }}
+        run: |
+          set -euo pipefail
+          if output="$(docker buildx imagetools inspect "$IMAGE_TAG" 2>&1)"; then
+            digest="$(awk '$1 == "Digest:" { print $2; exit }' <<< "$output")"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          elif grep -qiE 'manifest unknown|not found' <<< "$output"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            printf '%s\n' "$output" >&2
+            exit 1
+          fi
+
       - name: Build and publish backend builder
+        if: steps.existing.outputs.exists != 'true'
         id: build
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
@@ -110,9 +129,14 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Record immutable builder identity
+        env:
+          EXISTING_DIGEST: ${{ steps.existing.outputs.digest }}
+          BUILT_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
+          digest="${EXISTING_DIGEST:-$BUILT_DIGEST}"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
           {
-            echo "builder_image=ghcr.io/${{ github.repository_owner }}/letovo-backend-builder@${{ steps.build.outputs.digest }}"
+            echo "builder_image=ghcr.io/${{ github.repository_owner }}/letovo-backend-builder@$digest"
             echo "builder_lock_revision=${{ steps.lock.outputs.revision }}"
             echo "dependency_manifest_revision=${{ steps.lock.outputs.manifest_revision }}"
           } | tee -a "$GITHUB_STEP_SUMMARY"
