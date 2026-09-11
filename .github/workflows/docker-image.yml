@@ -50,6 +50,12 @@ jobs:
           ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
           persist-credentials: false
 
+      - name: Install Python test dependencies
+        run: python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
+
+      - name: Verify backend builder contract
+        run: python3 -m pytest -q test/test_issue215_backend_builder_contract.py
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -84,7 +90,6 @@ jobs:
         env:
           LETOVO_POSTGRES_DSN: postgresql://postgres@127.0.0.1:5432/letovo_issue193
         run: |
-          python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
           python3 -m pytest -q test/test_issue193_department_payout_postgres.py test/test_issue179_media_order_postgres.py
 
       - name: Build registration backend image locally

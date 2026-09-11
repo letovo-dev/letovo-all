@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "src" / "backend-builder.env"
 DOCKERFILE = ROOT / "src" / "Dockerfile.builder"
 WORKFLOW = ROOT / ".github" / "workflows" / "backend-builder.yml"
+BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "docker-image.yml"
 
 
 def _read(path: Path) -> str:
@@ -52,7 +53,15 @@ def test_builder_is_published_only_by_trusted_main_workflow():
     assert "file: ./src/Dockerfile.builder" in workflow
     assert "platforms: linux/amd64" in workflow
     assert "push: true" in workflow
-    assert "sha256sum src/backend-builder.env" in workflow
+    assert "sha256sum src/backend-builder.env src/Dockerfile.builder | sha256sum" in workflow
     assert "ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ steps.lock.outputs.revision }}" in workflow
     assert "builder_image=" in workflow
     assert "dependency_manifest_revision=" in workflow
+
+
+def test_builder_contract_runs_before_pr_backend_build():
+    workflow = _read(BUILD_WORKFLOW)
+
+    contract = "python3 -m pytest -q test/test_issue215_backend_builder_contract.py"
+    assert contract in workflow
+    assert workflow.index(contract) < workflow.index("Build backend image locally")

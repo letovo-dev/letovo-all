@@ -25,10 +25,13 @@ jobs:
         id: lock
         run: |
           set -euo pipefail
-          revision="$(sha256sum src/backend-builder.env | cut -d ' ' -f 1)"
+          manifest_revision="$(sha256sum src/backend-builder.env | cut -d ' ' -f 1)"
+          revision="$(sha256sum src/backend-builder.env src/Dockerfile.builder | sha256sum | cut -d ' ' -f 1)"
           base_image="$(sed -n 's/^BASE_IMAGE=//p' src/backend-builder.env)"
+          test -n "$manifest_revision"
           test -n "$revision"
           test -n "$base_image"
+          echo "manifest_revision=$manifest_revision" >> "$GITHUB_OUTPUT"
           echo "revision=$revision" >> "$GITHUB_OUTPUT"
           echo "base_image=$base_image" >> "$GITHUB_OUTPUT"
 
@@ -62,5 +65,6 @@ jobs:
         run: |
           {
             echo "builder_image=ghcr.io/${{ github.repository_owner }}/letovo-backend-builder@${{ steps.build.outputs.digest }}"
-            echo "dependency_manifest_revision=${{ steps.lock.outputs.revision }}"
+            echo "builder_lock_revision=${{ steps.lock.outputs.revision }}"
+            echo "dependency_manifest_revision=${{ steps.lock.outputs.manifest_revision }}"
           } | tee -a "$GITHUB_STEP_SUMMARY"
