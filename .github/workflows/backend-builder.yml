@@ -1,0 +1,66 @@
+name: publish backend builder
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - src/backend-builder.env
+      - src/Dockerfile.builder
+      - .github/workflows/backend-builder.yml
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve dependency lock
+        id: lock
+        run: |
+          set -euo pipefail
+          revision="$(sha256sum src/backend-builder.env | cut -d ' ' -f 1)"
+          base_image="$(sed -n 's/^BASE_IMAGE=//p' src/backend-builder.env)"
+          test -n "$revision"
+          test -n "$base_image"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+          echo "base_image=$base_image" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish backend builder
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile.builder
+          platforms: linux/amd64
+          push: true
+          build-args: BASE_IMAGE=${{ steps.lock.outputs.base_image }}
+          tags: ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ steps.lock.outputs.revision }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Record immutable builder identity
+        run: |
+          {
+            echo "builder_image=ghcr.io/${{ github.repository_owner }}/letovo-backend-builder@${{ steps.build.outputs.digest }}"
+            echo "dependency_manifest_revision=${{ steps.lock.outputs.revision }}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
