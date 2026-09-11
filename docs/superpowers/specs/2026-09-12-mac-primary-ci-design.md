@@ -39,7 +39,7 @@ disabled, offline, or busy falls back once to the same hosted build path.
 - `MAC_CI_ENABLED=false` explicitly selects hosted execution. Any other value
   selects Mac first.
 - A single forced-command SSH session transfers the source archive, acquires a
-  non-blocking `flock`, clones the golden Lima template, runs the trusted worker,
+  non-blocking native macOS `lockf`, clones the golden Lima template, runs the trusted worker,
   and returns the result archive.
 - Connect/readiness is bounded to 15 seconds. Remote execution is bounded to 30
   minutes and the controller job to 60 minutes.
