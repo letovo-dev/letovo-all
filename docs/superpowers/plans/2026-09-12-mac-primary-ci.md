@@ -75,6 +75,19 @@
 
 ### Task 3: Mac-first PR and main workflows
 
+Stage this task because `workflow_run` loads its controller from the default
+branch. Task 3a first adds `mac-ci-pr-controller.yml`, the build-only pilot,
+status reporter and new contract tests; keep `docker-image.yml` and its direct
+PR checks unchanged and do not add `pr-ci-request.yml` yet. After Task 3a is
+merged, Task 3b adds the request trigger and switches the legacy PR/main build
+paths. In both workflows, the Mac job only packs/transfers source. Exit 75 gates
+a separate `packages: read` builder-fetch job and a hosted build job with only
+`contents: read`, no SSH secrets and no prior registry credentials. Fetch exports
+the pinned image with trusted image-ID/archive-SHA outputs; hosted verifies and
+loads it under a fixed run-local tag because Docker archives lose RepoDigests.
+The request/manifest retain the pinned digest. The pilot has no package write
+permission. A real disabled/offline hosted pilot must pass before Task 3b.
+
 **Files:**
 - Create: `.github/workflows/pr-ci-request.yml`
 - Create: `.github/workflows/mac-ci-pilot.yml`

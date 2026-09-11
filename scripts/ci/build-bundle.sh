@@ -75,6 +75,13 @@ if [ "${#resolved_builders[@]}" -ne 1 ] || [ "${resolved_builders[0]}" != "$expe
   exit 2
 fi
 builder_image="${resolved_builders[0]}"
+if [ -n "${LOCAL_BUILDER_REF:-}${LOCAL_BUILDER_IMAGE_ID:-}" ]; then
+  [ "${LOCAL_BUILDER_REF:-}" = "letovo-ci/backend-builder:${run_id}-${run_attempt}" ] || exit 2
+  [[ "${LOCAL_BUILDER_IMAGE_ID:-}" =~ ^sha256:[0-9a-f]{64}$ ]] || exit 2
+  [ "$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$LOCAL_BUILDER_REF")" = "$LOCAL_BUILDER_IMAGE_ID amd64 linux" ] || exit 2
+  # docker save/load loses RepoDigests; this verified local alias avoids a registry lookup.
+  builder_image="$LOCAL_BUILDER_REF"
+fi
 
 docker run --rm --platform linux/amd64 \
   --volume "$source_root:/work:ro" --workdir /work "$builder_image" \

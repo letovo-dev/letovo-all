@@ -594,6 +594,74 @@ def make_fake_build_source(tmp_path, request_data):
     return source
 
 
+@pytest.mark.parametrize("mutation", [None, "ref", "id"])
+def test_hosted_local_builder_override_is_fixed_and_identity_checked(tmp_path, mutation):
+    data = request()
+    request_path = tmp_path / "request.json"
+    write_request(request_path, data)
+    source = make_fake_build_source(tmp_path, data)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    install_fake_ci_tools(bin_dir)
+    docker = bin_dir / "docker"
+    original = docker.read_text()
+    docker.write_text(original.replace('command=${1-}', '''if [ "$1 ${2-}" = "image inspect" ] && [ "${@: -1}" = "letovo-ci/backend-builder:123456-2" ]; then
+  printf 'sha256:%064d amd64 linux\\n' 7
+  exit 0
+fi
+command=${1-}'''))
+    env = os.environ | {"PATH": f"{bin_dir}:{os.environ['PATH']}", "OPS_LOG": str(tmp_path / "ops"), "LOCAL_BUILDER_REF": "letovo-ci/backend-builder:123456-2", "LOCAL_BUILDER_IMAGE_ID": f"sha256:{7:064d}"}
+    if mutation == "ref":
+        env["LOCAL_BUILDER_REF"] = "attacker/evil:latest"
+    elif mutation == "id":
+        env["LOCAL_BUILDER_IMAGE_ID"] = f"sha256:{8:064d}"
+    result = run("bash", str(BUILD_BUNDLE), str(source), str(request_path), str(tmp_path / "bundle"), env=env)
+    operations = (tmp_path / "ops").read_text() if (tmp_path / "ops").exists() else ""
+    if mutation:
+        assert result.returncode != 0
+        assert "docker\trun\t" not in operations and "npm\t" not in operations
+    else:
+        assert result.returncode == 0, result.stderr
+        assert "BUILDER_IMAGE=letovo-ci/backend-builder:123456-2" in operations
+        manifest = json.loads((tmp_path / "bundle/manifest.json").read_text())
+        assert manifest["builder_image"] == data["builder_image"]
+        assert manifest["build_args"]["backend"]["BUILDER_IMAGE"] == data["builder_image"]
+
+
+@pytest.mark.parametrize("bomb", [False, True])
+def test_expanded_image_limit_before_docker_load(tmp_path, bomb):
+    bundle, request_path, env = make_bundle(tmp_path)
+    install_fake_ci_tools(tmp_path / "bin")
+    # Use real zstd to exercise a highly compressed expansion, not a fake stream.
+    (tmp_path / "bin/zstd").unlink()
+    env |= {"OPS_LOG": str(tmp_path / "ops"), "CI_IMAGE_EXPANDED_LIMIT": "1024"}
+    for path in (bundle / "images").iterdir():
+        content = b"0" * (1024 * 1024 if bomb else 16)
+        path.write_bytes(subprocess.check_output(["zstd", "-q", "-c"], input=content))
+    assert run("python3", str(IMAGE_MANIFEST), "create", str(request_path), str(bundle), env=env).returncode == 0
+    result = run("bash", str(PUBLISH_BUNDLE), str(bundle), str(request_path), "candidate", env=env)
+    operations = (tmp_path / "ops").read_text() if (tmp_path / "ops").exists() else ""
+    if bomb:
+        assert result.returncode != 0
+        assert "docker\tload" not in operations and "docker\tpush" not in operations
+    else:
+        assert result.returncode == 0, result.stderr
+
+
+def test_publisher_load_phase_finishes_before_auth_and_push_phase(tmp_path):
+    bundle, request_path, env = make_bundle(tmp_path)
+    install_fake_ci_tools(tmp_path / "bin")
+    env |= {"OPS_LOG": str(tmp_path / "ops")}
+    result = run("bash", str(PUBLISH_BUNDLE), str(bundle), str(request_path), "candidate", "--load-only", env=env)
+    assert result.returncode == 0, result.stderr
+    before = (tmp_path / "ops").read_text()
+    assert before.count("docker\tload\n") == 4 and "docker\tpush" not in before
+    result = run("bash", str(PUBLISH_BUNDLE), str(bundle), str(request_path), "candidate", "--publish-only", env=env)
+    assert result.returncode == 0, result.stderr
+    after = (tmp_path / "ops").read_text()[len(before):]
+    assert "docker\tload" not in after and after.count("docker\tpush\t") == 4
+
+
 @pytest.mark.parametrize("profile", ["candidate", "production"])
 def test_builder_separates_production_route_scan_from_profile_image_args(tmp_path, profile):
     request_data = request(profile)

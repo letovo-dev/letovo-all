@@ -80,6 +80,26 @@ publisher. A release uses a frozen main SHA and production profile.
 
 ## Workflows
 
+Deployment is staged: Task 3a first lands the separate trusted
+`mac-ci-pr-controller.yml` on the default branch, together with the pilot and
+status reporter. The existing direct PR checks in `docker-image.yml` stay in
+place. Task 3b adds `pr-ci-request.yml` and switches PR/main execution only after
+the controller is merged. Both workflows isolate the SSH attempt, credentialed
+private-builder fetch and unprivileged hosted build into separate jobs. Only
+the fetch job may use `packages: read`; candidate execution receives neither
+secrets nor package permissions. Exact source/builder artifacts carry trusted
+SHA outputs; the imported builder's ID and linux/amd64 platform must match
+before a fixed local tag is used, retaining the digest in request/manifest.
+Publisher bounds each expanded image archive at 2 GiB before Docker loads it,
+and logs into GHCR only after all four loaded identities are verified. The
+pilot has no package write permission; a real disabled/offline hosted build
+must pass before the Task 3b switch.
+
+The privileged candidate deploy takes migration SQL only from the frozen trusted
+controller checkout, never from PR source. It requires
+`LETOVO_E2E_DEPLOY_KNOWN_HOSTS`; every deploy/restore SSH and SCP connection uses
+that mode-0600 pinned host file with strict checking and no runtime key scan.
+
 - `pr-ci-request.yml`: unprivileged PR completion signal only.
 - `docker-image.yml`: trusted PR controller via `workflow_run`, direct main
   controller via `push`, Mac-first build with hosted fallback, status contexts,

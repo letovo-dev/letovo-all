@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -ne 3 ]; then
-  echo "usage: publish-bundle.sh BUNDLE_DIR EXPECTED_JSON TAG_MODE" >&2
+if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+  echo "usage: publish-bundle.sh BUNDLE_DIR EXPECTED_JSON TAG_MODE [--load-only|--publish-only]" >&2
   exit 2
 fi
 
@@ -10,6 +10,8 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 bundle_dir="$(cd "$1" && pwd -P)"
 expected_json="$(cd "$(dirname "$2")" && pwd -P)/$(basename "$2")"
 tag_mode="$3"
+phase="${4:-all}"
+case "$phase" in all|--load-only|--publish-only) ;; *) exit 2 ;; esac
 manifest="$bundle_dir/manifest.json"
 manifest_tool="$script_dir/image_manifest.py"
 
@@ -39,12 +41,20 @@ fi
 python3 "$manifest_tool" verify \
   "$manifest" "$expected_json" "$bundle_dir" --skip-image-inspect
 
-for name in backend registration frontend uploader; do
-  archive="$(python3 "$manifest_tool" image-field "$manifest" "$name" archive)"
-  zstd -dc -- "$bundle_dir/$archive" | docker load
-done
+if [ "$phase" != --publish-only ]; then
+  expanded="$(mktemp)"
+  trap 'rm -f "$expanded"' EXIT
+  for name in backend registration frontend uploader; do
+    archive="$(python3 "$manifest_tool" image-field "$manifest" "$name" archive)"
+    python3 "$script_dir/bounded_decompress.py" "$bundle_dir/$archive" "$expanded"
+    docker load < "$expanded"
+    rm -f "$expanded"
+  done
+  trap - EXIT
+fi
 
 python3 "$manifest_tool" verify "$manifest" "$expected_json" "$bundle_dir"
+[ "$phase" != --load-only ] || exit 0
 
 digest_file="$bundle_dir/registry-digests.json"
 digest_tmp="$bundle_dir/.registry-digests.json.tmp"
