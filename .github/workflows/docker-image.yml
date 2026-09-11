@@ -81,6 +81,7 @@ jobs:
             test -f /opt/letovo/lib/cmake/llhttp/llhttp-config.cmake
             test -f /opt/letovo/lib/cmake/opentelemetry-cpp/opentelemetry-cpp-config.cmake
             test -f /opt/letovo/share/cmake/nlohmann_json/nlohmann_jsonConfig.cmake
+            test -f /usr/include/boost/format.hpp
           '
 
       - name: Build backend image locally

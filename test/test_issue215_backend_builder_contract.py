@@ -19,6 +19,7 @@ def test_builder_manifest_pins_every_external_input():
     assert re.search(r"^BASE_IMAGE=ubuntu@sha256:[0-9a-f]{64}$", manifest, re.MULTILINE)
     assert re.search(r"^APT_SNAPSHOT=[0-9]{8}T[0-9]{6}Z$", manifest, re.MULTILINE)
     assert "build-essential=" in manifest
+    assert "libboost-dev=" in manifest
     assert "libpqxx-dev=" in manifest
     assert "libssl-dev=" in manifest
     assert re.search(r"^OPENTELEMETRY_CPP_COMMIT=[0-9a-f]{40}$", manifest, re.MULTILINE)
@@ -73,3 +74,4 @@ def test_builder_contract_runs_before_pr_backend_build():
     assert "file: ./src/Dockerfile.builder" in workflow
     assert "Inspect backend builder dependencies" in workflow
     assert "opentelemetry-cpp-config.cmake" in workflow
+    assert "boost/format.hpp" in workflow
