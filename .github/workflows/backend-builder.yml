@@ -1,6 +1,12 @@
 name: publish backend builder
 
 on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - src/backend-builder.env
+      - src/Dockerfile.builder
+      - .github/workflows/backend-builder.yml
   push:
     branches: ["main"]
     paths:
@@ -12,7 +18,49 @@ permissions:
   contents: read
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Resolve dependency lock
+        id: lock
+        run: echo "base_image=$(sed -n 's/^BASE_IMAGE=//p' src/backend-builder.env)" >> "$GITHUB_OUTPUT"
+
+      - name: Build backend builder for review
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile.builder
+          platforms: linux/amd64
+          load: true
+          push: false
+          build-args: BASE_IMAGE=${{ steps.lock.outputs.base_image }}
+          tags: letovo-backend-builder:review-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Inspect backend builder dependencies
+        run: |
+          docker run --rm letovo-backend-builder:review-${{ github.sha }} sh -ec '
+            test -f /opt/letovo/cmake/jwt-cpp-config.cmake
+            test -f /opt/letovo/lib/cmake/llhttp/llhttp-config.cmake
+            test -f /opt/letovo/lib/cmake/opentelemetry-cpp/opentelemetry-cpp-config.cmake
+            test -f /opt/letovo/share/cmake/nlohmann_json/nlohmann_jsonConfig.cmake
+            test -f /usr/include/boost/format.hpp
+            command -v ninja
+          '
+
   publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read

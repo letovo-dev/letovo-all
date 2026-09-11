@@ -29,39 +29,8 @@ else()
     find_package(restinio REQUIRED)
 endif()
 
-# ?
-include(FetchContent)
-
-fetchcontent_declare(jwt-cpp 
-    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
-    GIT_TAG 08bcf77a687fb06e34138e9e9fa12a4ecbe12332 # v0.7.0 release
-)
-
-set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "disable building examples" FORCE)
-fetchcontent_makeavailable(jwt-cpp)
-
-
-FetchContent_Declare(llhttp
-  URL "https://github.com/nodejs/llhttp/archive/refs/tags/release/v8.1.0.tar.gz")
-
-set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
-set(BUILD_STATIC_LIBS ON CACHE INTERNAL "")
-FetchContent_MakeAvailable(llhttp)
-
-set(WITH_OTLP_HTTP ON CACHE BOOL "enable OpenTelemetry OTLP HTTP exporter" FORCE)
-set(WITH_OTLP_GRPC OFF CACHE BOOL "disable OpenTelemetry OTLP gRPC exporter" FORCE)
-set(WITH_EXAMPLES OFF CACHE BOOL "disable OpenTelemetry examples" FORCE)
-set(WITH_FUNC_TESTS OFF CACHE BOOL "disable OpenTelemetry functional tests" FORCE)
-set(WITH_BENCHMARK OFF CACHE BOOL "disable OpenTelemetry benchmarks" FORCE)
-set(WITH_TESTING OFF CACHE BOOL "disable OpenTelemetry tests" FORCE)
-set(BUILD_TESTING OFF CACHE BOOL "disable dependency tests" FORCE)
-
-FetchContent_Declare(
-    opentelemetry-cpp
-    GIT_REPOSITORY https://github.com/open-telemetry/opentelemetry-cpp.git
-    GIT_TAG        v1.27.0
-)
-FetchContent_MakeAvailable(opentelemetry-cpp)
+find_package(jwt-cpp CONFIG REQUIRED)
+find_package(opentelemetry-cpp CONFIG REQUIRED)
 
 string(REPLACE " " ";" BUILD_FILES "$ENV{BUILD_FILES}")
 set(SOURCES "$ENV{MAIN_FILE};${BUILD_FILES}")

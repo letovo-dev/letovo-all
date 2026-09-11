@@ -142,6 +142,9 @@ jobs:
           ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
           persist-credentials: false
 
+      - name: Resolve pinned backend builder
+        run: bash scripts/export_backend_builder.sh
+
       - name: Resolve release images
         id: release
         env:
@@ -254,6 +257,7 @@ jobs:
           context: ./src
           push: true
           build-args: |
+            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
             MAIN_FILE=server.cpp
             TEST_FILE=test.cpp
             BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
@@ -268,6 +272,7 @@ jobs:
           context: ./src
           push: true
           build-args: |
+            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
             MAIN_FILE=registration_server.cpp
             TEST_FILE=test.cpp
             BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}

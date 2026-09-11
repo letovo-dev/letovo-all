@@ -82,7 +82,8 @@ def test_runtime_image_and_compose_limit_disk_pressure():
     dockerfile = read("src/Dockerfile")
     compose = read("docs/docker-compose.yaml")
 
-    assert "cmake -DCMAKE_BUILD_TYPE=Release .." in dockerfile
+    assert "-G Ninja -DCMAKE_BUILD_TYPE=Release" in dockerfile
+    assert "cmake --build build" in dockerfile
     assert "strip /app/server_starter" in dockerfile
     assert "libpqxx-7.8" in dockerfile or "libpqxx-" in dockerfile
     assert "libpqxx-dev" not in dockerfile.split("# ------ Stage 2: runtime -------", 1)[1]

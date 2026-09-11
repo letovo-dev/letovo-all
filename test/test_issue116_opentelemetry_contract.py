@@ -63,6 +63,7 @@ def test_collector_config_and_compose_are_wired():
 
 def test_backend_opentelemetry_dependency_and_request_wrapper_are_wired():
     cmake = read("src/CMakeLists.txt")
+    builder_manifest = read("src/backend-builder.env")
     dockerfile = read("src/Dockerfile")
     workflow = read(".github/workflows/docker-image.yml")
     header = read("src/basic/otel.h")
@@ -71,15 +72,15 @@ def test_backend_opentelemetry_dependency_and_request_wrapper_are_wired():
     registration_server = read("src/registration_server.cpp")
 
     assert "opentelemetry-cpp" in cmake
-    assert "GIT_TAG        v1.27.0" in cmake
-    assert "WITH_OTLP_HTTP" in cmake
+    assert "find_package(opentelemetry-cpp CONFIG REQUIRED)" in cmake
+    assert "OPENTELEMETRY_CPP_COMMIT=" in builder_manifest
     assert "basic/otel.cc" in cmake
     assert "opentelemetry-cpp::otlp_http_exporter" in cmake
     assert "opentelemetry-cpp::trace" in cmake
 
-    assert "libcurl4-openssl-dev" in dockerfile
-    assert "libprotobuf-dev" in dockerfile
-    assert "protobuf-compiler" in dockerfile
+    assert "libcurl4-openssl-dev=" in builder_manifest
+    assert "libprotobuf-dev=" in builder_manifest
+    assert "protobuf-compiler=" in builder_manifest
     assert "libcurl4" in dockerfile
     assert "libprotobuf" in dockerfile
 
