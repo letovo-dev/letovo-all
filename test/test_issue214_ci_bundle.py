@@ -18,6 +18,7 @@ BUILD_BUNDLE = ROOT / "scripts/ci/build-bundle.sh"
 PUBLISH_BUNDLE = ROOT / "scripts/ci/publish-bundle.sh"
 NAMES = ("backend", "registration", "frontend", "uploader")
 IMAGE_IDS = {name: f"sha256:{index:064x}" for index, name in enumerate(NAMES, 1)}
+SAVED_IMAGE_ID = "sha256:9d99a75171aea000c711b34c0e5e3f28d3d537dd99d110eafbfbc2bd8e52c2bf"
 RUNTIME_LINKS = (
     "ServerConfig.json",
     "SqlConnectionConfig.json",
@@ -156,7 +157,20 @@ elif [ "$command $subcommand" = "image inspect" ]; then
     *) printf '%s amd64\n' "$id" ;;
   esac
 elif [ "$command" = save ]; then
-  printf 'saved:%s\n' "$subcommand"
+  python3 - "$subcommand" <<'PY'
+import io, json, sys, tarfile
+reference = sys.argv[1]
+config = b'{"architecture":"amd64","os":"linux"}'
+digest = "9d99a75171aea000c711b34c0e5e3f28d3d537dd99d110eafbfbc2bd8e52c2bf"
+with tarfile.open(fileobj=sys.stdout.buffer, mode="w|") as archive:
+    member = tarfile.TarInfo(f"blobs/sha256/{digest}")
+    member.size = len(config)
+    archive.addfile(member, io.BytesIO(config))
+    manifest = json.dumps([{"Config": f"blobs/sha256/{digest}", "RepoTags": [reference], "Layers": []}]).encode()
+    member = tarfile.TarInfo("manifest.json")
+    member.size = len(manifest)
+    archive.addfile(member, io.BytesIO(manifest))
+PY
 elif [ "$command" = tag ]; then
   [ "${FAKE_DOCKER_FAIL-}" != tag ]
 elif [ "$command" = push ]; then
@@ -216,6 +230,7 @@ def make_bundle(tmp_path, request_data=None):
         "create",
         str(request_path),
         str(bundle),
+        *IMAGE_IDS.values(),
         env=env,
     )
     assert created.returncode == 0, created.stderr
@@ -431,6 +446,34 @@ def test_manifest_create_and_verify_complete_bundle(tmp_path):
         env=env,
     )
     assert verified.returncode == 0, verified.stderr
+
+
+def test_saved_image_identity_uses_transferable_config_digest(tmp_path):
+    reference = "letovo-ci/backend:123456-2-candidate-" + "a" * 40
+    config_digest = "9d99a75171aea000c711b34c0e5e3f28d3d537dd99d110eafbfbc2bd8e52c2bf"
+    config = b'{"architecture":"amd64","os":"linux"}'
+    archive_path = tmp_path / "backend.tar"
+    with tarfile.open(archive_path, "w") as archive:
+        member = tarfile.TarInfo(f"blobs/sha256/{config_digest}")
+        member.size = len(config)
+        archive.addfile(member, io.BytesIO(config))
+        manifest = json.dumps(
+            [{"Config": f"blobs/sha256/{config_digest}", "RepoTags": [reference], "Layers": []}]
+        ).encode()
+        member = tarfile.TarInfo("manifest.json")
+        member.size = len(manifest)
+        archive.addfile(member, io.BytesIO(manifest))
+
+    result = run(
+        sys.executable,
+        str(IMAGE_MANIFEST),
+        "saved-image-id",
+        str(archive_path),
+        reference,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == f"sha256:{config_digest} amd64 linux"
 
 
 @pytest.mark.parametrize(
@@ -732,6 +775,33 @@ command=${1-}'''))
         assert manifest["build_args"]["backend"]["BUILDER_IMAGE"] == data["builder_image"]
 
 
+def test_builder_manifest_records_transferable_saved_identity(tmp_path):
+    data = request()
+    request_path = tmp_path / "request.json"
+    write_request(request_path, data)
+    source = make_fake_build_source(tmp_path, data)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    install_fake_ci_tools(bin_dir)
+    env = os.environ | {
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "OPS_LOG": str(tmp_path / "operations.log"),
+    }
+
+    built = run(
+        "bash",
+        str(BUILD_BUNDLE),
+        str(source),
+        str(request_path),
+        str(tmp_path / "output"),
+        env=env,
+    )
+
+    assert built.returncode == 0, built.stderr
+    manifest = json.loads((tmp_path / "output/manifest.json").read_text())
+    assert {image["image_id"] for image in manifest["images"]} == {SAVED_IMAGE_ID}
+
+
 @pytest.mark.parametrize("bomb", [False, True])
 def test_expanded_image_limit_before_docker_load(tmp_path, bomb):
     bundle, request_path, env = make_bundle(tmp_path)
@@ -742,7 +812,15 @@ def test_expanded_image_limit_before_docker_load(tmp_path, bomb):
     for path in (bundle / "images").iterdir():
         content = b"0" * (1024 * 1024 if bomb else 16)
         path.write_bytes(subprocess.check_output(["zstd", "-q", "-c"], input=content))
-    assert run("python3", str(IMAGE_MANIFEST), "create", str(request_path), str(bundle), env=env).returncode == 0
+    assert run(
+        "python3",
+        str(IMAGE_MANIFEST),
+        "create",
+        str(request_path),
+        str(bundle),
+        *IMAGE_IDS.values(),
+        env=env,
+    ).returncode == 0
     result = run("bash", str(PUBLISH_BUNDLE), str(bundle), str(request_path), "candidate", env=env)
     operations = (tmp_path / "ops").read_text() if (tmp_path / "ops").exists() else ""
     if bomb:

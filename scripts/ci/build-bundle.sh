@@ -55,12 +55,14 @@ local_suffix="${run_id}-${run_attempt}-${profile}-${source_sha}"
 env_file="$(mktemp)"
 summary_file="$(mktemp)"
 postgres_name=""
+raw_image=""
 
 cleanup() {
   if [ -n "$postgres_name" ]; then
     docker rm -f "$postgres_name" >/dev/null 2>&1 || true
   fi
   rm -f "$env_file" "$summary_file"
+  [ -z "$raw_image" ] || rm -f "$raw_image"
 }
 trap cleanup EXIT
 
@@ -199,6 +201,7 @@ docker buildx build --platform linux/amd64 --load \
   --build-arg "UPLOADER_CAPABILITIES_URL=$base_url/letovo-api/auth/amiuploader" \
   --tag "$uploader_ref" "$source_root/src/python-helpers"
 
+image_ids=()
 for name in backend registration frontend uploader; do
   reference="letovo-ci/${name}:$local_suffix"
   inspection="$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$reference")"
@@ -207,7 +210,14 @@ for name in backend registration frontend uploader; do
     exit 1
   fi
   printf '{"status":"success"}\n' > "$output_dir/reports/$name.json"
-  docker save "$reference" | zstd -1 -T0 -o "$output_dir/images/$name.tar.zst"
+  raw_image="$output_dir/images/.$name.tar"
+  docker save "$reference" > "$raw_image"
+  identity="$(python3 "$manifest_tool" saved-image-id "$raw_image" "$reference")"
+  [[ "$identity" =~ ^(sha256:[0-9a-f]{64})\ amd64\ linux$ ]] || exit 2
+  image_ids+=("${BASH_REMATCH[1]}")
+  zstd -1 -T0 -o "$output_dir/images/$name.tar.zst" < "$raw_image"
+  rm -f "$raw_image"
+  raw_image=""
 done
 
-python3 "$manifest_tool" create "$request_json" "$output_dir"
+python3 "$manifest_tool" create "$request_json" "$output_dir" "${image_ids[@]}"
