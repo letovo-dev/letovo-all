@@ -252,7 +252,7 @@ jobs:
 
   hosted:
     needs: [resolve, mac]
-    if: needs.mac.outputs.fallback == 'true'
+    if: always() && needs.resolve.result == 'success' && needs.mac.result == 'success' && needs.mac.outputs.fallback == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

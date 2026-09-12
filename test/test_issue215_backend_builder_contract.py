@@ -142,6 +142,16 @@ def test_builder_is_published_only_by_trusted_main_workflow():
     assert not re.search(r"uses: [^\n]+@v[0-9]+(?:\s|$)", request + controller)
 
 
+def test_builder_pr_fallback_ignores_skipped_main_lookup():
+    hosted = _workflow_job(_read(BUILDER_CONTROLLER), "hosted")
+
+    assert "needs: [resolve, mac]" in hosted
+    assert (
+        "if: always() && needs.resolve.result == 'success' && needs.mac.result == 'success' "
+        "&& needs.mac.outputs.fallback == 'true'"
+    ) in hosted
+
+
 def test_builder_contract_runs_before_pr_backend_build():
     controller = _read(PR_CONTROLLER)
     bundle = _read(BUILD_BUNDLE)
