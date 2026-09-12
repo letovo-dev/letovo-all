@@ -1,13 +1,26 @@
 import re
+import os
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+def _contract_root() -> Path:
+    configured = os.environ.get("LETOVO_CONTRACT_ROOT")
+    if not configured:
+        return Path(__file__).resolve().parents[1]
+    path = Path(configured)
+    if not path.is_absolute() or path.is_symlink() or not path.is_dir():
+        raise ValueError("LETOVO_CONTRACT_ROOT must be an absolute real directory")
+    return path.resolve(strict=True)
+
+
+ROOT = _contract_root()
 MANIFEST = ROOT / "src" / "backend-builder.env"
 DOCKERFILE = ROOT / "src" / "Dockerfile.builder"
 WORKFLOW = ROOT / ".github" / "workflows" / "backend-builder.yml"
 BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "docker-image.yml"
+PR_CONTROLLER = ROOT / ".github" / "workflows" / "mac-ci-pr-controller.yml"
 PRODUCTION_WORKFLOW = ROOT / ".github" / "workflows" / "production-release.yml"
+BUILD_BUNDLE = ROOT / "scripts" / "ci" / "build-bundle.sh"
 BACKEND_DOCKERFILE = ROOT / "src" / "Dockerfile"
 CMAKE = ROOT / "src" / "CMakeLists.txt"
 LOCK = ROOT / "src" / "backend-builder.lock"
@@ -16,6 +29,56 @@ EXPORT_SCRIPT = ROOT / "scripts" / "export_backend_builder.sh"
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _workflow_job(workflow: str, name: str) -> str:
+    marker = f"  {name}:\n"
+    assert workflow.count("\n" + marker) == 1
+    start = workflow.index(marker)
+    following = re.search(r"^  [a-z0-9-]+:\n", workflow[start + len(marker) :], re.MULTILINE)
+    end = start + len(marker) + following.start() if following else len(workflow)
+    return workflow[start:end]
+
+
+def _workflow_step(job: str, name: str) -> str:
+    marker = f"    - name: {name}\n"
+    assert job.count(marker) == 1
+    start = job.index(marker)
+    following = re.search(r"^    - name: .+\n", job[start + len(marker) :], re.MULTILINE)
+    end = start + len(marker) + following.start() if following else len(job)
+    return job[start:end]
+
+
+def assert_pr_controller_validation(controller: str) -> None:
+    assert "PYTHONOPTIMIZE" not in controller
+    validation = _workflow_job(controller, "source-validation")
+    assert re.search(
+        r"^  source-validation:\n    needs:\n    - resolve\n    runs-on: ubuntu-latest\n"
+        r"    permissions:\n      contents: read\n",
+        validation,
+        re.MULTILINE,
+    )
+    assert validation.count("\n    needs:") == 1
+    assert validation.count("\n    permissions:") == 1
+    assert "packages:" not in validation and "secrets." not in validation
+    assert "continue-on-error:" not in validation and "\n    if:" not in validation
+    assert _workflow_step(validation, "Validate frozen backend builder contract") == (
+        "    - name: Validate frozen backend builder contract\n"
+        "      env:\n"
+        "        LETOVO_CONTRACT_ROOT: ${{ github.workspace }}/candidate\n"
+        "      run: python3 control/test/test_issue215_backend_builder_contract.py\n"
+    )
+    assert "python3 -O" not in validation
+    assert "candidate/test/test_issue215_backend_builder_contract.py" not in validation
+
+    pending = _workflow_job(controller, "pending")
+    mac = _workflow_job(controller, "mac")
+    finalize = _workflow_job(controller, "finalize")
+    assert re.search(r"^  pending:\n    needs:\n    - resolve\n    - source-validation\n", pending)
+    assert re.search(r"^  mac:\n    needs:\n    - resolve\n    - pending\n    - source-validation\n", mac)
+    assert finalize.count("\n    - source-validation\n") == 1
+    assert "SOURCE_VALIDATION_RESULT: ${{ needs.source-validation.result }}" in finalize
+    assert '"$RESOLVE_RESULT/$SOURCE_VALIDATION_RESULT/$PENDING_RESULT/$MAC_RESULT" = success/success/success/success' in finalize
 
 
 def test_builder_manifest_pins_every_external_input():
@@ -80,13 +143,14 @@ def test_builder_is_published_only_by_trusted_main_workflow():
 
 
 def test_builder_contract_runs_before_pr_backend_build():
-    workflow = _read(BUILD_WORKFLOW)
+    controller = _read(PR_CONTROLLER)
+    bundle = _read(BUILD_BUNDLE)
     builder_workflow = _read(WORKFLOW)
 
-    contract = "python3 -m pytest -q test/test_issue215_backend_builder_contract.py"
-    assert contract in workflow
-    assert workflow.index(contract) < workflow.index("Build backend image locally")
-    assert "Dockerfile.builder" not in workflow
+    assert "bash scripts/export_backend_builder.sh" in controller
+    assert "control/scripts/ci/build-bundle.sh" in controller
+    assert bundle.index("bash scripts/export_backend_builder.sh") < bundle.index("docker buildx build")
+    assert "Dockerfile.builder" not in controller
     assert "pull_request:" in builder_workflow
     assert "Build backend builder for review" in builder_workflow
     assert "file: ./src/Dockerfile.builder" in builder_workflow
@@ -94,6 +158,8 @@ def test_builder_contract_runs_before_pr_backend_build():
     assert "opentelemetry-cpp-config.cmake" in builder_workflow
     assert "boost/format.hpp" in builder_workflow
     assert "command -v ninja" in builder_workflow
+
+    assert_pr_controller_validation(controller)
 
 
 def test_application_build_uses_preinstalled_dependencies_without_network_fetches():
@@ -117,6 +183,8 @@ def test_all_backend_workflows_use_one_immutable_builder_lock():
     lock = _read(LOCK)
     dockerfile = _read(BACKEND_DOCKERFILE)
     build_workflow = _read(BUILD_WORKFLOW)
+    pr_controller = _read(PR_CONTROLLER)
+    build_bundle = _read(BUILD_BUNDLE)
     production_workflow = _read(PRODUCTION_WORKFLOW)
     export_script = _read(EXPORT_SCRIPT)
 
@@ -132,7 +200,24 @@ def test_all_backend_workflows_use_one_immutable_builder_lock():
     assert "builder_image=$BUILDER_IMAGE" in export_script
     assert "builder_lock_revision=$BUILDER_LOCK_REVISION" in export_script
     assert "dependency_manifest_revision=$BUILDER_MANIFEST_REVISION" in export_script
-    assert build_workflow.count("bash scripts/export_backend_builder.sh") == 3
+    assert build_workflow.count("bash scripts/export_backend_builder.sh") == 1
+    assert pr_controller.count("bash scripts/export_backend_builder.sh") == 1
+    assert build_bundle.count("bash scripts/export_backend_builder.sh") == 1
     assert production_workflow.count("bash scripts/export_backend_builder.sh") == 1
-    assert build_workflow.count("BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}") == 6
+    for workflow in (build_workflow, pr_controller):
+        assert "control/scripts/export_backend_builder.sh" in workflow
+        assert "control/src/backend-builder.lock" in workflow
+        assert "needs.resolve.outputs.builder_image" in workflow
     assert production_workflow.count("BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}") == 2
+
+
+if __name__ == "__main__":
+    for check in (
+        test_builder_manifest_pins_every_external_input,
+        test_builder_recipe_installs_manifest_dependencies,
+        test_builder_is_published_only_by_trusted_main_workflow,
+        test_builder_contract_runs_before_pr_backend_build,
+        test_application_build_uses_preinstalled_dependencies_without_network_fetches,
+        test_all_backend_workflows_use_one_immutable_builder_lock,
+    ):
+        check()

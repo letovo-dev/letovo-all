@@ -42,8 +42,8 @@ def test_live_browser_flow_switches_accounts_without_reusing_persisted_state():
     )
 
     assert "['userStore', 'chat-store', 'comments-store', 'articles-store']" in source
-    workflow = (ROOT / ".github/workflows/docker-image.yml").read_text()
-    assert 'LIVE_E2E_REQUIRE_ACCOUNT_SWITCH: "true"' in workflow
+    workflow = (ROOT / ".github/workflows/mac-ci-pr-controller.yml").read_text()
+    assert "LIVE_E2E_REQUIRE_ACCOUNT_SWITCH: 'true'" in workflow
     assert "issue176AccountMarker" in flow
     assert "getByRole('button', { name: 'Выйти' })" in flow
     assert "await submitLogin(page, secondaryUsername, secondaryPassword)" in flow

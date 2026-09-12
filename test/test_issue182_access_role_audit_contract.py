@@ -46,7 +46,7 @@ def test_roles_natural_key_migration_is_non_destructive_and_reports_usage():
 
 
 def test_roles_migration_is_wired_to_candidate_and_production_deployments():
-    candidate = (ROOT / ".github/workflows/docker-image.yml").read_text()
+    candidate = (ROOT / ".github/workflows/mac-ci-pr-controller.yml").read_text()
     production = (ROOT / ".github/workflows/production-release.yml").read_text()
 
     for workflow in (candidate, production):

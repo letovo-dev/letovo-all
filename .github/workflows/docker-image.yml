@@ -2,650 +2,273 @@ name: build and verify
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [main]
 
 permissions:
   contents: read
 
+concurrency:
+  group: build-and-verify-main
+  # A cancelled publisher could update only a subset of latest tags.
+  cancel-in-progress: false
+
 env:
   BACKEND_BUILD_FILES: >-
     basic/auth.cc basic/analytics.cc basic/otel.cc basic/security.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc
-    basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc
-    basic/media.cc basic/media_cash.cc basic/qr_worker.cc basic/ws_topic_authorizer.cc
-    basic/ws_event_bus.cc basic/ws_endpoint.cc market/transactions.cc market/actives.cc
-    market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc
-    letovo-soc-net/page_server.cc letovo-soc-net/authors.cc letovo-soc-net/chat.cc
-    letovo-soc-net/chat_ws.cc
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-server
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-all-frontend
-  REGISTRATION_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-registration-server
-  UPLOADER_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-flask-uploader
-  LIVE_E2E_BASE_URL: ${{ vars.LIVE_E2E_BASE_URL || 'https://ya.sergeiscv.ru' }}
+    basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc basic/media.cc basic/media_cash.cc
+    basic/qr_worker.cc basic/ws_topic_authorizer.cc basic/ws_event_bus.cc basic/ws_endpoint.cc market/transactions.cc
+    market/actives.cc market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc letovo-soc-net/page_server.cc
+    letovo-soc-net/authors.cc letovo-soc-net/chat.cc letovo-soc-net/chat_ws.cc
 
 jobs:
-  backend-pr:
-    if: github.event_name == 'pull_request'
+  resolve:
+    if: github.repository == 'letovo-dev/letovo-all' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_HOST_AUTH_METHOD: trust
-          POSTGRES_DB: letovo_issue193
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d letovo_issue193"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    permissions: {contents: read}
+    outputs:
+      source_sha: ${{ steps.freeze.outputs.source_sha }}
+      frontend_gitlink: ${{ steps.freeze.outputs.frontend_gitlink }}
+      control_sha: ${{ steps.freeze.outputs.control_sha }}
+      request: ${{ steps.freeze.outputs.request }}
+      artifact: ${{ steps.freeze.outputs.artifact }}
+      builder_image: ${{ steps.freeze.outputs.builder_image }}
     steps:
-      - name: Checkout code with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
-          persist-credentials: false
-
-      - name: Install Python test dependencies
-        run: python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
-
-      - name: Verify backend builder contract
-        run: python3 -m pytest -q test/test_issue215_backend_builder_contract.py
-
-      - name: Resolve pinned backend builder
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ github.sha }}", path: control, persist-credentials: false}
+      - name: Resolve trusted builder
+        working-directory: control
         run: bash scripts/export_backend_builder.sh
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR for pinned builder
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build backend image locally
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          load: true
-          push: false
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: letovo-server:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Inspect backend image
-        run: docker image inspect letovo-server:${{ github.sha }} >/dev/null
-
-      - name: Run avatar policy regression with sanitizers
-        run: |
-          g++ -std=c++20 -fsanitize=address,undefined -fno-omit-frame-pointer \
-            test/avatar_policy_regression.cc -o "$RUNNER_TEMP/avatar-policy-regression"
-          "$RUNNER_TEMP/avatar-policy-regression"
-
-      - name: Run PostgreSQL regressions
+      - name: Freeze request
+        id: freeze
         env:
-          LETOVO_POSTGRES_DSN: postgresql://postgres@127.0.0.1:5432/letovo_issue193
+          GH_TOKEN: ${{ github.token }}
+          CONTROL_SHA: ${{ github.sha }}
+          PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}
+          BUILD_FILES: ${{ env.BACKEND_BUILD_FILES }}
         run: |
-          python3 -m pytest -q test/test_issue193_department_payout_postgres.py test/test_issue179_media_order_postgres.py
+          python3 - <<'PY'
+          import json, os, re, subprocess, sys
+          sys.path.insert(0, "control/scripts/ci")
+          from image_manifest import validate_request
+          def api(path):
+              return json.loads(subprocess.check_output(["gh", "api", "repos/letovo-dev/letovo-all/" + path]))
+          def sha(value):
+              if not isinstance(value, str) or not re.fullmatch("[0-9a-f]{40}", value):
+                  raise ValueError("invalid SHA")
+              return value
+          source_sha = control_sha = sha(os.environ["CONTROL_SHA"])
+          assert subprocess.check_output(["git", "-C", "control", "rev-parse", "HEAD"], text=True).strip() == control_sha
+          assert api("commits/" + source_sha)["sha"] == source_sha
+          assert api("branches/main")["commit"]["sha"] == source_sha
+          frontend = [entry for entry in api("git/trees/" + source_sha)["tree"] if entry["path"] == "frontend"]
+          assert len(frontend) == 1 and frontend[0]["mode"] == "160000" and frontend[0]["type"] == "commit"
+          frontend_gitlink = sha(frontend[0]["sha"])
+          request = validate_request(dict(
+              schema_version=1, repository="letovo-dev/letovo-all", run_id=os.environ["GITHUB_RUN_ID"],
+              run_attempt=int(os.environ["GITHUB_RUN_ATTEMPT"]), job="main", source_sha=source_sha,
+              frontend_gitlink=frontend_gitlink, profile="production", platform="linux/amd64",
+              base_url=os.environ["PRODUCTION_BASE_URL"], candidate_number=None, builder_image=os.environ["BUILDER_IMAGE"],
+              build_files=os.environ["BUILD_FILES"].split()))
+          outputs = dict(source_sha=source_sha, frontend_gitlink=frontend_gitlink, control_sha=control_sha,
+                         builder_image=request["builder_image"], request=json.dumps(request, separators=(",", ":")),
+                         artifact=f"letovo-images-{request['run_id']}-{request['run_attempt']}-production-{source_sha}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for key, value in outputs.items():
+                  output.write(f"{key}={value}\n")
+          PY
 
-      - name: Build registration backend image locally
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          load: true
-          push: false
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=registration_server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: letovo-registration-server:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Inspect registration backend image
-        run: docker image inspect letovo-registration-server:${{ github.sha }} >/dev/null
-
-      - name: Build uploader image locally
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src/python-helpers
-          file: ./src/python-helpers/dockerfile.uploader
-          load: true
-          push: false
-          tags: letovo-flask-uploader:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Inspect uploader image
-        run: docker image inspect letovo-flask-uploader:${{ github.sha }} >/dev/null
-
-  publish-pr-candidate:
-    if: github.event_name == 'pull_request'
-    needs: [backend-pr, frontend-verify]
+  mac:
+    needs: [resolve]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    timeout-minutes: 60
+    permissions: {contents: read}
+    outputs:
+      fallback: ${{ steps.mac.outputs.fallback }}
+      source_sha256: ${{ steps.pack.outputs.source_sha256 }}
     steps:
-      - name: Refuse forked pull requests
-        if: github.event.pull_request.head.repo.full_name != github.repository
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ needs.resolve.outputs.control_sha }}", path: control, persist-credentials: false}
+      - name: Checkout frozen source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ needs.resolve.outputs.source_sha }}", path: source-checkout, persist-credentials: false}
+      - name: Checkout public frontend
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: letovo-dev/letovo-all-frontend
+          ref: ${{ needs.resolve.outputs.frontend_gitlink }}
+          path: source-checkout/frontend
+          persist-credentials: false
+      - name: Pack frozen source
+        id: pack
+        env: {EXPECTED_JSON: "${{ needs.resolve.outputs.request }}"}
         run: |
-          echo "Live deployment e2e publishes immutable PR images, so forked PRs are not supported."
-          exit 1
-
-      - name: Checkout code with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
-          persist-credentials: false
-
-      - name: Resolve pinned backend builder
-        run: bash scripts/export_backend_builder.sh
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push PR backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          push: true
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: ${{ env.BACKEND_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push PR registration backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          push: true
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=registration_server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: ${{ env.REGISTRATION_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push PR frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          file: ./frontend/dockerfile
-          push: true
-          build-args: |
-            LETOVO_BUILD_SHA=${{ github.sha }}
-            NEXT_PUBLIC_BASE_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api
-            NEXT_PUBLIC_BASE_URL_UPLOAD=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/upload/
-            NEXT_PUBLIC_BASE_URL_MEDIA=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/media/get
-            NEXT_PUBLIC_UPLOAD_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/upload/
-            NEXT_PUBLIC_BASE_URL_CLEAR=${{ env.LIVE_E2E_BASE_URL }}
-            NEXT_PUBLIC_OTEL_ENABLED=true
-            NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otel/v1/traces
-            NEXT_PUBLIC_OTEL_SERVICE_NAME=letovo-frontend
-            NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT=production
-            NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE=letovocorp
-            NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO=0.1
-            NEXT_PUBLIC_LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: ${{ env.FRONTEND_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push PR uploader image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src/python-helpers
-          file: ./src/python-helpers/dockerfile.uploader
-          push: true
-          build-args: |
-            UPLOADER_CAPABILITIES_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/auth/amiuploader
-          tags: ${{ env.UPLOADER_IMAGE }}:pr-${{ github.event.pull_request.number }}-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  publish-main:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout code with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
-          persist-credentials: false
-
-      - name: Resolve pinned backend builder
-        run: bash scripts/export_backend_builder.sh
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          push: true
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/letovo-server:latest
-            ghcr.io/${{ github.repository_owner }}/letovo-server:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push registration backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          push: true
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=registration_server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/letovo-registration-server:latest
-            ghcr.io/${{ github.repository_owner }}/letovo-registration-server:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          file: ./frontend/dockerfile
-          push: true
-          build-args: |
-            LETOVO_BUILD_SHA=${{ github.sha }}
-            NEXT_PUBLIC_BASE_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api
-            NEXT_PUBLIC_BASE_URL_UPLOAD=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/
-            NEXT_PUBLIC_BASE_URL_MEDIA=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/media/get
-            NEXT_PUBLIC_UPLOAD_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/
-            NEXT_PUBLIC_BASE_URL_CLEAR=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}
-            NEXT_PUBLIC_OTEL_ENABLED=true
-            NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otel/v1/traces
-            NEXT_PUBLIC_OTEL_SERVICE_NAME=letovo-frontend
-            NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT=production
-            NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE=letovocorp
-            NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO=0.1
-            NEXT_PUBLIC_LETOVO_BUILD_SHA=${{ github.sha }}
-          tags: |
-            ${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push uploader image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src/python-helpers
-          file: ./src/python-helpers/dockerfile.uploader
-          push: true
-          build-args: |
-            UPLOADER_CAPABILITIES_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/auth/amiuploader
-          tags: |
-            ${{ env.UPLOADER_IMAGE }}:latest
-            ${{ env.UPLOADER_IMAGE }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  frontend-verify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code with submodules
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
-          persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Verify frontend OpenTelemetry wiring
-        working-directory: frontend
-        run: npm run test:opentelemetry
-
-      - name: Verify post media upload ordering
-        working-directory: frontend
-        run: npm run test:post-media-order
-
-      - name: Verify image lightbox interactions
-        working-directory: frontend
-        run: npm run test:image-lightbox
-
-      - name: Verify article editor modes
-        working-directory: frontend
-        run: npm run test:article-editor-modes
-
-      - name: Build frontend
-        working-directory: frontend
+          set -euo pipefail
+          for directory in source-checkout/scripts source-checkout/src; do test -d "$directory" && test ! -L "$directory"; done
+          cp --remove-destination control/scripts/export_backend_builder.sh source-checkout/scripts/export_backend_builder.sh
+          cp --remove-destination control/src/backend-builder.lock source-checkout/src/backend-builder.lock
+          printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/source_archive.py pack source-checkout "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/source.tar"
+          echo "source_sha256=$(sha256sum "$RUNNER_TEMP/source.tar" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      - name: Try Mac
+        id: mac
         env:
-          NEXT_TELEMETRY_DISABLED: "1"
-          NEXT_PUBLIC_OTEL_ENABLED: "true"
-          NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: /otel/v1/traces
-          NEXT_PUBLIC_OTEL_SERVICE_NAME: letovo-frontend
-          NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT: production
-          NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE: letovocorp
-          NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO: "0.1"
-          NEXT_PUBLIC_LETOVO_BUILD_SHA: ${{ github.sha }}
-        run: npm run build
-
-      - name: Scan frontend bundle for known bad routes
-        working-directory: frontend
+          MAC_CI_ENABLED: ${{ vars.MAC_CI_ENABLED }}
+          MAC_CI_BASTION_HOST: ${{ vars.MAC_CI_BASTION_HOST || 'ya.sergeiscv.ru' }}
+          MAC_CI_BASTION_USER: ${{ vars.MAC_CI_BASTION_USER || 'letovo-ci-proxy' }}
+          MAC_CI_WORKER_USER: ${{ vars.MAC_CI_WORKER_USER || 'letovo-ci' }}
+          MAC_CI_WORKER_PORT: ${{ vars.MAC_CI_WORKER_PORT || '22222' }}
+          MAC_CI_SSH_KEY: ${{ secrets.MAC_CI_SSH_KEY }}
+          MAC_CI_KNOWN_HOSTS: ${{ secrets.MAC_CI_KNOWN_HOSTS }}
         run: |
-          if grep -R -I -n -E 'ya\.sergeiscv\.ru|/undefined/auth|/letovo-api/letovo-api' .next; then
-            echo "Found forbidden frontend route or host in built bundle"
-            exit 1
-          fi
-
-  live-deployment-e2e:
-    if: github.event_name == 'pull_request'
-    needs: [publish-pr-candidate]
-    runs-on: ubuntu-latest
-    concurrency:
-      group: live-deployment-e2e
-      cancel-in-progress: false
-    env:
-      PLAYWRIGHT_VERSION: "1.55.1"
-      LIVE_E2E_WAIT_TIMEOUT_SECONDS: ${{ vars.LIVE_E2E_WAIT_TIMEOUT_SECONDS || '600' }}
-      LIVE_E2E_REQUIRE_AUTH: "true"
-      LIVE_E2E_REQUIRE_ACCOUNT_SWITCH: "true"
-      LIVE_E2E_REQUIRE_EXTENDED: ${{ vars.LIVE_E2E_REQUIRE_EXTENDED || 'false' }}
-      LIVE_E2E_REQUIRE_OTEL: "false"
-      LIVE_E2E_EXPECTED_BACKEND_SHA: ${{ github.sha }}
-      LIVE_E2E_EXPECTED_FRONTEND_SHA: ${{ github.sha }}
-      LETOVO_E2E_DEPLOY_HOST: ${{ vars.LETOVO_E2E_DEPLOY_HOST || 'ya.sergeiscv.ru' }}
-      LETOVO_E2E_DEPLOY_USER: ${{ secrets.LETOVO_E2E_DEPLOY_USER }}
-      LETOVO_E2E_DEPLOY_SSH_KEY: ${{ secrets.LETOVO_E2E_DEPLOY_SSH_KEY }}
-      LETOVO_E2E_DEPLOY_COMPOSE: ${{ vars.LETOVO_E2E_DEPLOY_COMPOSE || '/mnt/docker-compose.yaml' }}
-      LETOVO_E2E_DEPLOY_PROJECT: ${{ vars.LETOVO_E2E_DEPLOY_PROJECT || 'mnt' }}
-    steps:
-      - name: Set PR candidate image names
-        run: |
-          set -euo pipefail
-          tag="pr-${{ github.event.pull_request.number }}-${{ github.sha }}"
-          {
-            echo "BACKEND_CANDIDATE_IMAGE=${BACKEND_IMAGE}:${tag}"
-            echo "REGISTRATION_CANDIDATE_IMAGE=${REGISTRATION_IMAGE}:${tag}"
-            echo "FRONTEND_CANDIDATE_IMAGE=${FRONTEND_IMAGE}:${tag}"
-            echo "UPLOADER_CANDIDATE_IMAGE=${UPLOADER_IMAGE}:${tag}"
-          } >> "$GITHUB_ENV"
-
-      - name: Validate live e2e deployment secrets
-        run: |
-          set -euo pipefail
-          test -n "$LETOVO_E2E_DEPLOY_USER" || { echo "LETOVO_E2E_DEPLOY_USER secret is required"; exit 1; }
-          test -n "$LETOVO_E2E_DEPLOY_SSH_KEY" || { echo "LETOVO_E2E_DEPLOY_SSH_KEY secret is required"; exit 1; }
-          test -n "$BACKEND_CANDIDATE_IMAGE" || { echo "backend candidate image is required"; exit 1; }
-          test -n "$REGISTRATION_CANDIDATE_IMAGE" || { echo "registration candidate image is required"; exit 1; }
-          test -n "$FRONTEND_CANDIDATE_IMAGE" || { echo "frontend candidate image is required"; exit 1; }
-          test -n "$UPLOADER_CANDIDATE_IMAGE" || { echo "uploader candidate image is required"; exit 1; }
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Configure deployment SSH
-        run: |
-          set -euo pipefail
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$LETOVO_E2E_DEPLOY_SSH_KEY" > ~/.ssh/live-e2e
-          chmod 600 ~/.ssh/live-e2e
-          ssh-keyscan -H "$LETOVO_E2E_DEPLOY_HOST" >> ~/.ssh/known_hosts
-
-      - name: Deploy PR candidate images to live e2e
-        run: |
-          set -euo pipefail
-          remote="${LETOVO_E2E_DEPLOY_USER}@${LETOVO_E2E_DEPLOY_HOST}"
-          state_dir="/tmp/letovo-live-e2e-${{ github.run_id }}"
-          ssh -i ~/.ssh/live-e2e "$remote" "mkdir -p '$state_dir'"
-          scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql \
-            "$remote:$state_dir/avatar_upload_role_migration.sql"
-          scp -i ~/.ssh/live-e2e docs/roles_natural_key_migration.sql \
-            "$remote:$state_dir/roles_natural_key_migration.sql"
-          scp -i ~/.ssh/live-e2e docs/child_avatar_access_migration.sql \
-            "$remote:$state_dir/child_avatar_access_migration.sql"
-          scp -i ~/.ssh/live-e2e docs/department_payout_migration.sql \
-            "$remote:$state_dir/department_payout_migration.sql"
-          scp -i ~/.ssh/live-e2e docs/publisher_authorization_migration.sql \
-            "$remote:$state_dir/publisher_authorization_migration.sql"
-          scp -i ~/.ssh/live-e2e docs/post_media_order_migration.sql \
-            "$remote:$state_dir/post_media_order_migration.sql"
-          ssh -i ~/.ssh/live-e2e "$remote" \
-            "BACKEND_IMAGE='$BACKEND_CANDIDATE_IMAGE' REGISTRATION_IMAGE='$REGISTRATION_CANDIDATE_IMAGE' FRONTEND_IMAGE='$FRONTEND_CANDIDATE_IMAGE' UPLOADER_IMAGE='$UPLOADER_CANDIDATE_IMAGE' COMPOSE_FILE='$LETOVO_E2E_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_E2E_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
           set -euo pipefail
           umask 077
-          test -f "$COMPOSE_FILE"
-          state_dir="/tmp/letovo-live-e2e-${RUN_ID}"
-          mkdir -p "$state_dir"
-          restore="$state_dir/restore.env"
-          candidate="$state_dir/docker-compose.yaml"
-          migration="$state_dir/avatar_upload_role_migration.sql"
-          roles_migration="$state_dir/roles_natural_key_migration.sql"
-          child_avatar_migration="$state_dir/child_avatar_access_migration.sql"
-          payout_migration="$state_dir/department_payout_migration.sql"
-          publisher_authorization_migration="$state_dir/publisher_authorization_migration.sql"
-          post_media_order_migration="$state_dir/post_media_order_migration.sql"
-          backup_root="$HOME/backups/letovo-live-e2e-${RUN_ID}"
-          role_backup="$backup_root/role.before-avatar-migration.sql"
-          roles_backup="$backup_root/roles.before-natural-key-migration.sql"
-          user_backup="$backup_root/user.before-child-avatar-migration.sql"
-          transactions_backup="$backup_root/transactions.before-department-payout-migration.sql"
-          post_media_backup="$backup_root/post-media.before-order-migration.sql"
-          child_avatar_preview="$backup_root/child-avatar-migration-preview.csv"
+          credentials="$(mktemp -d "$RUNNER_TEMP/mac-auth.XXXXXX")"
+          trap 'rm -rf "$credentials"' EXIT
+          export MAC_CI_SSH_KEY_FILE="$credentials/key" MAC_CI_KNOWN_HOSTS_FILE="$credentials/known_hosts"
+          printf '%s\n' "$MAC_CI_SSH_KEY" > "$MAC_CI_SSH_KEY_FILE"
+          printf '%s\n' "$MAC_CI_KNOWN_HOSTS" > "$MAC_CI_KNOWN_HOSTS_FILE"
+          chmod 600 "$MAC_CI_SSH_KEY_FILE" "$MAC_CI_KNOWN_HOSTS_FILE"
+          unset MAC_CI_SSH_KEY MAC_CI_KNOWN_HOSTS
+          status=0
+          bash control/scripts/ci/try-mac.sh "$RUNNER_TEMP/source.tar" "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/mac-summary" || status=$?
+          rm -rf "$credentials"; trap - EXIT
+          cat "$RUNNER_TEMP/mac-summary" >> "$GITHUB_STEP_SUMMARY"
+          case "$status" in
+            0) echo "fallback=false" >> "$GITHUB_OUTPUT" ;;
+            75) echo "fallback=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$status" ;;
+          esac
+      - name: Upload frozen source
+        if: steps.mac.outputs.fallback == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ needs.resolve.outputs.artifact }}-source", path: "${{ runner.temp }}/source.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
+      - name: Extract bounded result
+        if: steps.mac.outputs.fallback == 'false'
+        run: python3 control/scripts/ci/result_archive.py "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/verified"
+      - name: Upload result
+        if: steps.mac.outputs.fallback == 'false'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ needs.resolve.outputs.artifact }}", path: "${{ runner.temp }}/result.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
 
-          test -f "$migration"
-          test -f "$roles_migration"
-          test -f "$child_avatar_migration"
-          test -f "$payout_migration"
-          test -f "$publisher_authorization_migration"
-          test -f "$post_media_order_migration"
-          mkdir -p "$backup_root"
-          docker exec letovo-postgres-1 \
-            pg_dump -U scv -d letovo_db -t public.post_media > "$post_media_backup"
-          test -s "$post_media_backup"
-          docker exec letovo-postgres-1 \
-            pg_dump -U scv -d letovo_db -t public.transactions > "$transactions_backup"
-          test -s "$transactions_backup"
-          docker cp "$payout_migration" letovo-postgres-1:/tmp/department_payout_migration.sql
-          docker exec letovo-postgres-1 \
-            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
-              -f /tmp/department_payout_migration.sql
-          docker exec letovo-postgres-1 rm -f /tmp/department_payout_migration.sql
-          docker cp "$publisher_authorization_migration" \
-            letovo-postgres-1:/tmp/publisher_authorization_migration.sql
-          docker exec letovo-postgres-1 \
-            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
-              -f /tmp/publisher_authorization_migration.sql
-          docker exec letovo-postgres-1 rm -f /tmp/publisher_authorization_migration.sql
-          docker cp "$post_media_order_migration" \
-            letovo-postgres-1:/tmp/post_media_order_migration.sql
-          docker exec letovo-postgres-1 \
-            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
-              -f /tmp/post_media_order_migration.sql
-          docker exec letovo-postgres-1 rm -f /tmp/post_media_order_migration.sql
+  fetch-builder:
+    needs: [resolve, mac]
+    if: needs.mac.outputs.fallback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: {contents: read, packages: read}
+    outputs:
+      image_id: ${{ steps.builder.outputs.image_id }}
+      archive_sha256: ${{ steps.builder.outputs.archive_sha256 }}
+    steps:
+      - name: Export private builder
+        id: builder
+        env: {GH_TOKEN: "${{ github.token }}", BUILDER_IMAGE: "${{ needs.resolve.outputs.builder_image }}"}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/docker-auth.XXXXXX")"
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker pull --platform linux/amd64 "$BUILDER_IMAGE"
+          inspection="$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$BUILDER_IMAGE")"
+          [[ "$inspection" =~ ^sha256:[0-9a-f]{64}\ amd64\ linux$ ]]
+          image_id="$(cut -d ' ' -f 1 <<< "$inspection")"
+          docker save "$BUILDER_IMAGE" > "$RUNNER_TEMP/builder.tar"
+          test "$(stat -c %s "$RUNNER_TEMP/builder.tar")" -le 2147483648
+          echo "image_id=$image_id" >> "$GITHUB_OUTPUT"
+          echo "archive_sha256=$(sha256sum "$RUNNER_TEMP/builder.tar" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          rm -rf "$DOCKER_CONFIG"; unset GH_TOKEN DOCKER_CONFIG; trap - EXIT
+      - name: Upload pinned builder
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ needs.resolve.outputs.artifact }}-builder", path: "${{ runner.temp }}/builder.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
 
-          docker inspect -f 'letovo-server={{.Config.Image}}' letovo-server > "$restore"
-          docker inspect -f 'letovo-registration-server={{.Config.Image}}' letovo-registration-server >> "$restore"
-          docker inspect -f 'letovo-front={{.Config.Image}}' letovo-front >> "$restore"
-          docker inspect -f 'flask-uploader={{.Config.Image}}' flask-uploader >> "$restore"
-
-          docker exec letovo-postgres-1 \
-            pg_dump -U scv -d letovo_db -t public.role > "$role_backup"
-          test -s "$role_backup"
-          docker exec letovo-postgres-1 \
-            pg_dump -U scv -d letovo_db -t public.roles > "$roles_backup"
-          test -s "$roles_backup"
-          docker exec letovo-postgres-1 \
-            pg_dump -U scv -d letovo_db -t 'public."user"' > "$user_backup"
-          test -s "$user_backup"
-          docker cp "$child_avatar_migration" \
-            letovo-postgres-1:/tmp/child_avatar_access_migration.sql
-          docker exec letovo-postgres-1 \
-            psql -q --csv -v ON_ERROR_STOP=1 -v apply=false \
-              -U scv -d letovo_db \
-              -f /tmp/child_avatar_access_migration.sql > "$child_avatar_preview"
-          # Forward-only additive migration: never restore the whole role table
-          # automatically, because that could erase concurrent permission edits.
-          docker cp "$migration" letovo-postgres-1:/tmp/avatar_upload_role_migration.sql
-          docker exec letovo-postgres-1 \
-            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
-              -f /tmp/avatar_upload_role_migration.sql
-          docker exec letovo-postgres-1 rm -f /tmp/avatar_upload_role_migration.sql
-          docker cp "$roles_migration" letovo-postgres-1:/tmp/roles_natural_key_migration.sql
-          docker exec letovo-postgres-1 \
-            psql -v ON_ERROR_STOP=1 -U scv -d letovo_db \
-              -f /tmp/roles_natural_key_migration.sql
-          docker exec letovo-postgres-1 rm -f /tmp/roles_natural_key_migration.sql
-          docker cp "$child_avatar_preview" \
-            letovo-postgres-1:/tmp/child_avatar_approved_preview.csv
-          docker exec letovo-postgres-1 \
-            chmod 0644 /tmp/child_avatar_approved_preview.csv
-          docker exec letovo-postgres-1 \
-            psql -v ON_ERROR_STOP=1 -v apply=true -U scv -d letovo_db \
-              -f /tmp/child_avatar_access_migration.sql
-          docker exec letovo-postgres-1 \
-            rm -f /tmp/child_avatar_access_migration.sql \
-              /tmp/child_avatar_approved_preview.csv
-
-          sed -E \
-            -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${BACKEND_IMAGE}#" \
-            -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${REGISTRATION_IMAGE}#" \
-            -e "/^    letovo-front:/,/^    [[:alnum:]_-]+:$/ s#^([[:space:]]*)image:.*#\\1image: ${FRONTEND_IMAGE}#" \
-            -e "/^    letovo-flask-uploader:/,/^    [[:alnum:]_-]+:$/ s#^([[:space:]]*)image:.*#\\1image: ${UPLOADER_IMAGE}#" \
-            "$COMPOSE_FILE" > "$candidate"
-
-          docker compose -p "$PROJECT_NAME" -f "$candidate" pull letovo-server letovo-registration-server letovo-front letovo-flask-uploader
-          docker compose -p "$PROJECT_NAME" -f "$candidate" up -d letovo-server letovo-registration-server letovo-front letovo-flask-uploader
-          test "$(docker inspect -f '{{.Config.Image}}' letovo-server)" = "$BACKEND_IMAGE"
-          test "$(docker inspect -f '{{.Config.Image}}' letovo-registration-server)" = "$REGISTRATION_IMAGE"
-          test "$(docker inspect -f '{{.Config.Image}}' letovo-front)" = "$FRONTEND_IMAGE"
-          test "$(docker inspect -f '{{.Config.Image}}' flask-uploader)" = "$UPLOADER_IMAGE"
-          REMOTE
-
+  hosted:
+    needs: [resolve, mac, fetch-builder]
+    if: needs.mac.outputs.fallback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions: {contents: read}
+    steps:
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ needs.resolve.outputs.control_sha }}", path: control, persist-credentials: false}
+      - name: Download frozen source
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with: {name: "${{ needs.resolve.outputs.artifact }}-source", path: "${{ runner.temp }}/source-download"}
+      - name: Download pinned builder
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with: {name: "${{ needs.resolve.outputs.artifact }}-builder", path: "${{ runner.temp }}/builder-download"}
+      - name: Extract frozen source
+        env: {EXPECTED_JSON: "${{ needs.resolve.outputs.request }}", SOURCE_SHA256: "${{ needs.mac.outputs.source_sha256 }}"}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$SOURCE_SHA256" "$RUNNER_TEMP/source-download/source.tar" | sha256sum --check
+          test "$(stat -c %s "$RUNNER_TEMP/source-download/source.tar")" -le 268435456
+          printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/source_archive.py extract "$RUNNER_TEMP/source-download/source.tar" "$RUNNER_TEMP/source"
+          cmp "$RUNNER_TEMP/source/request.json" "$RUNNER_TEMP/request.json"
+      - name: Load pinned builder
+        env: {BUILDER_SHA256: "${{ needs.fetch-builder.outputs.archive_sha256 }}", BUILDER_ID: "${{ needs.fetch-builder.outputs.image_id }}"}
+        run: |
+          set -euo pipefail
+          [[ "$BUILDER_SHA256" =~ ^[0-9a-f]{64}$ && "$BUILDER_ID" =~ ^sha256:[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$BUILDER_SHA256" "$RUNNER_TEMP/builder-download/builder.tar" | sha256sum --check
+          test "$(stat -c %s "$RUNNER_TEMP/builder-download/builder.tar")" -le 2147483648
+          docker load < "$RUNNER_TEMP/builder-download/builder.tar"
+          test "$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$BUILDER_ID")" = "$BUILDER_ID amd64 linux"
+          docker tag "$BUILDER_ID" "letovo-ci/backend-builder:$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
       - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install Playwright runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: {node-version: 22}
+      - name: Install hosted dependencies
+        run: python3 -m pip install --disable-pip-version-check psycopg2-binary pytest && sudo apt-get update && sudo apt-get install -y zstd
+      - name: Hosted fallback
+        env: {LOCAL_BUILDER_REF: "letovo-ci/backend-builder:${{ github.run_id }}-${{ github.run_attempt }}", LOCAL_BUILDER_IMAGE_ID: "${{ needs.fetch-builder.outputs.image_id }}"}
         run: |
           set -euo pipefail
-          export PLAYWRIGHT_PACKAGE_DIR="$RUNNER_TEMP/letovo-live-e2e"
-          mkdir -p "$PLAYWRIGHT_PACKAGE_DIR"
-          cd "$PLAYWRIGHT_PACKAGE_DIR"
-          npm init -y
-          npm install "playwright@${PLAYWRIGHT_VERSION}"
-          "$PLAYWRIGHT_PACKAGE_DIR/node_modules/.bin/playwright" install --with-deps chromium
-          echo "PLAYWRIGHT_PACKAGE_DIR=$PLAYWRIGHT_PACKAGE_DIR" >> "$GITHUB_ENV"
+          docker buildx use default
+          bash control/scripts/ci/build-bundle.sh "$RUNNER_TEMP/source" "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/bundle"
+          tar --format=ustar -cf "$RUNNER_TEMP/result.tar" -C "$RUNNER_TEMP/bundle" \
+            manifest.json images/backend.tar.zst images/registration.tar.zst images/frontend.tar.zst images/uploader.tar.zst \
+            reports/backend.json reports/registration.json reports/frontend.json reports/uploader.json
+      - name: Extract bounded result
+        run: python3 control/scripts/ci/result_archive.py "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/verified"
+      - name: Upload result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ needs.resolve.outputs.artifact }}", path: "${{ runner.temp }}/result.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
 
-      - name: Run live browser smoke
-        env:
-          LETOVO_E2E_USERNAME: ${{ secrets.LETOVO_E2E_USERNAME }}
-          LETOVO_E2E_PASSWORD: ${{ secrets.LETOVO_E2E_PASSWORD }}
-          LETOVO_E2E_SECONDARY_USERNAME: ${{ secrets.LETOVO_E2E_SECONDARY_USERNAME }}
-          LETOVO_E2E_SECONDARY_PASSWORD: ${{ secrets.LETOVO_E2E_SECONDARY_PASSWORD }}
-        run: node $GITHUB_WORKSPACE/test/e2e/live-platform-smoke.mjs
-
-      - name: Restore live deployment images
-        if: always()
+  publish-main:
+    needs: [resolve, mac, hosted]
+    if: always() && needs.resolve.result == 'success' && needs.mac.result == 'success' && (needs.mac.outputs.fallback == 'false' || (needs.mac.outputs.fallback == 'true' && needs.hosted.result == 'success'))
+    runs-on: ubuntu-latest
+    permissions: {contents: read, packages: write}
+    steps:
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ needs.resolve.outputs.control_sha }}", path: control, persist-credentials: false}
+      - name: Download exact result
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with: {name: "${{ needs.resolve.outputs.artifact }}", path: "${{ runner.temp }}/download"}
+      - name: Recreate expected request
+        env: {EXPECTED_JSON: "${{ needs.resolve.outputs.request }}"}
+        run: printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/expected.json" && python3 control/scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/expected.json"
+      - name: Extract bounded result
+        run: python3 control/scripts/ci/result_archive.py "$RUNNER_TEMP/download/result.tar" "$RUNNER_TEMP/verified"
+      - name: Verify result before credentials or load
+        run: python3 control/scripts/ci/image_manifest.py verify "$RUNNER_TEMP/verified/manifest.json" "$RUNNER_TEMP/expected.json" "$RUNNER_TEMP/verified" --skip-image-inspect
+      - name: Install archive decompressor
+        run: sudo apt-get update && sudo apt-get install -y zstd
+      - name: Load bounded verified images
+        run: bash control/scripts/ci/publish-bundle.sh "$RUNNER_TEMP/verified" "$RUNNER_TEMP/expected.json" main --load-only
+      - name: Publish verified main images
+        env: {GH_TOKEN: "${{ github.token }}"}
         run: |
           set -euo pipefail
-          test -f ~/.ssh/live-e2e || exit 0
-          remote="${LETOVO_E2E_DEPLOY_USER}@${LETOVO_E2E_DEPLOY_HOST}"
-          ssh -i ~/.ssh/live-e2e "$remote" \
-            "COMPOSE_FILE='$LETOVO_E2E_DEPLOY_COMPOSE' PROJECT_NAME='$LETOVO_E2E_DEPLOY_PROJECT' RUN_ID='${{ github.run_id }}' bash -s" <<'REMOTE'
-          set -euo pipefail
-          state_dir="/tmp/letovo-live-e2e-${RUN_ID}"
-          restore="$state_dir/restore.env"
-          test -f "$restore" || exit 0
-
-          backend_image="$(awk -F= '$1 == "letovo-server" { print $2 }' "$restore" | tail -n 1)"
-          registration_image="$(awk -F= '$1 == "letovo-registration-server" { print $2 }' "$restore" | tail -n 1)"
-          frontend_image="$(awk -F= '$1 == "letovo-front" { print $2 }' "$restore" | tail -n 1)"
-          uploader_image="$(awk -F= '$1 == "flask-uploader" { print $2 }' "$restore" | tail -n 1)"
-          test -n "$backend_image"
-          test -n "$registration_image"
-          test -n "$frontend_image"
-          test -n "$uploader_image"
-
-          candidate="$state_dir/docker-compose.restore.yaml"
-          sed -E \
-            -e "s#image: ghcr.io/letovo-dev/letovo-server:.*#image: ${backend_image}#" \
-            -e "s#image: ghcr.io/letovo-dev/letovo-registration-server:.*#image: ${registration_image}#" \
-            -e "/^    letovo-front:/,/^    [[:alnum:]_-]+:$/ s#^([[:space:]]*)image:.*#\\1image: ${frontend_image}#" \
-            -e "/^    letovo-flask-uploader:/,/^    [[:alnum:]_-]+:$/ s#^([[:space:]]*)image:.*#\\1image: ${uploader_image}#" \
-            "$COMPOSE_FILE" > "$candidate"
-
-          docker compose -p "$PROJECT_NAME" -f "$candidate" pull letovo-server letovo-registration-server letovo-front letovo-flask-uploader || true
-          docker compose -p "$PROJECT_NAME" -f "$candidate" up -d letovo-server letovo-registration-server letovo-front letovo-flask-uploader
-          test "$(docker inspect -f '{{.Config.Image}}' flask-uploader)" = "$uploader_image"
-          # The additive schema migration intentionally remains in place. The
-          # retained role dump is for explicit operator recovery only.
-          rm -rf "$state_dir"
-          REMOTE
+          export DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/publish-auth.XXXXXX")"
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          bash control/scripts/ci/publish-bundle.sh "$RUNNER_TEMP/verified" "$RUNNER_TEMP/expected.json" main --publish-only

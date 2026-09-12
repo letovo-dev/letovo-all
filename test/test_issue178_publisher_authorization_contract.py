@@ -28,7 +28,7 @@ def test_moderator_scope_remains_limited_to_public_authors():
 
 def test_authorization_migration_is_applied_in_candidate_and_production_deploys():
     for workflow_path in (
-        ROOT / ".github/workflows/docker-image.yml",
+        ROOT / ".github/workflows/mac-ci-pr-controller.yml",
         ROOT / ".github/workflows/production-release.yml",
     ):
         workflow = workflow_path.read_text()

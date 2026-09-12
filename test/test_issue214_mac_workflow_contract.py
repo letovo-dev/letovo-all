@@ -29,11 +29,16 @@ def controller():
     return workflow("mac-ci-pr-controller.yml")
 
 
-def test_staged_trigger_and_permissions():
+def test_active_request_trigger_and_permissions():
     doc = controller()
     assert doc.get("on", doc.get(True)) == {"workflow_run": {"workflows": ["Mac CI request"], "types": ["completed"]}}
     assert doc["permissions"] == {"contents": "read"}
-    assert not (ROOT / ".github/workflows/pr-ci-request.yml").exists()
+    request = workflow("pr-ci-request.yml")
+    assert request.get("on", request.get(True)) == {"pull_request": {"branches": ["main"]}}
+    assert request["permissions"] == {"contents": "read"}
+    assert list(request["jobs"]) == ["complete"]
+    assert request["jobs"]["complete"]["permissions"] == {"contents": "read"}
+    assert "secrets." not in json.dumps(request)
     for name, job in doc["jobs"].items():
         permissions = job["permissions"]
         assert permissions.get("contents") == "read"
@@ -44,11 +49,95 @@ def test_staged_trigger_and_permissions():
 
 
 def test_every_action_is_pinned_to_a_full_commit():
-    for doc in [controller(), workflow("mac-ci-pilot.yml")]:
+    for doc in [controller(), workflow("mac-ci-pilot.yml"), workflow("docker-image.yml")]:
         for job in doc["jobs"].values():
             for action in job["steps"]:
                 if "uses" in action:
                     assert re.fullmatch(r"[\w-]+/[\w-]+@[0-9a-f]{40}", action["uses"])
+
+
+def test_main_uses_mac_first_bundle_and_publisher_only_push():
+    doc = workflow("docker-image.yml")
+    assert doc.get("on", doc.get(True)) == {"push": {"branches": ["main"]}}
+    assert doc["concurrency"] == {"group": "build-and-verify-main", "cancel-in-progress": False}
+    jobs = doc["jobs"]
+    assert set(jobs) == {"resolve", "mac", "fetch-builder", "hosted", "publish-main"}
+    assert jobs["mac"]["timeout-minutes"] == 60
+    assert "75) echo \"fallback=true\"" in step(jobs["mac"], "Try Mac")["run"]
+    assert "needs.mac.outputs.fallback == 'true'" in jobs["fetch-builder"]["if"]
+    assert "needs.mac.outputs.fallback == 'true'" in jobs["hosted"]["if"]
+    assert len([s for s in jobs["hosted"]["steps"] if "build-bundle.sh" in s.get("run", "")]) == 1
+    publisher = jobs["publish-main"]
+    assert publisher["permissions"] == {"contents": "read", "packages": "write"}
+    assert "always()" in publisher["if"]
+    assert step(publisher, "Download exact result")["with"]["name"] == "${{ needs.resolve.outputs.artifact }}"
+    text = json.dumps(publisher)
+    assert "publish-bundle.sh" in text and " main --publish-only" in text
+    assert 'profile="production"' in step(jobs["resolve"], "Freeze request")["run"]
+    assert 'artifact=f"letovo-images-{request[\'run_id\']}-{request[\'run_attempt\']}-production-{source_sha}"' in step(jobs["resolve"], "Freeze request")["run"]
+    assert "build-bundle.sh" not in text and "build-push-action" not in text and "docker build " not in text
+    assert "docker push" not in json.dumps({name: job for name, job in jobs.items() if name != "publish-main"})
+
+
+def test_main_freezes_source_and_public_frontend_without_submodule_secret():
+    jobs = workflow("docker-image.yml")["jobs"]
+    resolve = jobs["resolve"]
+    assert set(resolve["outputs"]) >= {"source_sha", "frontend_gitlink", "control_sha", "request", "artifact"}
+    freeze = step(resolve, "Freeze request")["run"]
+    assert "git/trees/" in freeze
+    assert 'api("branches/main")["commit"]["sha"] == source_sha' in freeze
+    assert resolve["steps"][-1]["env"]["PRODUCTION_BASE_URL"] == "${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}"
+    assert 'base_url=os.environ["PRODUCTION_BASE_URL"]' in freeze
+    mac = jobs["mac"]
+    assert step(mac, "Checkout trusted controls")["with"]["path"] == "control"
+    assert step(mac, "Checkout frozen source")["with"]["ref"] == "${{ needs.resolve.outputs.source_sha }}"
+    frontend = step(mac, "Checkout public frontend")["with"]
+    assert frontend["repository"] == "letovo-dev/letovo-all-frontend"
+    assert frontend["ref"] == "${{ needs.resolve.outputs.frontend_gitlink }}"
+    assert "SUBMODULE_SSH_KEY" not in json.dumps(jobs)
+    assert "secrets." not in json.dumps(jobs["hosted"])
+    assert jobs["hosted"]["permissions"] == {"contents": "read"}
+
+
+def test_main_resolver_emits_frozen_production_request(tmp_path):
+    script = step(workflow("docker-image.yml")["jobs"]["resolve"], "Freeze request")["run"]
+    (tmp_path / "control").symlink_to(ROOT, target_is_directory=True)
+    source_sha, frontend_sha = "a" * 40, "b" * 40
+    responses = {
+        f"commits/{source_sha}": {"sha": source_sha},
+        "branches/main": {"commit": {"sha": source_sha}},
+        f"git/trees/{source_sha}": {
+            "tree": [{"path": "frontend", "mode": "160000", "type": "commit", "sha": frontend_sha}]
+        },
+    }
+    (tmp_path / "responses").write_text(json.dumps(responses))
+    fake = tmp_path / "gh"
+    fake.write_text('#!/usr/bin/env python3\nimport json,os,sys\nprint(json.dumps(json.load(open(os.environ["RESPONSES"]))[sys.argv[-1].removeprefix("repos/letovo-dev/letovo-all/")]))\n')
+    fake.chmod(0o755)
+    fake = tmp_path / "git"
+    fake.write_text('#!/bin/sh\nprintf "%s\\n" "$CONTROL_SHA"\n')
+    fake.chmod(0o755)
+    output = tmp_path / "output"
+    env = {
+        **os.environ,
+        "PATH": f"{tmp_path}:{os.environ['PATH']}",
+        "CONTROL_SHA": source_sha,
+        "BUILD_FILES": "basic/auth.cc",
+        "PRODUCTION_BASE_URL": "https://school.example",
+        "BUILDER_IMAGE": "ghcr.io/letovo-dev/letovo-backend-builder@sha256:" + "f" * 64,
+        "GITHUB_OUTPUT": str(output),
+        "GITHUB_RUN_ID": "123",
+        "GITHUB_RUN_ATTEMPT": "2",
+        "RESPONSES": str(tmp_path / "responses"),
+    }
+    result = subprocess.run(["bash", "-e", "-c", script], cwd=tmp_path, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    request = json.loads(outputs["request"])
+    assert request["job"] == "main" and request["profile"] == "production"
+    assert request["base_url"] == "https://school.example"
+    assert request["source_sha"] == source_sha and request["frontend_gitlink"] == frontend_sha
+    assert outputs["artifact"] == f"letovo-images-123-2-production-{source_sha}"
 
 
 def test_resolve_freezes_run_pr_merge_and_trusted_request():
@@ -59,6 +148,55 @@ def test_resolve_freezes_run_pr_merge_and_trusted_request():
     assert set(job["outputs"]) >= {"head_sha", "source_sha", "frontend_gitlink", "control_sha", "request", "artifact", "pr_number"}
     assert "len(" in script
     assert step(job, "Checkout trusted controls")["with"]["ref"] == "${{ github.sha }}"
+
+
+def test_trusted_builder_contract_gates_candidate_before_pending_and_mac():
+    jobs = controller()["jobs"]
+    validation = jobs["source-validation"]
+    assert validation["needs"] == ["resolve"]
+    assert validation["permissions"] == {"contents": "read"}
+    controls = step(validation, "Checkout trusted controls")["with"]
+    candidate = step(validation, "Checkout frozen source")["with"]
+    assert controls == {
+        "ref": "${{ needs.resolve.outputs.control_sha }}",
+        "path": "control",
+        "persist-credentials": False,
+    }
+    assert candidate == {
+        "ref": "${{ needs.resolve.outputs.source_sha }}",
+        "path": "candidate",
+        "persist-credentials": False,
+    }
+    check = step(validation, "Validate frozen backend builder contract")
+    assert check["env"] == {"LETOVO_CONTRACT_ROOT": "${{ github.workspace }}/candidate"}
+    assert check["run"] == "python3 control/test/test_issue215_backend_builder_contract.py"
+    assert "candidate/test" not in json.dumps(validation)
+    assert "secrets." not in json.dumps(validation) and "packages" not in validation["permissions"]
+    assert jobs["pending"]["needs"] == ["resolve", "source-validation"]
+    assert jobs["mac"]["needs"] == ["resolve", "pending", "source-validation"]
+    assert "source-validation" in jobs["finalize"]["needs"]
+    assert "SOURCE_VALIDATION_RESULT" in step(jobs["finalize"], "Report terminal statuses")["env"]
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        ("run: python3 control/test/test_issue215_backend_builder_contract.py", "run: python3 control/test/test_issue215_backend_builder_contract.py && true"),
+        ("    - name: Validate frozen backend builder contract\n      env:\n", "    - name: Validate frozen backend builder contract\n      if: always()\n      env:\n"),
+        ("    - name: Validate frozen backend builder contract\n      env:\n", "    - name: Validate frozen backend builder contract\n      continue-on-error: true\n      env:\n"),
+        ("${{ github.workspace }}/candidate", "${{ github.workspace }}/candidate-evil"),
+        ("run: python3 control/", "run: python3 -O control/"),
+        ("permissions:\n      contents: read", "env:\n      PYTHONOPTIMIZE: 1\n    permissions:\n      contents: read"),
+    ],
+)
+def test_trusted_builder_contract_self_check_rejects_wiring_mutations(mutation):
+    from test_issue215_backend_builder_contract import assert_pr_controller_validation
+
+    source = (ROOT / ".github/workflows/mac-ci-pr-controller.yml").read_text()
+    old, new = mutation
+    assert old in source
+    with pytest.raises(AssertionError):
+        assert_pr_controller_validation(source.replace(old, new, 1))
 
 
 def test_candidate_checkout_and_pack_are_separate_from_controls():
@@ -127,20 +265,46 @@ def test_publisher_reconstructs_expected_and_never_builds():
 
 def test_status_and_deploy_failure_propagation():
     jobs = controller()["jobs"]
-    assert jobs["mac"]["needs"] == ["resolve", "pending"]
+    assert jobs["mac"]["needs"] == ["resolve", "pending", "source-validation"]
     final = jobs["finalize"]
     assert "always()" in final["if"]
-    assert set(final["needs"]) == {"resolve", "pending", "mac", "fetch-builder", "hosted", "publish", "deploy"}
+    assert set(final["needs"]) == {"resolve", "source-validation", "pending", "mac", "fetch-builder", "hosted", "publish", "deploy"}
     script = step(final, "Report terminal statuses")["run"]
     for context in CONTEXTS:
         assert context in script
     assert "success" in script and "failure" in script
-    old = yaml.safe_load((ROOT / ".github/workflows/docker-image.yml").read_text())["jobs"]["live-deployment-e2e"]
     deploy = jobs["deploy"]
-    assert deploy["concurrency"] == old["concurrency"]
-    for name in ["Deploy PR candidate images to live e2e", "Restore live deployment images"]:
-        # Connection options/source checkout can change; remote semantics stay exact.
-        assert step(deploy, name)["run"].split("<<'REMOTE'\n", 1)[1] == step(old, name)["run"].split("<<'REMOTE'\n", 1)[1]
+    assert deploy["concurrency"] == {"group": "live-deployment-e2e", "cancel-in-progress": False}
+    deploy_script = step(deploy, "Deploy PR candidate images to live e2e")["run"]
+    restore_script = step(deploy, "Restore live deployment images")["run"]
+    for migration in [
+        "avatar_upload_role_migration.sql",
+        "roles_natural_key_migration.sql",
+        "child_avatar_access_migration.sql",
+        "department_payout_migration.sql",
+        "publisher_authorization_migration.sql",
+        "post_media_order_migration.sql",
+    ]:
+        assert f"control/docs/{migration}" in deploy_script
+        assert f'"$state_dir/{migration}"' in deploy_script
+    for backup in [
+        "post-media.before-order-migration.sql",
+        "transactions.before-department-payout-migration.sql",
+        "role.before-avatar-migration.sql",
+        "roles.before-natural-key-migration.sql",
+        "user.before-child-avatar-migration.sql",
+        "child-avatar-migration-preview.csv",
+    ]:
+        assert backup in deploy_script
+    for service in ["letovo-server", "letovo-registration-server", "letovo-front", "flask-uploader"]:
+        assert f"{service}={{{{.Config.Image}}}}" in deploy_script
+        assert service in restore_script
+    assert deploy_script.index("post-media.before-order-migration.sql") < deploy_script.index("-f /tmp/post_media_order_migration.sql")
+    assert deploy_script.index("transactions.before-department-payout-migration.sql") < deploy_script.index("-f /tmp/department_payout_migration.sql")
+    assert "-v apply=false" in deploy_script and "-v apply=true" in deploy_script
+    assert "docker compose" in deploy_script and "docker compose" in restore_script
+    assert "pull letovo-server letovo-registration-server letovo-front letovo-flask-uploader || true" in restore_script
+    assert 'rm -rf "$state_dir"' in restore_script
     assert step(deploy, "Run live browser smoke")["run"] == "node $GITHUB_WORKSPACE/control/test/e2e/live-platform-smoke.mjs"
     assert step(deploy, "Restore live deployment images")["if"] == "always()"
 
