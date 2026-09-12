@@ -1,0 +1,332 @@
+name: Mac CI pilot
+'on':
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: normal requires Mac; busy requires an operator-held native lock; remote-failure must fail
+        type: choice
+        required: true
+        default: normal
+        options:
+        - normal
+        - disabled
+        - offline
+        - busy
+        - remote-failure
+permissions:
+  contents: read
+jobs:
+  resolve:
+    if: github.ref == 'refs/heads/main' && github.repository == 'letovo-dev/letovo-all'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      head_sha: ${{ steps.freeze.outputs.head_sha }}
+      source_sha: ${{ steps.freeze.outputs.source_sha }}
+      frontend_gitlink: ${{ steps.freeze.outputs.frontend_gitlink }}
+      control_sha: ${{ steps.freeze.outputs.control_sha }}
+      request: ${{ steps.freeze.outputs.request }}
+      artifact: ${{ steps.freeze.outputs.artifact }}
+      pr_number: ${{ steps.freeze.outputs.pr_number }}
+      builder_image: ${{ steps.freeze.outputs.builder_image }}
+      profile: ${{ steps.freeze.outputs.profile }}
+      build_files: ${{ steps.freeze.outputs.build_files }}
+    steps:
+    - name: Checkout trusted controls
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        ref: ${{ github.sha }}
+        path: control
+        persist-credentials: false
+    - name: Resolve trusted builder
+      working-directory: control
+      run: bash scripts/export_backend_builder.sh
+    - name: Freeze request
+      id: freeze
+      env:
+        GH_TOKEN: ${{ github.token }}
+        CONTROL_SHA: ${{ github.sha }}
+        MODE: ${{ inputs.mode }}
+        BUILD_FILES: basic/auth.cc basic/analytics.cc basic/otel.cc basic/security.cc basic/utils.cc basic/pqxx_cp.cc basic/hash.cc basic/assist_funcs.cc basic/url_parser.cc basic/user_data.cc basic/checks.cc basic/media.cc basic/media_cash.cc basic/qr_worker.cc basic/ws_topic_authorizer.cc basic/ws_event_bus.cc basic/ws_endpoint.cc market/transactions.cc market/actives.cc market/DOM.cc letovo-soc-net/social.cc letovo-soc-net/achivements.cc letovo-soc-net/page_server.cc letovo-soc-net/authors.cc letovo-soc-net/chat.cc letovo-soc-net/chat_ws.cc
+      run: |
+        python3 - <<'PY'
+        import json, os, re, subprocess, sys
+        sys.path.insert(0, "control/scripts/ci")
+        from image_manifest import validate_request
+        def api(path):
+            return json.loads(subprocess.check_output(["gh", "api", "repos/letovo-dev/letovo-all/" + path]))
+        def sha(value):
+            if not isinstance(value, str) or not re.fullmatch("[0-9a-f]{40}", value):
+                raise ValueError("invalid SHA")
+            return value
+        control_sha = sha(os.environ["CONTROL_SHA"])
+        assert subprocess.check_output(["git", "-C", "control", "rev-parse", "HEAD"], text=True).strip() == control_sha
+        assert api("branches/main")["commit"]["sha"] == control_sha
+        source_sha = head_sha = control_sha
+        profile, job, base_url, pr_number = "production", "pilot", "https://letovocorp.ru", None
+        build_files = os.environ["BUILD_FILES"].split()
+        assert os.environ["MODE"] in ("normal", "disabled", "offline", "busy", "remote-failure")
+        if os.environ["MODE"] == "remote-failure":
+            build_files.append("mac-ci-injected-missing.cc")
+        tree = api("git/trees/" + source_sha)["tree"]
+        frontend = [entry for entry in tree if entry["path"] == "frontend"]
+        assert len(frontend) == 1 and frontend[0]["mode"] == "160000" and frontend[0]["type"] == "commit"
+        frontend_gitlink = sha(frontend[0]["sha"])
+        request = validate_request(dict(
+            schema_version=1, repository="letovo-dev/letovo-all", run_id=os.environ["GITHUB_RUN_ID"],
+            run_attempt=int(os.environ["GITHUB_RUN_ATTEMPT"]), job=job, source_sha=source_sha,
+            frontend_gitlink=frontend_gitlink, profile=profile, platform="linux/amd64",
+            base_url=base_url, candidate_number=pr_number, builder_image=os.environ["BUILDER_IMAGE"],
+            build_files=build_files))
+        outputs = dict(head_sha=head_sha, source_sha=source_sha, frontend_gitlink=frontend_gitlink,
+                       control_sha=control_sha, pr_number=pr_number or "", profile=profile,
+                       builder_image=request["builder_image"], build_files=json.dumps(build_files),
+                       request=json.dumps(request, separators=(",", ":")),
+                       artifact=f"letovo-images-{request['run_id']}-{request['run_attempt']}-{profile}-{source_sha}")
+        with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+            for key, value in outputs.items():
+                output.write(f"{key}={value}\n")
+        PY
+  mac:
+    needs:
+    - resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout trusted controls
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        ref: ${{ needs.resolve.outputs.control_sha }}
+        path: control
+        persist-credentials: false
+    - name: Checkout frozen source
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        ref: ${{ needs.resolve.outputs.source_sha }}
+        path: source-checkout
+        persist-credentials: false
+    - name: Checkout public frontend
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        repository: letovo-dev/letovo-all-frontend
+        ref: ${{ needs.resolve.outputs.frontend_gitlink }}
+        path: source-checkout/frontend
+        persist-credentials: false
+    - name: Pack frozen source
+      env:
+        EXPECTED_JSON: ${{ needs.resolve.outputs.request }}
+      run: |
+        set -euo pipefail
+        for directory in source-checkout/scripts source-checkout/src; do
+          test -d "$directory" && test ! -L "$directory"
+        done
+        cp --remove-destination control/scripts/export_backend_builder.sh source-checkout/scripts/export_backend_builder.sh
+        cp --remove-destination control/src/backend-builder.lock source-checkout/src/backend-builder.lock
+        printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+        python3 control/scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/request.json"
+        python3 control/scripts/ci/source_archive.py pack source-checkout "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/source.tar"
+        echo "source_sha256=$(sha256sum "$RUNNER_TEMP/source.tar" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      id: pack
+    - name: Try Mac
+      id: mac
+      env:
+        MODE: ${{ inputs.mode }}
+        MAC_CI_ENABLED: ${{ vars.MAC_CI_ENABLED }}
+        MAC_CI_BASTION_HOST: ${{ vars.MAC_CI_BASTION_HOST || 'ya.sergeiscv.ru' }}
+        MAC_CI_BASTION_USER: ${{ vars.MAC_CI_BASTION_USER || 'letovo-ci-proxy' }}
+        MAC_CI_WORKER_USER: ${{ vars.MAC_CI_WORKER_USER || 'letovo-ci' }}
+        MAC_CI_WORKER_PORT: ${{ vars.MAC_CI_WORKER_PORT || '22222' }}
+        MAC_CI_SSH_KEY: ${{ secrets.MAC_CI_SSH_KEY }}
+        MAC_CI_KNOWN_HOSTS: ${{ secrets.MAC_CI_KNOWN_HOSTS }}
+      run: |
+        set -euo pipefail
+        umask 077
+        credentials="$(mktemp -d "$RUNNER_TEMP/mac-auth.XXXXXX")"
+        trap 'rm -rf "$credentials"' EXIT
+        export MAC_CI_SSH_KEY_FILE="$credentials/key"
+        export MAC_CI_KNOWN_HOSTS_FILE="$credentials/known_hosts"
+        printf '%s\n' "$MAC_CI_SSH_KEY" > "$MAC_CI_SSH_KEY_FILE"
+        printf '%s\n' "$MAC_CI_KNOWN_HOSTS" > "$MAC_CI_KNOWN_HOSTS_FILE"
+        chmod 600 "$MAC_CI_SSH_KEY_FILE" "$MAC_CI_KNOWN_HOSTS_FILE"
+        unset MAC_CI_SSH_KEY MAC_CI_KNOWN_HOSTS
+        case "$MODE" in
+          disabled) export MAC_CI_ENABLED=false ;;
+          offline) export MAC_CI_ENABLED=true MAC_CI_BASTION_HOST=letovo-ci-offline.invalid ;;
+          normal|busy|remote-failure) export MAC_CI_ENABLED=true ;;
+          *) exit 2 ;;
+        esac
+        status=0
+        bash control/scripts/ci/try-mac.sh "$RUNNER_TEMP/source.tar" "$RUNNER_TEMP/request.json" \
+          "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/mac-summary" || status=$?
+        rm -rf "$credentials"
+        trap - EXIT
+        cat "$RUNNER_TEMP/mac-summary" >> "$GITHUB_STEP_SUMMARY"
+        case "$MODE/$status" in
+          normal/0|disabled/75|offline/75|busy/75) ;;
+          remote-failure/0|remote-failure/75)
+            echo "Injected remote failure did not fail after start" >&2; exit 1 ;;
+          remote-failure/*) exit "$status" ;;
+          *) echo "Unexpected pilot executor or outcome" >&2; exit 1 ;;
+        esac
+        case "$status" in
+          0) echo "fallback=false" >> "$GITHUB_OUTPUT" ;;
+          75) echo "fallback=true" >> "$GITHUB_OUTPUT" ;;
+          *) exit "$status" ;;
+        esac
+    - name: Upload frozen source
+      if: steps.mac.outputs.fallback == 'true'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: ${{ needs.resolve.outputs.artifact }}-source
+        path: ${{ runner.temp }}/source.tar
+        if-no-files-found: error
+        compression-level: 0
+        retention-days: 3
+    - name: Extract bounded result
+      if: steps.mac.outputs.fallback == 'false'
+      run: |
+        python3 control/scripts/ci/result_archive.py "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/verified"
+    - name: Upload result
+      if: steps.mac.outputs.fallback == 'false'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: ${{ needs.resolve.outputs.artifact }}
+        path: ${{ runner.temp }}/result.tar
+        if-no-files-found: error
+        compression-level: 0
+        retention-days: 3
+    outputs:
+      fallback: ${{ steps.mac.outputs.fallback }}
+      source_sha256: ${{ steps.pack.outputs.source_sha256 }}
+  fetch-builder:
+    needs:
+    - resolve
+    - mac
+    if: needs.mac.outputs.fallback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      image_id: ${{ steps.builder.outputs.image_id }}
+      archive_sha256: ${{ steps.builder.outputs.archive_sha256 }}
+    steps:
+    - name: Export private builder
+      id: builder
+      env:
+        GH_TOKEN: ${{ github.token }}
+        BUILDER_IMAGE: ${{ needs.resolve.outputs.builder_image }}
+      run: |
+        set -euo pipefail
+        export DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/docker-auth.XXXXXX")"
+        trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+        printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        docker pull --platform linux/amd64 "$BUILDER_IMAGE"
+        inspection="$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$BUILDER_IMAGE")"
+        [[ "$inspection" =~ ^sha256:[0-9a-f]{64}\ amd64\ linux$ ]]
+        image_id="$(cut -d ' ' -f 1 <<< "$inspection")"
+        docker save "$BUILDER_IMAGE" > "$RUNNER_TEMP/builder.tar"
+        test "$(stat -c %s "$RUNNER_TEMP/builder.tar")" -le 2147483648
+        {
+          echo "image_id=$image_id"
+          echo "archive_sha256=$(sha256sum "$RUNNER_TEMP/builder.tar" | cut -d ' ' -f 1)"
+        } >> "$GITHUB_OUTPUT"
+        rm -rf "$DOCKER_CONFIG"
+        unset GH_TOKEN DOCKER_CONFIG
+        trap - EXIT
+    - name: Upload pinned builder
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: ${{ needs.resolve.outputs.artifact }}-builder
+        path: ${{ runner.temp }}/builder.tar
+        if-no-files-found: error
+        compression-level: 0
+        retention-days: 3
+  hosted:
+    needs:
+    - resolve
+    - mac
+    - fetch-builder
+    if: needs.mac.outputs.fallback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout trusted controls
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        ref: ${{ needs.resolve.outputs.control_sha }}
+        path: control
+        persist-credentials: false
+    - name: Download frozen source
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      with:
+        name: ${{ needs.resolve.outputs.artifact }}-source
+        path: ${{ runner.temp }}/source-download
+    - name: Download pinned builder
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      with:
+        name: ${{ needs.resolve.outputs.artifact }}-builder
+        path: ${{ runner.temp }}/builder-download
+    - name: Extract frozen source
+      env:
+        EXPECTED_JSON: ${{ needs.resolve.outputs.request }}
+        SOURCE_SHA256: ${{ needs.mac.outputs.source_sha256 }}
+      run: |
+        set -euo pipefail
+        [[ "$SOURCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+        printf '%s  %s\n' "$SOURCE_SHA256" "$RUNNER_TEMP/source-download/source.tar" | sha256sum --check
+        test "$(stat -c %s "$RUNNER_TEMP/source-download/source.tar")" -le 268435456
+        printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+        python3 control/scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/request.json"
+        python3 control/scripts/ci/source_archive.py extract "$RUNNER_TEMP/source-download/source.tar" "$RUNNER_TEMP/source"
+        cmp "$RUNNER_TEMP/source/request.json" "$RUNNER_TEMP/request.json"
+    - name: Load pinned builder
+      env:
+        BUILDER_SHA256: ${{ needs.fetch-builder.outputs.archive_sha256 }}
+        BUILDER_ID: ${{ needs.fetch-builder.outputs.image_id }}
+      run: |
+        set -euo pipefail
+        [[ "$BUILDER_SHA256" =~ ^[0-9a-f]{64}$ ]]
+        [[ "$BUILDER_ID" =~ ^sha256:[0-9a-f]{64}$ ]]
+        printf '%s  %s\n' "$BUILDER_SHA256" "$RUNNER_TEMP/builder-download/builder.tar" | sha256sum --check
+        test "$(stat -c %s "$RUNNER_TEMP/builder-download/builder.tar")" -le 2147483648
+        docker load < "$RUNNER_TEMP/builder-download/builder.tar"
+        test "$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$BUILDER_ID")" = "$BUILDER_ID amd64 linux"
+        docker tag "$BUILDER_ID" "letovo-ci/backend-builder:$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+    - name: Set up Node.js
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      with:
+        node-version: 22
+    - name: Install hosted dependencies
+      run: |
+        python3 -m pip install --disable-pip-version-check psycopg2-binary pytest
+        sudo apt-get update
+        sudo apt-get install -y zstd
+    - name: Hosted fallback
+      run: |
+        set -euo pipefail
+        docker buildx use default
+        bash control/scripts/ci/build-bundle.sh "$RUNNER_TEMP/source" "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/bundle"
+        tar --format=ustar -cf "$RUNNER_TEMP/result.tar" -C "$RUNNER_TEMP/bundle" \
+          manifest.json images/backend.tar.zst images/registration.tar.zst images/frontend.tar.zst images/uploader.tar.zst \
+          reports/backend.json reports/registration.json reports/frontend.json reports/uploader.json
+      env:
+        LOCAL_BUILDER_REF: letovo-ci/backend-builder:${{ github.run_id }}-${{ github.run_attempt }}
+        LOCAL_BUILDER_IMAGE_ID: ${{ needs.fetch-builder.outputs.image_id }}
+    - name: Extract bounded result
+      run: |
+        python3 control/scripts/ci/result_archive.py "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/verified"
+    - name: Upload result
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: ${{ needs.resolve.outputs.artifact }}
+        path: ${{ runner.temp }}/result.tar
+        if-no-files-found: error
+        compression-level: 0
+        retention-days: 3
