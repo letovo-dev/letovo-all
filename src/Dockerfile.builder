@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# Issue #214 pre-start fallback pilot; this PR is not for merge.
 ARG BASE_IMAGE=ubuntu@sha256:a61567bd31828687156d735ea8eb01ba4e37636e225dd6a48ba94136a70d9d61
 FROM ${BASE_IMAGE}
 
