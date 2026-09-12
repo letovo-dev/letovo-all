@@ -4,10 +4,11 @@ Issue: https://github.com/letovo-dev/letovo-all/issues/214
 
 ## Goal
 
-Use the Mac mini as the primary compute host for verification and all four
-application image builds. GitHub-hosted runners remain the trusted controller,
-artifact boundary, GHCR publisher, and deployment boundary. A Mac that is
-disabled, offline, or busy falls back once to the same hosted build path.
+Use the Mac mini as the primary compute host for verification, all four
+application image builds, and the backend-builder image build. GitHub-hosted
+runners remain the trusted controller, artifact boundary, GHCR publisher, and
+deployment boundary. A Mac that is disabled, offline, or busy falls back once
+to the same hosted build path.
 
 ## Trust boundary
 
@@ -106,6 +107,10 @@ that mode-0600 pinned host file with strict checking and no runtime key scan.
   publisher-only GHCR jobs, and the existing candidate live E2E/restore path.
 - `mac-ci-pilot.yml`: manual build-only exercise for normal, disabled/offline,
   busy, and injected remote-failure paths; it never publishes or deploys.
+- `backend-builder.yml`: unprivileged PR/main completion signal for changes to
+  the two builder inputs only.
+- `mac-ci-builder-controller.yml`: trusted Mac-first builder validation, hosted
+  fallback, exact artifact verification, and main-only immutable GHCR publish.
 - `production-release.yml`: preview remains build-free. Apply freezes main,
   builds a production bundle before the protected deploy job, and the deploy job
   verifies/publishes the bundle without rebuilding before existing migration,
@@ -118,6 +123,8 @@ controller. Missing or skipped work is an error, not success.
 ## Acceptance criteria
 
 - A same-repository PR and a main push use the Mac when it is ready.
+- Backend-builder PR/main requests use the separate Mac builder protocol; only
+  GitHub may read or write GHCR and main publication reuses immutable revisions.
 - All four images are built once, exported, verified, and published as
   `linux/amd64`; publisher and release jobs contain no Docker build command.
 - Existing regression, frontend, candidate deployment/restore, production

@@ -1,142 +1,24 @@
-name: publish backend builder
+name: Mac builder CI request
 
 on:
   pull_request:
-    branches: ["main"]
+    branches: [main]
     paths:
       - src/backend-builder.env
       - src/Dockerfile.builder
-      - .github/workflows/backend-builder.yml
   push:
-    branches: ["main"]
+    branches: [main]
     paths:
       - src/backend-builder.env
       - src/Dockerfile.builder
-      - .github/workflows/backend-builder.yml
 
 permissions:
   contents: read
 
 jobs:
-  validate:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
-
-      - name: Resolve dependency lock
-        id: lock
-        run: echo "base_image=$(sed -n 's/^BASE_IMAGE=//p' src/backend-builder.env)" >> "$GITHUB_OUTPUT"
-
-      - name: Build backend builder for review
-        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
-        with:
-          context: ./src
-          file: ./src/Dockerfile.builder
-          platforms: linux/amd64
-          load: true
-          push: false
-          build-args: BASE_IMAGE=${{ steps.lock.outputs.base_image }}
-          tags: letovo-backend-builder:review-${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Inspect backend builder dependencies
-        run: |
-          docker run --rm letovo-backend-builder:review-${{ github.sha }} sh -ec '
-            test -f /opt/letovo/cmake/jwt-cpp-config.cmake
-            test -f /opt/letovo/lib/cmake/llhttp/llhttp-config.cmake
-            test -f /opt/letovo/lib/cmake/opentelemetry-cpp/opentelemetry-cpp-config.cmake
-            test -f /opt/letovo/share/cmake/nlohmann_json/nlohmann_jsonConfig.cmake
-            test -f /usr/include/boost/format.hpp
-            command -v ninja
-          '
-
-  publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  complete:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Resolve dependency lock
-        id: lock
-        run: |
-          set -euo pipefail
-          manifest_revision="$(sha256sum src/backend-builder.env | cut -d ' ' -f 1)"
-          revision="$(sha256sum src/backend-builder.env src/Dockerfile.builder | sha256sum | cut -d ' ' -f 1)"
-          base_image="$(sed -n 's/^BASE_IMAGE=//p' src/backend-builder.env)"
-          test -n "$manifest_revision"
-          test -n "$revision"
-          test -n "$base_image"
-          echo "manifest_revision=$manifest_revision" >> "$GITHUB_OUTPUT"
-          echo "revision=$revision" >> "$GITHUB_OUTPUT"
-          echo "base_image=$base_image" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Reuse published dependency lock
-        id: existing
-        env:
-          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ steps.lock.outputs.revision }}
-        run: |
-          set -euo pipefail
-          if output="$(docker buildx imagetools inspect "$IMAGE_TAG" 2>&1)"; then
-            digest="$(awk '$1 == "Digest:" { print $2; exit }' <<< "$output")"
-            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "digest=$digest" >> "$GITHUB_OUTPUT"
-          elif grep -qiE 'manifest unknown|not found' <<< "$output"; then
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          else
-            printf '%s\n' "$output" >&2
-            exit 1
-          fi
-
-      - name: Build and publish backend builder
-        if: steps.existing.outputs.exists != 'true'
-        id: build
-        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
-        with:
-          context: ./src
-          file: ./src/Dockerfile.builder
-          platforms: linux/amd64
-          push: true
-          build-args: BASE_IMAGE=${{ steps.lock.outputs.base_image }}
-          tags: ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ steps.lock.outputs.revision }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Record immutable builder identity
-        env:
-          EXISTING_DIGEST: ${{ steps.existing.outputs.digest }}
-          BUILT_DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          digest="${EXISTING_DIGEST:-$BUILT_DIGEST}"
-          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
-          {
-            echo "builder_image=ghcr.io/${{ github.repository_owner }}/letovo-backend-builder@$digest"
-            echo "builder_lock_revision=${{ steps.lock.outputs.revision }}"
-            echo "dependency_manifest_revision=${{ steps.lock.outputs.manifest_revision }}"
-          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - run: echo "Trusted controller will verify this frozen builder source."

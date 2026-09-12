@@ -120,79 +120,56 @@ def test_builder_recipe_installs_manifest_dependencies():
 
 
 def test_builder_is_published_only_by_trusted_main_workflow():
-    workflow = _read(WORKFLOW)
-    if workflow.startswith("name: Mac builder CI request\n"):
-        controller = _read(BUILDER_CONTROLLER)
-        existing = _workflow_job(controller, "existing")
-        publish = _workflow_job(controller, "publish")
+    request = _read(WORKFLOW)
+    controller = _read(BUILDER_CONTROLLER)
+    existing = _workflow_job(controller, "existing")
+    publish = _workflow_job(controller, "publish")
 
-        assert "pull_request:" in workflow and "push:" in workflow
-        assert "packages:" not in workflow
-        assert "docker" not in _workflow_job(workflow, "complete").lower()
-        assert "packages: write" not in controller[: controller.index("  publish:\n")]
-        assert publish.count("packages: write") == 1
-        assert "needs.resolve.outputs.mode == 'main'" in publish
-        assert "docker buildx imagetools inspect" in existing
-        assert "docker buildx imagetools inspect" in publish
-        assert "manifest unknown|not found" in existing and "manifest unknown|not found" in publish
-        assert "if: needs.existing.outputs.exists != 'true'" in publish
-        assert publish.index("Verify and load exact builder image") < publish.index("Login to GHCR")
-        assert "docker push" in publish
-        assert "ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ needs.resolve.outputs.revision }}" in controller
-        assert "builder_image=" in publish
-        assert "dependency_manifest_revision=" in publish
-        assert not re.search(r"uses: [^\n]+@v[0-9]+(?:\s|$)", workflow + controller)
-        return
+    assert "pull_request:" in request and "push:" in request
+    assert "packages:" not in request and "docker" not in _workflow_job(request, "complete").lower()
+    assert "packages: write" not in controller[: controller.index("  publish:\n")]
+    assert publish.count("packages: write") == 1
+    assert "needs.resolve.outputs.mode == 'main'" in publish
+    assert "docker buildx imagetools inspect" in existing
+    assert "docker buildx imagetools inspect" in publish
+    assert "manifest unknown|not found" in existing and "manifest unknown|not found" in publish
+    assert "if: needs.existing.outputs.exists != 'true'" in publish
+    assert publish.index("Verify and load exact builder image") < publish.index("Login to GHCR")
+    assert "docker push" in publish
+    assert "ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ needs.resolve.outputs.revision }}" in controller
+    assert "builder_image=" in publish
+    assert "dependency_manifest_revision=" in publish
+    assert not re.search(r"uses: [^\n]+@v[0-9]+(?:\s|$)", request + controller)
 
-    validate_job, publish_job = workflow.split("  publish:\n", 1)
 
-    assert "pull_request:" in workflow
-    assert re.search(r"push:\n\s+branches: \[\"main\"\]", workflow)
-    assert "packages: write" not in validate_job
-    assert publish_job.count("packages: write") == 1
-    assert "if: github.event_name == 'push' && github.ref == 'refs/heads/main'" in publish_job
-    assert "file: ./src/Dockerfile.builder" in workflow
-    assert "platforms: linux/amd64" in workflow
-    assert "push: true" not in validate_job
-    assert "push: true" in publish_job
-    assert "docker buildx imagetools inspect" in publish_job
-    assert "if: steps.existing.outputs.exists != 'true'" in publish_job
-    assert "manifest unknown|not found" in publish_job
-    assert "EXISTING_DIGEST" in publish_job
-    assert "BUILT_DIGEST" in publish_job
-    assert "sha256sum src/backend-builder.env src/Dockerfile.builder | sha256sum" in workflow
-    assert "ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ steps.lock.outputs.revision }}" in workflow
-    assert "builder_image=" in workflow
-    assert "dependency_manifest_revision=" in workflow
-    assert not re.search(r"uses: [^\n]+@v[0-9]+(?:\s|$)", workflow)
+def test_builder_pr_fallback_ignores_skipped_main_lookup():
+    hosted = _workflow_job(_read(BUILDER_CONTROLLER), "hosted")
+
+    assert "needs: [resolve, mac]" in hosted
+    assert (
+        "if: always() && needs.resolve.result == 'success' && needs.mac.result == 'success' "
+        "&& needs.mac.outputs.fallback == 'true'"
+    ) in hosted
 
 
 def test_builder_contract_runs_before_pr_backend_build():
     controller = _read(PR_CONTROLLER)
     bundle = _read(BUILD_BUNDLE)
     builder_workflow = _read(WORKFLOW)
+    builder_controller = _read(BUILDER_CONTROLLER)
+    builder_script = _read(BUILD_BUILDER)
 
     assert "bash scripts/export_backend_builder.sh" in controller
     assert "control/scripts/ci/build-bundle.sh" in controller
     assert bundle.index("bash scripts/export_backend_builder.sh") < bundle.index("docker buildx build")
     assert "Dockerfile.builder" not in controller
     assert "pull_request:" in builder_workflow
-    if builder_workflow.startswith("name: Mac builder CI request\n"):
-        builder_controller = _read(BUILDER_CONTROLLER)
-        builder_script = _read(BUILD_BUILDER)
-        assert "build-builder.sh" in builder_controller
-        assert "--platform linux/amd64 --load" in builder_script
-        assert "Dockerfile.builder" in builder_script
-        assert "opentelemetry-cpp-config.cmake" in builder_script
-        assert "boost/format.hpp" in builder_script
-        assert "command -v ninja" in builder_script
-    else:
-        assert "Build backend builder for review" in builder_workflow
-        assert "file: ./src/Dockerfile.builder" in builder_workflow
-        assert "Inspect backend builder dependencies" in builder_workflow
-        assert "opentelemetry-cpp-config.cmake" in builder_workflow
-        assert "boost/format.hpp" in builder_workflow
-        assert "command -v ninja" in builder_workflow
+    assert "build-builder.sh" in builder_controller
+    assert "--platform linux/amd64 --load" in builder_script
+    assert "Dockerfile.builder" in builder_script
+    assert "opentelemetry-cpp-config.cmake" in builder_script
+    assert "boost/format.hpp" in builder_script
+    assert "command -v ninja" in builder_script
 
     assert_pr_controller_validation(controller)
 
