@@ -17,10 +17,12 @@ ROOT = _contract_root()
 MANIFEST = ROOT / "src" / "backend-builder.env"
 DOCKERFILE = ROOT / "src" / "Dockerfile.builder"
 WORKFLOW = ROOT / ".github" / "workflows" / "backend-builder.yml"
+BUILDER_CONTROLLER = ROOT / ".github" / "workflows" / "mac-ci-builder-controller.yml"
 BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "docker-image.yml"
 PR_CONTROLLER = ROOT / ".github" / "workflows" / "mac-ci-pr-controller.yml"
 PRODUCTION_WORKFLOW = ROOT / ".github" / "workflows" / "production-release.yml"
 BUILD_BUNDLE = ROOT / "scripts" / "ci" / "build-bundle.sh"
+BUILD_BUILDER = ROOT / "scripts" / "ci" / "build-builder.sh"
 BACKEND_DOCKERFILE = ROOT / "src" / "Dockerfile"
 CMAKE = ROOT / "src" / "CMakeLists.txt"
 LOCK = ROOT / "src" / "backend-builder.lock"
@@ -119,6 +121,29 @@ def test_builder_recipe_installs_manifest_dependencies():
 
 def test_builder_is_published_only_by_trusted_main_workflow():
     workflow = _read(WORKFLOW)
+    if workflow.startswith("name: Mac builder CI request\n"):
+        controller = _read(BUILDER_CONTROLLER)
+        existing = _workflow_job(controller, "existing")
+        publish = _workflow_job(controller, "publish")
+
+        assert "pull_request:" in workflow and "push:" in workflow
+        assert "packages:" not in workflow
+        assert "docker" not in _workflow_job(workflow, "complete").lower()
+        assert "packages: write" not in controller[: controller.index("  publish:\n")]
+        assert publish.count("packages: write") == 1
+        assert "needs.resolve.outputs.mode == 'main'" in publish
+        assert "docker buildx imagetools inspect" in existing
+        assert "docker buildx imagetools inspect" in publish
+        assert "manifest unknown|not found" in existing and "manifest unknown|not found" in publish
+        assert "if: needs.existing.outputs.exists != 'true'" in publish
+        assert publish.index("Verify and load exact builder image") < publish.index("Login to GHCR")
+        assert "docker push" in publish
+        assert "ghcr.io/${{ github.repository_owner }}/letovo-backend-builder:deps-${{ needs.resolve.outputs.revision }}" in controller
+        assert "builder_image=" in publish
+        assert "dependency_manifest_revision=" in publish
+        assert not re.search(r"uses: [^\n]+@v[0-9]+(?:\s|$)", workflow + controller)
+        return
+
     validate_job, publish_job = workflow.split("  publish:\n", 1)
 
     assert "pull_request:" in workflow
@@ -152,12 +177,22 @@ def test_builder_contract_runs_before_pr_backend_build():
     assert bundle.index("bash scripts/export_backend_builder.sh") < bundle.index("docker buildx build")
     assert "Dockerfile.builder" not in controller
     assert "pull_request:" in builder_workflow
-    assert "Build backend builder for review" in builder_workflow
-    assert "file: ./src/Dockerfile.builder" in builder_workflow
-    assert "Inspect backend builder dependencies" in builder_workflow
-    assert "opentelemetry-cpp-config.cmake" in builder_workflow
-    assert "boost/format.hpp" in builder_workflow
-    assert "command -v ninja" in builder_workflow
+    if builder_workflow.startswith("name: Mac builder CI request\n"):
+        builder_controller = _read(BUILDER_CONTROLLER)
+        builder_script = _read(BUILD_BUILDER)
+        assert "build-builder.sh" in builder_controller
+        assert "--platform linux/amd64 --load" in builder_script
+        assert "Dockerfile.builder" in builder_script
+        assert "opentelemetry-cpp-config.cmake" in builder_script
+        assert "boost/format.hpp" in builder_script
+        assert "command -v ninja" in builder_script
+    else:
+        assert "Build backend builder for review" in builder_workflow
+        assert "file: ./src/Dockerfile.builder" in builder_workflow
+        assert "Inspect backend builder dependencies" in builder_workflow
+        assert "opentelemetry-cpp-config.cmake" in builder_workflow
+        assert "boost/format.hpp" in builder_workflow
+        assert "command -v ninja" in builder_workflow
 
     assert_pr_controller_validation(controller)
 
