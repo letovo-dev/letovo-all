@@ -217,13 +217,22 @@ def test_build_builder_builds_once_inspects_and_never_authenticates_or_pushes(tm
     docker = bin_dir / "docker"
     docker.write_text(
         """#!/usr/bin/env python3
-import json, os, sys
+import io, json, os, sys, tarfile
 args=sys.argv[1:]
 with open(os.environ['OPS'], 'a') as output: output.write(json.dumps(args)+'\\n')
 if args[:2] == ['image', 'inspect']:
     print('sha256:'+'7'*64+' amd64 linux')
 elif args[0] == 'save':
-    sys.stdout.buffer.write(b'image archive')
+    config = b'{"architecture":"amd64","os":"linux"}'
+    digest = '9d99a75171aea000c711b34c0e5e3f28d3d537dd99d110eafbfbc2bd8e52c2bf'
+    with tarfile.open(fileobj=sys.stdout.buffer, mode='w|') as archive:
+        member = tarfile.TarInfo(f'blobs/sha256/{digest}')
+        member.size = len(config)
+        archive.addfile(member, io.BytesIO(config))
+        manifest = json.dumps([{'Config': f'blobs/sha256/{digest}', 'RepoTags': [args[1]], 'Layers': []}]).encode()
+        member = tarfile.TarInfo('manifest.json')
+        member.size = len(manifest)
+        archive.addfile(member, io.BytesIO(manifest))
 elif args[0] not in ('buildx', 'run'):
     sys.exit(17)
 """
@@ -259,7 +268,11 @@ data=sys.stdin.buffer.read(); pathlib.Path(sys.argv[sys.argv.index('-o')+1]).wri
     for expected in ["jwt-cpp-config.cmake", "llhttp-config.cmake", "opentelemetry-cpp-config.cmake", "nlohmann_jsonConfig.cmake", "boost/format.hpp", "command -v ninja"]:
         assert expected in " ".join(inspection)
     assert run_tool("verify-result", request_path, output).returncode == 0
-    assert json.loads((output / "manifest.json").read_text())["builder_revision"] == request["builder_revision"]
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert manifest["builder_revision"] == request["builder_revision"]
+    assert manifest["image"]["image_id"] == (
+        "sha256:9d99a75171aea000c711b34c0e5e3f28d3d537dd99d110eafbfbc2bd8e52c2bf"
+    )
 
 
 def test_dormant_builder_controller_is_trusted_mac_first_and_never_publishes():

@@ -8,6 +8,7 @@ import re
 import stat
 import subprocess
 import sys
+import tarfile
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 
@@ -257,25 +258,70 @@ def inspect_image(reference):
     return image_id, architecture
 
 
+def saved_image_identity(archive_name, expected_reference):
+    archive_path = Path(archive_name)
+    if archive_path.is_symlink() or not archive_path.is_file():
+        fail("saved image archive is missing or unsafe")
+    with tarfile.open(archive_path, "r:") as archive:
+        manifests = [member for member in archive.getmembers() if member.name == "manifest.json"]
+        if len(manifests) != 1 or not manifests[0].isreg() or manifests[0].size > 1024 * 1024:
+            fail("saved image must contain one bounded manifest.json")
+        manifest_file = archive.extractfile(manifests[0])
+        if manifest_file is None:
+            fail("saved image manifest is unreadable")
+        manifest = json.load(manifest_file)
+        if not isinstance(manifest, list) or len(manifest) != 1 or not isinstance(manifest[0], dict):
+            fail("saved image manifest must describe exactly one image")
+        record = manifest[0]
+        if record.get("RepoTags") != [expected_reference] or not isinstance(record.get("Layers"), list):
+            fail("saved image reference does not match")
+        config_name = record.get("Config")
+        if not isinstance(config_name, str):
+            fail("saved image config path is missing")
+        match = re.fullmatch(r"(?:blobs/sha256/)?([0-9a-f]{64})(?:\.json)?", config_name)
+        if not match:
+            fail("saved image config path is invalid")
+        configs = [member for member in archive.getmembers() if member.name == config_name]
+        if len(configs) != 1 or not configs[0].isreg() or configs[0].size > 1024 * 1024:
+            fail("saved image config must be one bounded regular file")
+        config_file = archive.extractfile(configs[0])
+        if config_file is None:
+            fail("saved image config is unreadable")
+        config_bytes = config_file.read()
+        if hashlib.sha256(config_bytes).hexdigest() != match.group(1):
+            fail("saved image config digest mismatch")
+        config = json.loads(config_bytes)
+        if not isinstance(config, dict):
+            fail("saved image config must be an object")
+        architecture, operating_system = config.get("architecture"), config.get("os")
+        if architecture != "amd64" or operating_system != "linux":
+            fail("saved image platform is not linux/amd64")
+        return f"sha256:{match.group(1)}", architecture, operating_system
+
+
 def validate_report(bundle, relative):
     report = read_json(regular_file(bundle, relative))
     if report.get("status") != "success":
         fail(f"report does not say status=success: {relative}")
 
 
-def create(request_name, output_dir):
+def create(request_name, output_dir, image_ids):
     request = validate_request(read_json(request_name))
+    if len(image_ids) != len(IMAGE_REPOSITORIES) or any(
+        not IMAGE_ID.fullmatch(image_id) for image_id in image_ids
+    ):
+        fail("create requires one transferable image ID per image")
     bundle = Path(output_dir)
     if bundle.is_symlink() or not bundle.is_dir():
         fail("bundle directory is missing or unsafe")
     images = []
-    for name, repository in IMAGE_REPOSITORIES.items():
+    for (name, repository), image_id in zip(IMAGE_REPOSITORIES.items(), image_ids):
         archive_name = f"images/{name}.tar.zst"
         report_name = f"reports/{name}.json"
         archive = regular_file(bundle, archive_name)
         validate_report(bundle, report_name)
         reference = local_ref(request, name)
-        image_id, architecture = inspect_image(reference)
+        _, architecture = inspect_image(reference)
         images.append(
             {
                 "name": name,
@@ -381,6 +427,7 @@ def main():
     create_parser = commands.add_parser("create")
     create_parser.add_argument("request")
     create_parser.add_argument("output_dir")
+    create_parser.add_argument("image_ids", nargs=4)
     verify_parser = commands.add_parser("verify")
     verify_parser.add_argument("manifest")
     verify_parser.add_argument("expected")
@@ -393,17 +440,22 @@ def main():
     image_field_parser.add_argument("manifest")
     image_field_parser.add_argument("name")
     image_field_parser.add_argument("field")
+    saved_image_parser = commands.add_parser("saved-image-id")
+    saved_image_parser.add_argument("archive")
+    saved_image_parser.add_argument("reference")
     args = parser.parse_args()
     if args.command == "validate-request":
         validate_request(read_json(args.request))
     elif args.command == "create":
-        create(args.request, args.output_dir)
+        create(args.request, args.output_dir, args.image_ids)
     elif args.command == "verify":
         verify(args.manifest, args.expected, args.bundle_dir, not args.skip_image_inspect)
     elif args.command == "field":
         field(args.request, args.name)
-    else:
+    elif args.command == "image-field":
         image_field(args.manifest, args.name, args.field)
+    else:
+        print(*saved_image_identity(args.archive, args.reference))
 
 
 if __name__ == "__main__":
