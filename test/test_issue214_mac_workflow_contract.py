@@ -49,7 +49,7 @@ def test_active_request_trigger_and_permissions():
 
 
 def test_every_action_is_pinned_to_a_full_commit():
-    for doc in [controller(), workflow("mac-ci-pilot.yml"), workflow("docker-image.yml")]:
+    for doc in [controller(), workflow("mac-ci-pilot.yml"), workflow("docker-image.yml"), workflow("production-release.yml")]:
         for job in doc["jobs"].values():
             for action in job["steps"]:
                 if "uses" in action:
@@ -138,6 +138,70 @@ def test_main_resolver_emits_frozen_production_request(tmp_path):
     assert request["base_url"] == "https://school.example"
     assert request["source_sha"] == source_sha and request["frontend_gitlink"] == frontend_sha
     assert outputs["artifact"] == f"letovo-images-123-2-production-{source_sha}"
+
+
+def test_production_release_builds_frozen_main_bundle_before_protected_deploy():
+    doc = workflow("production-release.yml")
+    jobs = doc["jobs"]
+    assert set(jobs) == {
+        "preview-child-avatar-migration",
+        "build-release-images",
+        "fetch-release-builder",
+        "hosted-release-images",
+        "release",
+    }
+
+    preview = json.dumps(jobs["preview-child-avatar-migration"])
+    for forbidden in ["build-bundle.sh", "publish-bundle.sh", "docker build", "build-push-action"]:
+        assert forbidden not in preview
+
+    build = jobs["build-release-images"]
+    assert build["if"] == "inputs.child_avatar_migration_mode == 'apply'"
+    assert build["permissions"] == {"contents": "read"}
+    assert build["timeout-minutes"] == 60
+    assert set(build["outputs"]) >= {
+        "source_sha", "frontend_gitlink", "request", "artifact", "builder_image", "fallback", "source_sha256"
+    }
+    main = step(build, "Resolve frozen main")["run"]
+    assert "repos/letovo-dev/letovo-all/branches/main" in main
+    freeze = step(build, "Freeze release request")["run"]
+    assert 'api("branches/main")' not in freeze
+    assert 'api("commits/" + source_sha)["sha"] == source_sha' in freeze
+    assert '["git", "-C", "control", "rev-parse", "HEAD"]' in freeze
+    assert 'job="release"' in freeze and 'profile="production"' in freeze
+    assert 'os.environ["PRODUCTION_BASE_URL"] != "https://letovocorp.ru"' in freeze
+    assert 'artifact=f"letovo-images-{request[\'run_id\']}-{request[\'run_attempt\']}-production-{source_sha}"' in freeze
+    assert step(build, "Checkout frozen source")["with"]["ref"] == "${{ steps.freeze.outputs.source_sha }}"
+    frontend = step(build, "Checkout public frontend")["with"]
+    assert frontend["repository"] == "letovo-dev/letovo-all-frontend"
+    assert frontend["ref"] == "${{ steps.freeze.outputs.frontend_gitlink }}"
+    assert "75) echo \"fallback=true\"" in step(build, "Try Mac")["run"]
+    assert "secrets.MAC_CI_SSH_KEY" in json.dumps(build)
+    assert "LETOVO_PROD_" not in json.dumps(build) and "SUBMODULE_SSH_KEY" not in json.dumps(build)
+
+    fetch = jobs["fetch-release-builder"]
+    assert fetch["permissions"] == {"contents": "read", "packages": "read"}
+    assert "needs.build-release-images.outputs.fallback == 'true'" in fetch["if"]
+    hosted = jobs["hosted-release-images"]
+    assert hosted["permissions"] == {"contents": "read"}
+    assert "needs.build-release-images.outputs.fallback == 'true'" in hosted["if"]
+    assert len([s for s in hosted["steps"] if "build-bundle.sh" in s.get("run", "")]) == 1
+    assert "secrets." not in json.dumps(hosted)
+
+    release = jobs["release"]
+    assert set(release["needs"]) == {"build-release-images", "hosted-release-images"}
+    assert "always()" in release["if"] and "inputs.child_avatar_migration_mode == 'apply'" in release["if"]
+    assert release["environment"] == "production"
+    assert release["permissions"] == {"contents": "read", "packages": "write"}
+    assert step(release, "Download exact release bundle")["with"]["name"] == "${{ needs.build-release-images.outputs.artifact }}"
+    assert step(release, "Checkout frozen release source")["with"]["ref"] == "${{ needs.build-release-images.outputs.source_sha }}"
+    release_text = json.dumps(release)
+    for forbidden in ["build-bundle.sh", "build-push-action", "docker build "]:
+        assert forbidden not in release_text
+    assert "publish-bundle.sh" in release_text and " release --publish-only" in release_text
+    names = [s.get("name") for s in release["steps"]]
+    assert names.index("Validate production deployment secrets") < names.index("Publish verified release images")
+    assert names.index("Publish verified release images") < names.index("Configure production SSH")
 
 
 def test_resolve_freezes_run_pr_merge_and_trusted_request():

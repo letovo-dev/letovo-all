@@ -148,11 +148,18 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "base_url=\"${INPUT_BASE_URL%/}\"" in workflow
     assert "base_url=\"${{ inputs.base_url }}\"" not in workflow
     assert "base_url must be https://letovocorp.ru for production releases" in workflow
-    assert "NEXT_PUBLIC_BASE_URL=${{ steps.release.outputs.base_url }}/letovo-api" in workflow
-    assert "ya\\.sergeiscv\\.ru|/undefined/auth|/letovo-api/letovo-api" in workflow
-    assert "Build and push production backend image" in workflow
-    assert "Build and push production registration image" in workflow
-    assert "Build and push production frontend image" in workflow
+    assert "PRODUCTION_BASE_URL: ${{ inputs.base_url }}" in workflow
+    assert 'base_url=os.environ["PRODUCTION_BASE_URL"]' in workflow
+    assert "build-bundle.sh" in workflow
+    assert "build-release-images:" in workflow
+    assert 'job="release"' in workflow
+    assert 'profile="production"' in workflow
+    assert "Download exact release bundle" in workflow
+    assert "publish-bundle.sh" in workflow
+    assert " release --publish-only" in workflow
+    assert "Build and push production backend image" not in workflow
+    assert "Build and push production registration image" not in workflow
+    assert "Build and push production frontend image" not in workflow
     assert "LETOVO_PROD_DEPLOY_HOST" in workflow
     assert "LETOVO_PROD_DEPLOY_USER" in workflow
     assert "LETOVO_PROD_DEPLOY_SSH_KEY" in workflow

@@ -44,11 +44,11 @@ def test_uploader_image_participates_in_production_deploy_and_rollback():
     workflow = _read(".github/workflows/production-release.yml")
 
     assert "UPLOADER_RELEASE_IMAGE=${UPLOADER_IMAGE}:${release_sha}" in workflow
-    assert "Build and push production uploader image" in workflow
+    assert "Publish verified release images" in workflow
     assert '"$UPLOADER_RELEASE_IMAGE"' in workflow
     assert "UPLOADER_IMAGE='$UPLOADER_RELEASE_IMAGE'" in workflow
     assert 'docker image inspect "$UPLOADER_IMAGE"' in workflow
-    assert "UPLOADER_CAPABILITIES_URL=${{ steps.release.outputs.base_url }}/letovo-api/auth/amiuploader" in workflow
+    assert "publish-bundle.sh" in workflow
     assert "for candidate_name in letovo-uploader flask-uploader" in workflow
     assert "uploader-container=%s" in workflow
     assert "uploader-service=%s" in workflow

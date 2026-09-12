@@ -204,11 +204,14 @@ def test_all_backend_workflows_use_one_immutable_builder_lock():
     assert pr_controller.count("bash scripts/export_backend_builder.sh") == 1
     assert build_bundle.count("bash scripts/export_backend_builder.sh") == 1
     assert production_workflow.count("bash scripts/export_backend_builder.sh") == 1
-    for workflow in (build_workflow, pr_controller):
+    for workflow in (build_workflow, pr_controller, production_workflow):
         assert "control/scripts/export_backend_builder.sh" in workflow
         assert "control/src/backend-builder.lock" in workflow
+    for workflow in (build_workflow, pr_controller):
         assert "needs.resolve.outputs.builder_image" in workflow
-    assert production_workflow.count("BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}") == 2
+    assert "needs.build-release-images.outputs.builder_image" in production_workflow
+    assert 'job="release"' in production_workflow
+    assert 'profile="production"' in production_workflow
 
 
 if __name__ == "__main__":
