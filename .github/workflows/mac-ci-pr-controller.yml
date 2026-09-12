@@ -436,6 +436,7 @@ jobs:
     needs:
     - resolve
     - publish
+    if: always() && needs.resolve.result == 'success' && needs.publish.result == 'success'
     permissions:
       contents: read
     runs-on: ubuntu-latest

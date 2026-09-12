@@ -338,6 +338,9 @@ def test_status_and_deploy_failure_propagation():
         assert context in script
     assert "success" in script and "failure" in script
     deploy = jobs["deploy"]
+    assert deploy["if"] == (
+        "always() && needs.resolve.result == 'success' && needs.publish.result == 'success'"
+    )
     assert deploy["concurrency"] == {"group": "live-deployment-e2e", "cancel-in-progress": False}
     deploy_script = step(deploy, "Deploy PR candidate images to live e2e")["run"]
     restore_script = step(deploy, "Restore live deployment images")["run"]
