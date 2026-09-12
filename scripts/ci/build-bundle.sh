@@ -101,7 +101,18 @@ done
 docker exec "$postgres_name" pg_isready -U postgres -d "$postgres_database" >/dev/null
 postgres_port="$(docker port "$postgres_name" 5432/tcp | head -n 1)"
 postgres_port="${postgres_port##*:}"
-LETOVO_POSTGRES_DSN="postgresql://postgres@127.0.0.1:${postgres_port}/${postgres_database}" \
+postgres_dsn="postgresql://postgres@127.0.0.1:${postgres_port}/${postgres_database}?connect_timeout=1"
+for _ in {1..60}; do
+  if LETOVO_POSTGRES_DSN="$postgres_dsn" python3 -c \
+    'import os, psycopg2; psycopg2.connect(os.environ["LETOVO_POSTGRES_DSN"]).close()' \
+    2>/dev/null; then
+    break
+  fi
+  sleep 1
+done
+LETOVO_POSTGRES_DSN="$postgres_dsn" python3 -c \
+  'import os, psycopg2; psycopg2.connect(os.environ["LETOVO_POSTGRES_DSN"]).close()'
+LETOVO_POSTGRES_DSN="$postgres_dsn" \
   python3 -m pytest -q \
     "$source_root/test/test_issue193_department_payout_postgres.py" \
     "$source_root/test/test_issue179_media_order_postgres.py"

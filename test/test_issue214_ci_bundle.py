@@ -2,6 +2,7 @@ import io
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import tarfile
@@ -95,6 +96,25 @@ def install_fake_ci_tools(bin_dir):
         f'    *"letovo-ci/{name}:"*) id="{image_id}" ;;'
         for name, image_id in IMAGE_IDS.items()
     )
+    write_executable(
+        bin_dir / "python3",
+        "#!/usr/bin/env bash\n"
+        "if [ \"${1-}\" = -c ] && [[ \"${2-}\" == *psycopg2.connect* ]]; then\n"
+        "  printf 'postgres-probe\\t%s\\n' \"${LETOVO_POSTGRES_DSN-}\" >> \"$OPS_LOG\"\n"
+        "  attempts=${FAKE_POSTGRES_ATTEMPTS_FILE-}\n"
+        "  count=0\n"
+        "  if [ -n \"$attempts\" ] && [ -f \"$attempts\" ]; then count=$(cat \"$attempts\"); fi\n"
+        "  count=$((count + 1))\n"
+        "  if [ -n \"$attempts\" ]; then printf '%s\\n' \"$count\" > \"$attempts\"; fi\n"
+        "  [ \"$count\" -gt \"${FAKE_POSTGRES_FAILS-0}\" ]\n"
+        "  exit\n"
+        "fi\n"
+        "if [ \"${1-} ${2-}\" = '-m pytest' ]; then\n"
+        "  printf 'pytest\\t%s\\n' \"${LETOVO_POSTGRES_DSN-}\" >> \"$OPS_LOG\"\n"
+        "fi\n"
+        f"exec {shlex.quote(sys.executable)} \"$@\"\n",
+    )
+    write_executable(bin_dir / "sleep", "#!/usr/bin/env bash\nexit 0\n")
     write_executable(
         bin_dir / "docker",
         """#!/usr/bin/env bash
@@ -535,6 +555,58 @@ def test_build_and_publish_keep_privileges_separate():
     assert not re.search(r"\bdocker\s+(?:build(?:\s|$)|buildx\s+build(?:\s|$))", publisher)
     assert "docker load" in publisher
     assert "docker push" in publisher
+
+
+def test_builder_retries_published_postgres_port_before_pytest(tmp_path):
+    data = request()
+    request_path = tmp_path / "request.json"
+    write_request(request_path, data)
+    source = make_fake_build_source(tmp_path, data)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    install_fake_ci_tools(bin_dir)
+    operations = tmp_path / "operations.log"
+    env = os.environ | {
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "OPS_LOG": str(operations),
+        "FAKE_POSTGRES_ATTEMPTS_FILE": str(tmp_path / "attempts"),
+        "FAKE_POSTGRES_FAILS": "2",
+    }
+
+    built = run("bash", str(BUILD_BUNDLE), str(source), str(request_path), str(tmp_path / "output"), env=env)
+    assert built.returncode == 0, built.stderr
+    lines = operations.read_text(encoding="utf-8").splitlines()
+    probes = [index for index, line in enumerate(lines) if line.startswith("postgres-probe\t")]
+    database_test = next(index for index, line in enumerate(lines) if line.startswith("pytest\t"))
+    assert len(probes) == 4 and max(probes) < database_test
+    assert lines[probes[-1]] == (
+        "postgres-probe\tpostgresql://postgres@127.0.0.1:55432/"
+        "letovo_ci_123456_2?connect_timeout=1"
+    )
+
+
+def test_builder_fails_closed_when_published_postgres_port_never_opens(tmp_path):
+    data = request()
+    request_path = tmp_path / "request.json"
+    write_request(request_path, data)
+    source = make_fake_build_source(tmp_path, data)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    install_fake_ci_tools(bin_dir)
+    operations = tmp_path / "operations.log"
+    env = os.environ | {
+        "PATH": f"{bin_dir}:{os.environ['PATH']}",
+        "OPS_LOG": str(operations),
+        "FAKE_POSTGRES_ATTEMPTS_FILE": str(tmp_path / "attempts"),
+        "FAKE_POSTGRES_FAILS": "99",
+    }
+
+    built = run("bash", str(BUILD_BUNDLE), str(source), str(request_path), str(tmp_path / "output"), env=env)
+    assert built.returncode != 0
+    lines = operations.read_text(encoding="utf-8").splitlines()
+    assert sum(line.startswith("postgres-probe\t") for line in lines) == 61
+    assert not any(line.startswith(("pytest\t", "npm\t", "docker\tbuildx\tbuild\t")) for line in lines)
+    assert any(line.startswith("docker\trm\t-f\tletovo-ci-pg-") for line in lines)
 
 
 def test_builder_refuses_nonempty_output_before_running_tools(tmp_path):
