@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
-if [ "${SSH_ORIGINAL_COMMAND-}" != run ] || [ "$#" -ne 0 ]; then
-  echo 'mac-supervisor: only the exact command run is allowed' >&2
+if { [ "${SSH_ORIGINAL_COMMAND-}" != run ] && [ "${SSH_ORIGINAL_COMMAND-}" != run-builder ]; } || [ "$#" -ne 0 ]; then
+  echo 'mac-supervisor: only the exact command run or run-builder is allowed' >&2
   exit 2
 fi
+kind=app
+[ "$SSH_ORIGINAL_COMMAND" = run-builder ] && kind=builder
 umask 077
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 state_dir="${MAC_CI_STATE_DIR:-$HOME/.local/state/letovo-ci}"
@@ -12,7 +14,7 @@ mkdir -p "$state_dir"
 exec 9>>"$state_dir/global.lock"
 lockf -s -t 0 9
 exec 3<&0
-exec python3 - "$script_dir" "$state_dir" <<'PY'
+exec python3 - "$script_dir" "$state_dir" "$kind" <<'PY'
 import json
 import gzip
 import os
@@ -27,10 +29,17 @@ import tempfile
 import time
 from pathlib import Path
 
-control, state = map(Path, sys.argv[1:])
+control, state = map(Path, sys.argv[1:3])
+kind = sys.argv[3]
 sys.path.insert(0, str(control))
-from image_manifest import read_json, validate_request
-from source_archive import extract
+if kind == "builder":
+    from builder_artifact import (extract_result as extract_builder_result,
+                                  extract_source as extract,
+                                  read_json, validate_request,
+                                  verify_result as verify_builder_result)
+else:
+    from image_manifest import read_json, validate_request
+    from source_archive import extract
 
 lima = os.environ.get("LIMACTL_BIN", "/opt/homebrew/bin/limactl")
 vm = None
@@ -192,7 +201,8 @@ try:
             signal.alarm(15)
             with os.fdopen(3, "rb") as incoming:
                 header = incoming.readline(256)
-                match = re.fullmatch(rb"LETOVO_MAC_CI_V1 ([0-9]{10}) ([1-9][0-9]{0,19}) ([1-9][0-9]{0,8}) ([0-9a-f]{40})\n", header)
+                protocol = b"LETOVO_MAC_BUILDER_CI_V1" if kind == "builder" else b"LETOVO_MAC_CI_V1"
+                match = re.fullmatch(protocol + rb" ([0-9]{10}) ([1-9][0-9]{0,19}) ([1-9][0-9]{0,8}) ([0-9a-f]{40})\n", header)
                 if not match:
                     raise ValueError("invalid transport header")
                 epoch, run_id, attempt, sha = (part.decode() for part in match.groups())
@@ -220,7 +230,8 @@ try:
             if template.get("name") != "letovo-ci-template" or template.get("status") != "Stopped":
                 raise ConnectionError("golden template must be stopped")
             signal.alarm(0)
-            vm = f"letovo-ci-{run_id}-{attempt}-{directory.name[4:]}"
+            prefix = "letovo-ci-builder" if kind == "builder" else "letovo-ci"
+            vm = f"{prefix}-{run_id}-{attempt}-{directory.name[4:]}"
             diagnostic(b"LETOVO_REMOTE_STARTED\n")
             started = True
             deadline = time.monotonic() + 1800
@@ -228,14 +239,20 @@ try:
             command("clone", "letovo-ci-template", vm, "--start", "--mount-none", "-y")
             command("shell", vm, "--", "mkdir", "-p", "/tmp/letovo-ci/control")
             command("copy", "--backend=scp", str(directory / "source.tar"), f"{vm}:/tmp/letovo-ci/source.tar")
-            for name in ("run-build.sh", "build-bundle.sh", "image_manifest.py", "source_archive.py"):
+            controls = (("run-builder.sh", "build-builder.sh", "builder_artifact.py") if kind == "builder" else
+                        ("run-build.sh", "build-bundle.sh", "image_manifest.py", "source_archive.py"))
+            for name in controls:
                 command("copy", "--backend=scp", str(control / name), f"{vm}:/tmp/letovo-ci/control/{name}")
+            runner = "run-builder.sh" if kind == "builder" else "run-build.sh"
             command("shell", vm, "--", "env", "-i", "PATH=/usr/local/bin:/usr/bin:/bin",
-                    "HOME=/tmp/letovo-ci/home", "/bin/bash", "/tmp/letovo-ci/control/run-build.sh")
+                    "HOME=/tmp/letovo-ci/home", "/bin/bash", f"/tmp/letovo-ci/control/{runner}")
             with (directory / "result.tar").open("wb") as output:
                 command("shell", vm, "--", "cat", "/tmp/letovo-ci/result.tar", output=output)
             if not (directory / "result.tar").stat().st_size:
                 raise ValueError("empty result archive")
+            if kind == "builder":
+                extract_builder_result(directory / "result.tar", directory / "verified-builder")
+                verify_builder_result(directory / "source/request.json", directory / "verified-builder")
             try:
                 with (directory / "result.tar").open("rb") as result:
                     shutil.copyfileobj(result, sys.stdout.buffer, 65536)
