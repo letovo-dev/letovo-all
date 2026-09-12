@@ -15,9 +15,6 @@ CI = ROOT / "scripts/ci"
 TOOL = CI / "builder_artifact.py"
 CONTROLLER = ROOT / ".github/workflows/mac-ci-builder-controller.yml"
 LEGACY = ROOT / ".github/workflows/backend-builder.yml"
-LEGACY_BASELINE = subprocess.check_output(
-    ["git", "show", "HEAD:.github/workflows/backend-builder.yml"], cwd=ROOT, text=True
-)
 
 
 def sha256(data):
@@ -262,14 +259,29 @@ data=sys.stdin.buffer.read(); pathlib.Path(sys.argv[sys.argv.index('-o')+1]).wri
     assert json.loads((output / "manifest.json").read_text())["builder_revision"] == request["builder_revision"]
 
 
-def test_dormant_builder_controller_is_trusted_mac_first_and_never_publishes():
+def test_builder_request_is_unprivileged_and_controller_is_mac_primary():
+    request = yaml.safe_load(LEGACY.read_text())
+    trigger = request.get("on", request.get(True))
+    paths = ["src/backend-builder.env", "src/Dockerfile.builder"]
+    assert request["name"] == "Mac builder CI request"
+    assert trigger == {
+        "pull_request": {"branches": ["main"], "paths": paths},
+        "push": {"branches": ["main"], "paths": paths},
+    }
+    assert request["permissions"] == {"contents": "read"}
+    assert set(request["jobs"]) == {"complete"}
+    assert "secrets" not in LEGACY.read_text()
+    assert "docker" not in json.dumps(request["jobs"]).lower()
+
     assert CONTROLLER.exists()
     doc = yaml.safe_load(CONTROLLER.read_text())
     trigger = doc.get("on", doc.get(True))
     assert trigger == {"workflow_run": {"workflows": ["Mac builder CI request"], "types": ["completed"]}}
     assert doc["permissions"] == {"contents": "read"}
-    assert set(doc["jobs"]) == {"resolve", "mac", "hosted", "verify"}
+    assert set(doc["jobs"]) == {"resolve", "existing", "mac", "hosted", "verify", "publish"}
     assert doc["jobs"]["resolve"]["permissions"] == {"contents": "read", "actions": "read", "pull-requests": "read"}
+    assert doc["jobs"]["existing"]["permissions"] == {"contents": "read", "packages": "read"}
+    assert doc["jobs"]["publish"]["permissions"] == {"contents": "read", "packages": "write"}
     source = CONTROLLER.read_text()
     text = json.dumps(doc)
     assert '"$RUNNER_TEMP/mac-summary" builder || status=$?' in source
@@ -282,9 +294,12 @@ def test_dormant_builder_controller_is_trusted_mac_first_and_never_publishes():
     assert "verify-result" in json.dumps(doc["jobs"]["verify"])
     verify = json.dumps(doc["jobs"]["verify"])
     assert "zstd -dc" in verify and "docker load" in verify and "docker image inspect" in verify
-    assert "packages" not in text and "docker push" not in text and "docker login" not in text
-    assert not any((ROOT / ".github/workflows" / name).exists() for name in ["backend-builder-request.yml", "builder-ci-request.yml"])
-    assert LEGACY.read_text() == LEGACY_BASELINE
+    for job in ("resolve", "mac", "hosted", "verify"):
+        assert "packages" not in json.dumps(doc["jobs"][job])
+    publish = json.dumps(doc["jobs"]["publish"])
+    assert "docker push" in publish and "docker/login-action" in publish
+    assert "imagetools inspect" in json.dumps(doc["jobs"]["existing"])
+    assert "imagetools inspect" in publish
     for job in doc["jobs"].values():
         for step in job["steps"]:
             if "uses" in step:
@@ -295,7 +310,7 @@ def workflow_step(job, name):
     return next(step for step in job["steps"] if step.get("name") == name)
 
 
-@pytest.mark.parametrize("mutation", [None, "path", "fork", "stale", "merge", "unrelated"])
+@pytest.mark.parametrize("mutation", [None, "push", "path", "fork", "stale", "merge", "unrelated"])
 def test_builder_resolver_rejects_untrusted_or_irrelevant_context(tmp_path, mutation):
     doc = yaml.safe_load(CONTROLLER.read_text())
     script = workflow_step(doc["jobs"]["resolve"], "Freeze builder request")["run"]
@@ -304,7 +319,7 @@ def test_builder_resolver_rejects_untrusted_or_irrelevant_context(tmp_path, muta
     repository = {"full_name": "letovo-dev/letovo-all", "private": False}
     run = {
         "name": "Mac builder CI request",
-        "path": ".github/workflows/backend-builder-request.yml",
+        "path": ".github/workflows/backend-builder.yml",
         "event": "pull_request",
         "conclusion": "success",
         "repository": repository,
@@ -321,7 +336,11 @@ def test_builder_resolver_rejects_untrusted_or_irrelevant_context(tmp_path, muta
     }
     commit = {"sha": merge, "parents": [{"sha": base}, {"sha": head}]}
     files = [{"filename": "src/Dockerfile.builder"}]
-    if mutation == "path":
+    if mutation == "push":
+        run["event"] = "push"
+        run["head_branch"] = "main"
+        run["pull_requests"] = []
+    elif mutation == "path":
         run["path"] = ".github/workflows/evil.yml"
     elif mutation == "fork":
         run["head_repository"] = {"full_name": "attacker/fork"}
@@ -336,6 +355,7 @@ def test_builder_resolver_rejects_untrusted_or_irrelevant_context(tmp_path, muta
         "actions/runs/99": run,
         "pulls/214": pr,
         f"commits/{merge}": commit,
+        f"commits/{head}": {"sha": head},
         "pulls/214/files?per_page=100&page=1": files,
     }
     (tmp_path / "event").write_text(json.dumps({"workflow_run": run}))
@@ -360,8 +380,9 @@ def test_builder_resolver_rejects_untrusted_or_irrelevant_context(tmp_path, muta
         "RESPONSES": str(tmp_path / "responses"),
     }
     result = subprocess.run(["bash", "-c", script], cwd=tmp_path, env=env, capture_output=True, text=True)
-    if mutation:
+    if mutation not in {None, "push"}:
         assert result.returncode != 0
     else:
         assert result.returncode == 0, result.stderr
-        assert (tmp_path / "output").read_text() == f"control_sha={control}\nsource_sha={merge}\n"
+        source, mode = (head, "main") if mutation == "push" else (merge, "pr")
+        assert (tmp_path / "output").read_text() == f"control_sha={control}\nsource_sha={source}\nmode={mode}\n"

@@ -60,13 +60,22 @@ injections only. They may lower the hard ceilings, never raise them; invalid or
 nonpositive values fail closed. Do not set or forward them in production.
 
 Install the approved commit's `mac-supervisor.sh`, `run-build.sh`,
-`source_archive.py`, `image_manifest.py`, and `build-bundle.sh` together in
+`source_archive.py`, `image_manifest.py`, `build-bundle.sh`, `run-builder.sh`,
+`builder_artifact.py`, and `build-builder.sh` together in
 `/opt/letovo-ci/control`, owned by root:wheel (directories 0755, files 0644)
 and unwritable by `letovo-ci`. The forced command below fixes PATH explicitly
 to include pinned Python and `/opt/homebrew/bin`, without shell startup files.
 Record the approved commit SHA and SHA-256 of each installed file. The
 supervisor transfers these installed controls separately; source archives
 cannot supply control scripts.
+
+The `builder` protocol is separate from the four-image application bundle. It
+accepts only `src/backend-builder.env` and `src/Dockerfile.builder`, builds and
+checks one `linux/amd64` backend-builder image on the Mac, and returns it for
+verification and GHCR publication by GitHub. The Mac still receives no registry
+credentials. A main request first reuses an existing immutable `deps-<revision>`
+tag when present; the publisher rechecks that tag before pushing a newly verified
+artifact.
 
 Create `letovo-ci-template` with a dedicated Ubuntu **24.04.3** disk image,
 Docker Engine **28.4.0**, Buildx **0.27.0**, Node **22.19.0**, Python **3.12.3**,
