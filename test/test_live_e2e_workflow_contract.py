@@ -73,39 +73,35 @@ def test_publisher_author_list_runs_on_default_candidate_and_production_smoke():
     assert "usernames.has(secondaryUsername)" in publisher_assertion
     assert "Citizen_hearst" not in publisher_assertion
     assert "Portal_Administration" not in publisher_assertion
-    for workflow_path in (BUILD_WORKFLOW, PRODUCTION_RELEASE_WORKFLOW):
+    for workflow_path in (ROOT / ".github/workflows/mac-ci-pr-controller.yml", PRODUCTION_RELEASE_WORKFLOW):
         workflow = _read(workflow_path)
-        assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
+        assert re.search(r"LIVE_E2E_REQUIRE_AUTH: ['\"]true['\"]", workflow)
         assert "LETOVO_E2E_SECONDARY_USERNAME: ${{ secrets.LETOVO_E2E_SECONDARY_USERNAME }}" in workflow
 
 
 def test_pr_build_publishes_candidate_images_before_live_e2e_gate():
-    workflow = _read(BUILD_WORKFLOW)
+    workflow = _read(ROOT / ".github/workflows/mac-ci-pr-controller.yml")
 
-    assert "publish-pr-candidate:" in workflow
-    assert "needs: [backend-pr, frontend-verify]" in workflow
-    assert "pr-${{ github.event.pull_request.number }}-${{ github.sha }}" in workflow
-    assert "Build and push PR backend image" in workflow
-    assert "Build and push PR registration backend image" in workflow
-    assert "Build and push PR frontend image" in workflow
-    assert "LETOVO_BUILD_SHA=${{ github.sha }}" in workflow
-    assert "NEXT_PUBLIC_BASE_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api" in workflow
-    assert "NEXT_PUBLIC_BASE_URL_UPLOAD=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/upload/" in workflow
-    assert "NEXT_PUBLIC_BASE_URL_MEDIA=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/media/get" in workflow
-    assert "live-deployment-e2e:" in workflow
-    assert "needs: [publish-pr-candidate]" in workflow
-    assert 'LIVE_E2E_REQUIRE_AUTH: "true"' in workflow
-    assert 'LIVE_E2E_REQUIRE_OTEL: "false"' in workflow
-    assert "LIVE_E2E_EXPECTED_BACKEND_SHA: ${{ github.sha }}" in workflow
-    assert "LIVE_E2E_EXPECTED_FRONTEND_SHA: ${{ github.sha }}" in workflow
+    assert "workflow_run:" in workflow
+    assert "Publish verified candidate" in workflow
+    assert "publish-bundle.sh" in workflow
+    assert "pr-${{ needs.resolve.outputs.pr_number }}-${{ needs.resolve.outputs.source_sha }}" in workflow
+    assert 'profile, job, base_url = "candidate", "pr", "https://ya.sergeiscv.ru"' in workflow
+    assert "deploy:" in workflow
+    assert "needs:" in workflow
+    assert "- publish" in workflow
+    assert "LIVE_E2E_REQUIRE_AUTH: 'true'" in workflow
+    assert "LIVE_E2E_REQUIRE_OTEL: 'false'" in workflow
+    assert "LIVE_E2E_EXPECTED_BACKEND_SHA: ${{ needs.resolve.outputs.source_sha }}" in workflow
+    assert "LIVE_E2E_EXPECTED_FRONTEND_SHA: ${{ needs.resolve.outputs.source_sha }}" in workflow
     assert "concurrency:" in workflow
     assert "LETOVO_E2E_DEPLOY_HOST" in workflow
     assert "LETOVO_E2E_DEPLOY_USER" in workflow
     assert "LETOVO_E2E_DEPLOY_SSH_KEY" in workflow
     assert "LETOVO_E2E_DEPLOY_PROJECT" in workflow
     assert "Deploy PR candidate images to live e2e" in workflow
-    assert "scp -i ~/.ssh/live-e2e docs/avatar_upload_role_migration.sql" in workflow
-    assert "scp -i ~/.ssh/live-e2e docs/child_avatar_access_migration.sql" in workflow
+    assert "control/docs/avatar_upload_role_migration.sql" in workflow
+    assert "control/docs/child_avatar_access_migration.sql" in workflow
     assert "pg_dump -U scv -d letovo_db -t public.role" in workflow
     assert "user.before-child-avatar-migration.sql" in workflow
     assert "child-avatar-migration-preview.csv" in workflow
@@ -119,12 +115,12 @@ def test_main_latest_frontend_image_bakes_production_api_prefix():
     workflow = _read(BUILD_WORKFLOW)
 
     assert "publish-main:" in workflow
-    assert "${{ env.FRONTEND_IMAGE }}:latest" in workflow
-    assert "NEXT_PUBLIC_BASE_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api" in workflow
-    assert "NEXT_PUBLIC_BASE_URL_UPLOAD=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/" in workflow
-    assert "NEXT_PUBLIC_BASE_URL_MEDIA=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/media/get" in workflow
-    assert "NEXT_PUBLIC_UPLOAD_URL=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}/letovo-api/upload/" in workflow
-    assert "NEXT_PUBLIC_BASE_URL_CLEAR=${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}" in workflow
+    assert 'job="main"' in workflow
+    assert 'profile="production"' in workflow
+    assert "PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || 'https://letovocorp.ru' }}" in workflow
+    assert 'base_url=os.environ["PRODUCTION_BASE_URL"]' in workflow
+    assert "publish-bundle.sh" in workflow
+    assert " main --publish-only" in workflow
 
 
 def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
@@ -152,11 +148,18 @@ def test_production_release_is_manual_deploy_with_required_live_e2e_gate():
     assert "base_url=\"${INPUT_BASE_URL%/}\"" in workflow
     assert "base_url=\"${{ inputs.base_url }}\"" not in workflow
     assert "base_url must be https://letovocorp.ru for production releases" in workflow
-    assert "NEXT_PUBLIC_BASE_URL=${{ steps.release.outputs.base_url }}/letovo-api" in workflow
-    assert "ya\\.sergeiscv\\.ru|/undefined/auth|/letovo-api/letovo-api" in workflow
-    assert "Build and push production backend image" in workflow
-    assert "Build and push production registration image" in workflow
-    assert "Build and push production frontend image" in workflow
+    assert "PRODUCTION_BASE_URL: ${{ inputs.base_url }}" in workflow
+    assert 'base_url=os.environ["PRODUCTION_BASE_URL"]' in workflow
+    assert "build-bundle.sh" in workflow
+    assert "build-release-images:" in workflow
+    assert 'job="release"' in workflow
+    assert 'profile="production"' in workflow
+    assert "Download exact release bundle" in workflow
+    assert "publish-bundle.sh" in workflow
+    assert " release --publish-only" in workflow
+    assert "Build and push production backend image" not in workflow
+    assert "Build and push production registration image" not in workflow
+    assert "Build and push production frontend image" not in workflow
     assert "LETOVO_PROD_DEPLOY_HOST" in workflow
     assert "LETOVO_PROD_DEPLOY_USER" in workflow
     assert "LETOVO_PROD_DEPLOY_SSH_KEY" in workflow

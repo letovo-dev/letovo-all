@@ -58,7 +58,7 @@ def test_both_media_api_paths_read_explicit_position_order():
 
 def test_candidate_and_production_deploy_apply_media_order_migration():
     for workflow_path in (
-        ROOT / ".github/workflows/docker-image.yml",
+        ROOT / ".github/workflows/mac-ci-pr-controller.yml",
         ROOT / ".github/workflows/production-release.yml",
     ):
         workflow = workflow_path.read_text(encoding="utf-8")

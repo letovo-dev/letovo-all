@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
-exec python3 - "$@" <<'PY'
+if [ "$#" -eq 4 ]; then
+  kind=app
+elif [ "$#" -eq 5 ] && [ "$5" = builder ]; then
+  kind=builder
+else
+  echo "usage: try-mac.sh SOURCE_ARCHIVE REQUEST_JSON RESULT_ARCHIVE SUMMARY_FILE [builder]" >&2
+  exit 2
+fi
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+exec python3 - "${@:1:4}" "$kind" "$script_dir" <<'PY'
 import json
 import os
 import re
@@ -13,9 +22,12 @@ import tempfile
 import time
 from pathlib import Path
 
-if len(sys.argv) != 5:
-    sys.exit("usage: try-mac.sh SOURCE_ARCHIVE REQUEST_JSON RESULT_ARCHIVE SUMMARY_FILE")
-source, request_path, result, summary = map(Path, sys.argv[1:])
+if len(sys.argv) != 7:
+    sys.exit("invalid try-mac bootstrap arguments")
+source, request_path, result, summary = map(Path, sys.argv[1:5])
+kind = sys.argv[5]
+control = Path(sys.argv[6])
+remote_command = "run-builder" if kind == "builder" else "run"
 begin = time.monotonic()
 started = False
 ready_seconds = 0.0
@@ -61,6 +73,14 @@ try:
     if request_path.stat().st_size > 1024 ** 2:
         raise ValueError("request exceeds size limit")
     request = json.loads(request_path.read_text())
+    if kind == "builder":
+        sys.path.insert(0, str(control))
+        from builder_artifact import (RESULT_SPEC as BUILDER_RESULT_SPEC,
+                                      extract_result as extract_builder_result,
+                                      scan_archive as scan_builder_archive,
+                                      validate_request as validate_builder_request,
+                                      verify_result as verify_builder_result)
+        validate_builder_request(request)
     identity = f"{request['run_id']} {request['run_attempt']} {request['source_sha']}"
     if not re.fullmatch(r"[1-9][0-9]* [1-9][0-9]* [0-9a-f]{40}", identity):
         raise ValueError("invalid run identity")
@@ -105,7 +125,8 @@ Host letovo-ci-worker
   ProxyJump letovo-ci-bastion
 ''')
         with (directory / "input").open("w+b") as payload, (directory / "result").open("wb") as output:
-            payload.write(f"LETOVO_MAC_CI_V1 {int(time.time())} {identity}\n".encode())
+            protocol = "LETOVO_MAC_BUILDER_CI_V1" if kind == "builder" else "LETOVO_MAC_CI_V1"
+            payload.write(f"{protocol} {int(time.time())} {identity}\n".encode())
             source_bytes = 0
             with source.open("rb") as archive:
                 while chunk := archive.read(min(65536, source_limit - source_bytes + 1)):
@@ -115,7 +136,7 @@ Host letovo-ci-worker
                     payload.write(chunk)
             payload.seek(0)
             process = subprocess.Popen([os.environ.get("SSH_BIN", "ssh"), "-F", str(config),
-                                        "letovo-ci-worker", "run"], stdin=payload,
+                                        "letovo-ci-worker", remote_command], stdin=payload,
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
             deadline = time.monotonic() + 15
             pending = b""
@@ -163,41 +184,46 @@ Host letovo-ci-worker
             received.seek(-1024, 2)
             if received.read() != bytes(1024):
                 raise ValueError("missing tar end markers")
-        # Inspect raw headers before tarfile can allocate/expand PAX or sparse metadata.
-        with (directory / "result").open("rb") as archive:
-            required = {"manifest.json"} | {
-                f"{directory}/{name}.{extension}"
-                for name in ("backend", "registration", "frontend", "uploader")
-                for directory, extension in (("images", "tar.zst"), ("reports", "json"))}
-            seen = set()
-            total_size = 0
-            while header := archive.read(512):
-                if header == bytes(512):
-                    break
-                member = tarfile.TarInfo.frombuf(header, "utf-8", "strict")
-                if member.type not in (tarfile.REGTYPE, tarfile.AREGTYPE, tarfile.DIRTYPE):
-                    raise ValueError("extended or sparse result metadata is forbidden")
-                if len(seen) >= 12:
-                    raise ValueError("too many result members")
-                name = member.name.removeprefix("./")
-                if name == ".":
-                    name = ""
-                allowed = ((member.isreg() and name in required) or
-                           (member.isdir() and name in ("", "images", "reports")))
-                if not allowed or name in seen:
-                    raise ValueError(f"unsafe result archive member: {member.name}")
-                member_limit = image_limit if name.startswith("images/") else 1024 ** 2
-                if member.size < 0 or member.size > member_limit or (member.isdir() and member.size):
-                    raise ValueError("result member exceeds size limit")
-                total_size += member.size
-                if total_size > logical_limit:
-                    raise ValueError("result logical size exceeds limit")
-                seen.add(name)
-                archive.seek((member.size + 511) // 512 * 512, 1)
-                if archive.tell() > received_size - 1024:
-                    raise ValueError("truncated result member")
-            if not required <= seen:
-                raise ValueError("missing required result archive members")
+        if kind == "builder":
+            scan_builder_archive(directory / "result", BUILDER_RESULT_SPEC, result_limit)
+            extract_builder_result(directory / "result", directory / "verified-builder")
+            verify_builder_result(request_path, directory / "verified-builder")
+        else:
+            # Inspect raw headers before tarfile can allocate/expand PAX or sparse metadata.
+            with (directory / "result").open("rb") as archive:
+                required = {"manifest.json"} | {
+                    f"{directory}/{name}.{extension}"
+                    for name in ("backend", "registration", "frontend", "uploader")
+                    for directory, extension in (("images", "tar.zst"), ("reports", "json"))}
+                seen = set()
+                total_size = 0
+                while header := archive.read(512):
+                    if header == bytes(512):
+                        break
+                    member = tarfile.TarInfo.frombuf(header, "utf-8", "strict")
+                    if member.type not in (tarfile.REGTYPE, tarfile.AREGTYPE, tarfile.DIRTYPE):
+                        raise ValueError("extended or sparse result metadata is forbidden")
+                    if len(seen) >= 12:
+                        raise ValueError("too many result members")
+                    name = member.name.removeprefix("./")
+                    if name == ".":
+                        name = ""
+                    allowed = ((member.isreg() and name in required) or
+                               (member.isdir() and name in ("", "images", "reports")))
+                    if not allowed or name in seen:
+                        raise ValueError(f"unsafe result archive member: {member.name}")
+                    member_limit = image_limit if name.startswith("images/") else 1024 ** 2
+                    if member.size < 0 or member.size > member_limit or (member.isdir() and member.size):
+                        raise ValueError("result member exceeds size limit")
+                    total_size += member.size
+                    if total_size > logical_limit:
+                        raise ValueError("result logical size exceeds limit")
+                    seen.add(name)
+                    archive.seek((member.size + 511) // 512 * 512, 1)
+                    if archive.tell() > received_size - 1024:
+                        raise ValueError("truncated result member")
+                if not required <= seen:
+                    raise ValueError("missing required result archive members")
         os.replace(directory / "result", result)
     sys.exit(finish(0, "success"))
 except Cancelled as error:

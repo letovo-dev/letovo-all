@@ -9,6 +9,7 @@ import stat
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
+from urllib.parse import urlsplit
 
 
 REQUEST_FIELDS = (
@@ -94,12 +95,33 @@ def validate_request(request):
         fail("profile must be candidate or production")
     if request["platform"] != "linux/amd64":
         fail("platform must be linux/amd64")
-    expected_url = {
-        "candidate": "https://ya.sergeiscv.ru",
-        "production": "https://letovocorp.ru",
-    }[request["profile"]]
-    if request["base_url"] != expected_url:
-        fail(f"base_url must be {expected_url} for {request['profile']}")
+    base_url = request["base_url"]
+    if request["profile"] == "candidate":
+        if base_url != "https://ya.sergeiscv.ru":
+            fail("base_url must be https://ya.sergeiscv.ru for candidate")
+    else:
+        if not isinstance(base_url, str):
+            fail("base_url must be a production HTTPS origin")
+        parsed = urlsplit(base_url)
+        try:
+            port = parsed.port
+        except ValueError:
+            fail("base_url must be a production HTTPS origin")
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path
+            or parsed.query
+            or parsed.fragment
+            or any(character.isspace() for character in base_url)
+            or parsed.netloc.endswith(":")
+            or port == 0
+            or base_url != f"https://{parsed.netloc}"
+            or base_url == "https://ya.sergeiscv.ru"
+        ):
+            fail("base_url must be a production HTTPS origin")
     candidate_number = request["candidate_number"]
     if request["profile"] == "candidate":
         if (

@@ -6,7 +6,7 @@ ROOT = Path(__file__).parents[1]
 POLICY = ROOT / "src" / "basic" / "avatar_policy.h"
 USER_DATA = ROOT / "src" / "basic" / "user_data.cc"
 MIGRATION = ROOT / "docs" / "child_avatar_access_migration.sql"
-BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "docker-image.yml"
+CANDIDATE_WORKFLOW = ROOT / ".github" / "workflows" / "mac-ci-pr-controller.yml"
 RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "production-release.yml"
 
 
@@ -60,7 +60,7 @@ def test_migration_has_preview_apply_backup_safe_contract():
 
 
 def test_candidate_and_production_deploy_preview_backup_and_apply_policy():
-    for workflow_path in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
+    for workflow_path in (CANDIDATE_WORKFLOW, RELEASE_WORKFLOW):
         workflow = workflow_path.read_text()
         assert "docs/child_avatar_access_migration.sql" in workflow
         assert "user.before-child-avatar-migration.sql" in workflow

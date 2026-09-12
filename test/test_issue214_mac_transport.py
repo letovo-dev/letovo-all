@@ -670,3 +670,188 @@ def test_result_rejects_links_duplicates_and_missing_members(transport, mutation
     response = try_mac(transport)
     assert response.returncode == 1
     assert transport[1].read_bytes() == b"previous result"
+
+
+def builder_request():
+    env_hash = __import__("hashlib").sha256(b"test").hexdigest()
+    revision = __import__("hashlib").sha256(
+        (f"{env_hash}  src/backend-builder.env\n"
+         f"{env_hash}  src/Dockerfile.builder\n").encode()
+    ).hexdigest()
+    return {
+        "schema_version": 1, "artifact": "backend-builder",
+        "repository": "letovo-dev/letovo-all", "run_id": "123456",
+        "run_attempt": 2, "source_sha": "a" * 40,
+        "platform": "linux/amd64", "builder_revision": revision,
+        "dependency_manifest_revision": env_hash,
+    }
+
+
+def builder_result_files():
+    report = json.dumps({
+        "schema_version": 1, "status": "success", "inspections": [
+            "/opt/letovo/cmake/jwt-cpp-config.cmake",
+            "/opt/letovo/lib/cmake/llhttp/llhttp-config.cmake",
+            "/opt/letovo/lib/cmake/opentelemetry-cpp/opentelemetry-cpp-config.cmake",
+            "/opt/letovo/share/cmake/nlohmann_json/nlohmann_jsonConfig.cmake",
+            "/usr/include/boost/format.hpp", "ninja",
+        ],
+    }).encode()
+    image = b"builder-image"
+    manifest = {
+        **builder_request(),
+        "image": {
+            "name": "backend-builder",
+            "local_ref": "letovo-ci/backend-builder:123456-2-" + builder_request()["builder_revision"],
+            "image_id": "sha256:" + "7" * 64,
+            "platform": "linux/amd64",
+            "archive": "images/backend-builder.tar.zst",
+            "archive_size": len(image),
+            "archive_sha256": __import__("hashlib").sha256(image).hexdigest(),
+            "report": "reports/backend-builder.json",
+            "report_size": len(report),
+            "report_sha256": __import__("hashlib").sha256(report).hexdigest(),
+        },
+    }
+    return {
+        "images/backend-builder.tar.zst": image,
+        "reports/backend-builder.json": report,
+        "manifest.json": json.dumps(manifest).encode(),
+    }
+
+
+def builder_source_bytes():
+    stream = io.BytesIO()
+    with tarfile.open(fileobj=stream, mode="w", format=tarfile.USTAR_FORMAT) as archive:
+        directory = tarfile.TarInfo("src")
+        directory.type = tarfile.DIRTYPE
+        archive.addfile(directory)
+        for name, content in {
+            "src/backend-builder.env": b"test",
+            "src/Dockerfile.builder": b"test",
+            "request.json": json.dumps(builder_request()).encode(),
+        }.items():
+            member = tarfile.TarInfo(name)
+            member.size = len(content)
+            archive.addfile(member, io.BytesIO(content))
+    return stream.getvalue()
+
+
+def builder_result_bytes():
+    stream = io.BytesIO()
+    with tarfile.open(fileobj=stream, mode="w", format=tarfile.USTAR_FORMAT) as archive:
+        for name in ("images", "reports"):
+            member = tarfile.TarInfo(name)
+            member.type = tarfile.DIRTYPE
+            archive.addfile(member)
+        for name, content in builder_result_files().items():
+            member = tarfile.TarInfo(name)
+            member.size = len(content)
+            archive.addfile(member, io.BytesIO(content))
+    return stream.getvalue()
+
+
+def framed_builder(payload):
+    return f"LETOVO_MAC_BUILDER_CI_V1 {int(time.time())} 123456 2 {'a' * 40}\n".encode() + payload
+
+
+def test_builder_transport_uses_separate_command_and_result_contract(transport):
+    source, result, summary, calls, env = transport
+    source.write_bytes(builder_source_bytes())
+    source.with_name("request.json").write_text(json.dumps(builder_request()))
+    Path(env["PAYLOAD"]).write_bytes(builder_result_bytes())
+    response = subprocess.run(
+        ["bash", CI / "try-mac.sh", source, source.with_name("request.json"), result, summary, "builder"],
+        env=env, capture_output=True,
+    )
+    assert response.returncode == 0, response.stderr
+    assert json.loads(calls.read_text())[-1] == "run-builder"
+    assert result.read_bytes() == Path(env["PAYLOAD"]).read_bytes()
+
+
+@pytest.mark.parametrize("mode,expected", [("offline", 75), ("busy", 75), ("failure", 1)])
+def test_builder_transport_preserves_fallback_boundary(transport, mode, expected):
+    source, result, summary, _, env = transport
+    source.write_bytes(builder_source_bytes())
+    source.with_name("request.json").write_text(json.dumps(builder_request()))
+    response = subprocess.run(
+        ["bash", CI / "try-mac.sh", source, source.with_name("request.json"), result, summary, "builder"],
+        env={**env, "MODE": mode}, capture_output=True,
+    )
+    assert response.returncode == expected
+    assert result.read_bytes() == b"previous result"
+
+
+def test_builder_transport_disabled_never_calls_ssh(transport):
+    source, result, summary, calls, env = transport
+    source.write_bytes(builder_source_bytes())
+    source.with_name("request.json").write_text(json.dumps(builder_request()))
+    response = subprocess.run(
+        ["bash", CI / "try-mac.sh", source, source.with_name("request.json"), result, summary, "builder"],
+        env={**env, "MAC_CI_ENABLED": "false"}, capture_output=True,
+    )
+    assert response.returncode == 75
+    assert not calls.exists()
+    assert "executor=hosted" in summary.read_text()
+
+
+def test_app_and_builder_result_protocols_reject_each_other(transport, tmp_path):
+    source, result, summary, _, env = transport
+    source.write_bytes(builder_source_bytes())
+    source.with_name("request.json").write_text(json.dumps(builder_request()))
+    # Application result cannot satisfy the builder contract.
+    response = subprocess.run(
+        ["bash", CI / "try-mac.sh", source, source.with_name("request.json"), result, summary, "builder"],
+        env=env, capture_output=True,
+    )
+    assert response.returncode == 1
+    # Builder result cannot satisfy the application exact-four contract.
+    Path(env["PAYLOAD"]).write_bytes(builder_result_bytes())
+    response = try_mac(transport)
+    assert response.returncode == 1
+
+
+def test_supervisor_commands_reject_cross_protocol_headers(supervisor):
+    _, _, app_payload, env = supervisor
+    builder_payload = builder_source_bytes()
+    app_as_builder = subprocess.run(
+        ["bash", CI / "mac-supervisor.sh"], input=framed(app_payload),
+        env={**env, "SSH_ORIGINAL_COMMAND": "run-builder"}, capture_output=True,
+    )
+    builder_as_app = subprocess.run(
+        ["bash", CI / "mac-supervisor.sh"], input=framed_builder(builder_payload),
+        env=env, capture_output=True,
+    )
+    assert app_as_builder.returncode == builder_as_app.returncode == 2
+    assert b"LETOVO_REMOTE_STARTED" not in app_as_builder.stderr + builder_as_app.stderr
+
+
+@pytest.mark.parametrize("mode,code", [("success", 0), ("failure", 1), ("missing", 1)])
+def test_supervisor_builder_uses_same_lock_disposable_vm_and_cleanup(supervisor, mode, code):
+    temp, state, _, env = supervisor
+    Path(env["RESULT_PAYLOAD"]).write_bytes(builder_result_bytes())
+    result = subprocess.run(
+        ["bash", CI / "mac-supervisor.sh"], input=framed_builder(builder_source_bytes()),
+        env={**env, "SSH_ORIGINAL_COMMAND": "run-builder", "LIMA_MODE": mode}, capture_output=True,
+    )
+    assert result.returncode == code, result.stderr
+    assert b"LETOVO_REMOTE_STARTED\n" in result.stderr
+    calls = [json.loads(line) for line in (temp / "lima.log").read_text().splitlines()]
+    clone = next(call for call in calls if call[0] == "clone")
+    assert ["delete", "--force", clone[2]] in calls
+    copied = {Path(call[2]).name for call in calls if call[0] == "copy" and "/control/" in call[3]}
+    if mode != "failure":
+        assert copied == {"run-builder.sh", "build-builder.sh", "builder_artifact.py"}
+    assert not list(state.glob("run-*"))
+
+
+def test_supervisor_builder_busy_is_prestart_fallback(supervisor):
+    _, state, _, env = supervisor
+    with (state / "global.lock").open("w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = subprocess.run(
+            ["bash", CI / "mac-supervisor.sh"], input=framed_builder(builder_source_bytes()),
+            env={**env, "SSH_ORIGINAL_COMMAND": "run-builder"}, capture_output=True,
+        )
+    assert result.returncode == 75
+    assert b"LETOVO_REMOTE_STARTED" not in result.stderr

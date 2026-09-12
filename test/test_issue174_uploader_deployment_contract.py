@@ -27,29 +27,28 @@ def test_personal_avatar_upload_uses_backend_owned_identity_and_namespace():
 
 def test_uploader_image_participates_in_pr_main_and_live_e2e_lifecycle():
     workflow = _read(".github/workflows/docker-image.yml")
+    candidate = _read(".github/workflows/mac-ci-pr-controller.yml")
 
-    assert "UPLOADER_IMAGE: ghcr.io/${{ github.repository_owner }}/letovo-flask-uploader" in workflow
-    assert "Build uploader image locally" in workflow
-    assert "Build and push PR uploader image" in workflow
-    assert "Build and push uploader image" in workflow
-    assert "UPLOADER_CANDIDATE_IMAGE=${UPLOADER_IMAGE}:${tag}" in workflow
-    assert "UPLOADER_CAPABILITIES_URL=${{ env.LIVE_E2E_BASE_URL }}/letovo-api/auth/amiuploader" in workflow
-    assert "UPLOADER_IMAGE='$UPLOADER_CANDIDATE_IMAGE'" in workflow
-    assert "flask-uploader={{.Config.Image}}" in workflow
-    assert "letovo-flask-uploader" in workflow
-    assert 'flask-uploader)" = "$UPLOADER_IMAGE"' in workflow
-    assert 'flask-uploader)" = "$uploader_image"' in workflow
+    assert "publish-bundle.sh" in workflow
+    assert 'job="main"' in workflow
+    assert "UPLOADER_CANDIDATE_IMAGE=${UPLOADER_IMAGE}:${tag}" in candidate
+    assert 'profile, job, base_url = "candidate", "pr", "https://ya.sergeiscv.ru"' in candidate
+    assert "UPLOADER_IMAGE='$UPLOADER_CANDIDATE_IMAGE'" in candidate
+    assert "flask-uploader={{.Config.Image}}" in candidate
+    assert "letovo-flask-uploader" in candidate
+    assert 'flask-uploader)" = "$UPLOADER_IMAGE"' in candidate
+    assert 'flask-uploader)" = "$uploader_image"' in candidate
 
 
 def test_uploader_image_participates_in_production_deploy_and_rollback():
     workflow = _read(".github/workflows/production-release.yml")
 
     assert "UPLOADER_RELEASE_IMAGE=${UPLOADER_IMAGE}:${release_sha}" in workflow
-    assert "Build and push production uploader image" in workflow
+    assert "Publish verified release images" in workflow
     assert '"$UPLOADER_RELEASE_IMAGE"' in workflow
     assert "UPLOADER_IMAGE='$UPLOADER_RELEASE_IMAGE'" in workflow
     assert 'docker image inspect "$UPLOADER_IMAGE"' in workflow
-    assert "UPLOADER_CAPABILITIES_URL=${{ steps.release.outputs.base_url }}/letovo-api/auth/amiuploader" in workflow
+    assert "publish-bundle.sh" in workflow
     assert "for candidate_name in letovo-uploader flask-uploader" in workflow
     assert "uploader-container=%s" in workflow
     assert "uploader-service=%s" in workflow

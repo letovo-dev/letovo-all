@@ -7,7 +7,7 @@ HEADER = (ROOT / "src/market/transactions.h").read_text()
 SERVER = (ROOT / "src/server.cpp").read_text()
 SCHEMA = (ROOT / "docs/schema.sql").read_text()
 MIGRATION = (ROOT / "docs/department_payout_migration.sql").read_text()
-BUILD_WORKFLOW = (ROOT / ".github/workflows/docker-image.yml").read_text()
+CANDIDATE_WORKFLOW = (ROOT / ".github/workflows/mac-ci-pr-controller.yml").read_text()
 RELEASE_WORKFLOW = (ROOT / ".github/workflows/production-release.yml").read_text()
 
 
@@ -49,7 +49,7 @@ def test_apply_is_atomic_auditable_and_idempotent():
 
 def test_reason_column_migration_runs_before_candidate_and_production_payouts():
     assert "ADD COLUMN IF NOT EXISTS reason character varying NOT NULL DEFAULT 'wire transfer'" in MIGRATION
-    for workflow in (BUILD_WORKFLOW, RELEASE_WORKFLOW):
+    for workflow in (CANDIDATE_WORKFLOW, RELEASE_WORKFLOW):
         assert "docs/department_payout_migration.sql" in workflow
         assert "department_payout_migration.sql" in workflow
         assert "psql -v ON_ERROR_STOP=1 -U scv -d letovo_db" in workflow

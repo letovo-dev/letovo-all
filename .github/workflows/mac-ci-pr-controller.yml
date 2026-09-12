@@ -105,9 +105,33 @@ jobs:
             for key, value in outputs.items():
                 output.write(f"{key}={value}\n")
         PY
+  source-validation:
+    needs:
+    - resolve
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout trusted controls
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        ref: ${{ needs.resolve.outputs.control_sha }}
+        path: control
+        persist-credentials: false
+    - name: Checkout frozen source
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      with:
+        ref: ${{ needs.resolve.outputs.source_sha }}
+        path: candidate
+        persist-credentials: false
+    - name: Validate frozen backend builder contract
+      env:
+        LETOVO_CONTRACT_ROOT: ${{ github.workspace }}/candidate
+      run: python3 control/test/test_issue215_backend_builder_contract.py
   pending:
     needs:
     - resolve
+    - source-validation
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -133,6 +157,7 @@ jobs:
     needs:
     - resolve
     - pending
+    - source-validation
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -663,6 +688,7 @@ jobs:
     if: always() && needs.resolve.outputs.head_sha != ''
     needs:
     - resolve
+    - source-validation
     - pending
     - mac
     - fetch-builder
@@ -685,6 +711,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         HEAD_SHA: ${{ needs.resolve.outputs.head_sha }}
         RESOLVE_RESULT: ${{ needs.resolve.result }}
+        SOURCE_VALIDATION_RESULT: ${{ needs.source-validation.result }}
         PENDING_RESULT: ${{ needs.pending.result }}
         PUBLISH_RESULT: ${{ needs.publish.result }}
         DEPLOY_RESULT: ${{ needs.deploy.result }}
@@ -694,7 +721,7 @@ jobs:
       run: |
         build_state=failure
         live_state=failure
-        if [ "$RESOLVE_RESULT/$PENDING_RESULT/$MAC_RESULT" = success/success/success ] &&
+        if [ "$RESOLVE_RESULT/$SOURCE_VALIDATION_RESULT/$PENDING_RESULT/$MAC_RESULT" = success/success/success/success ] &&
           { [ "$MAC_FALLBACK" = false ] || { [ "$MAC_FALLBACK" = true ] && [ "$HOSTED_RESULT" = success ]; }; }; then
           build_state=success
           if [ "$PUBLISH_RESULT/$DEPLOY_RESULT" = success/success ]; then

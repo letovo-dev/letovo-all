@@ -34,7 +34,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 concurrency:
   group: production-release
@@ -67,7 +66,7 @@ jobs:
     environment: production
     steps:
       - name: Checkout migration
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           persist-credentials: false
@@ -129,21 +128,254 @@ jobs:
           echo "Child avatar preview preserved: count=$preview_count sha256=$preview_sha256 path=$backup_root"
           REMOTE
 
-  release:
+  build-release-images:
     if: inputs.child_avatar_migration_mode == 'apply'
     runs-on: ubuntu-latest
-    environment: production
+    timeout-minutes: 60
+    permissions: {contents: read}
+    outputs:
+      source_sha: ${{ steps.freeze.outputs.source_sha }}
+      frontend_gitlink: ${{ steps.freeze.outputs.frontend_gitlink }}
+      request: ${{ steps.freeze.outputs.request }}
+      artifact: ${{ steps.freeze.outputs.artifact }}
+      builder_image: ${{ steps.freeze.outputs.builder_image }}
+      fallback: ${{ steps.mac.outputs.fallback }}
+      source_sha256: ${{ steps.pack.outputs.source_sha256 }}
     steps:
-      - name: Checkout main with submodules
-        uses: actions/checkout@v4
+      - name: Resolve frozen main
+        id: main
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          set -euo pipefail
+          source_sha="$(gh api repos/letovo-dev/letovo-all/branches/main --jq .commit.sha)"
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ steps.main.outputs.source_sha }}", path: control, persist-credentials: false}
+
+      - name: Resolve trusted builder
+        working-directory: control
+        run: bash scripts/export_backend_builder.sh
+
+      - name: Freeze release request
+        id: freeze
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          SOURCE_SHA: "${{ steps.main.outputs.source_sha }}"
+          PRODUCTION_BASE_URL: ${{ inputs.base_url }}
+          BUILD_FILES: ${{ env.BACKEND_BUILD_FILES }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess, sys
+          sys.path.insert(0, "control/scripts/ci")
+          from image_manifest import validate_request
+          def api(path):
+              return json.loads(subprocess.check_output(["gh", "api", "repos/letovo-dev/letovo-all/" + path]))
+          def sha(value):
+              if not isinstance(value, str) or not re.fullmatch("[0-9a-f]{40}", value):
+                  raise ValueError("invalid SHA")
+              return value
+          source_sha = sha(os.environ["SOURCE_SHA"])
+          if os.environ["PRODUCTION_BASE_URL"] != "https://letovocorp.ru":
+              raise ValueError("base_url must be https://letovocorp.ru for production releases")
+          assert subprocess.check_output(["git", "-C", "control", "rev-parse", "HEAD"], text=True).strip() == source_sha
+          assert api("commits/" + source_sha)["sha"] == source_sha
+          frontend = [entry for entry in api("git/trees/" + source_sha)["tree"] if entry["path"] == "frontend"]
+          assert len(frontend) == 1 and frontend[0]["mode"] == "160000" and frontend[0]["type"] == "commit"
+          frontend_gitlink = sha(frontend[0]["sha"])
+          request = validate_request(dict(
+              schema_version=1, repository="letovo-dev/letovo-all", run_id=os.environ["GITHUB_RUN_ID"],
+              run_attempt=int(os.environ["GITHUB_RUN_ATTEMPT"]), job="release", source_sha=source_sha,
+              frontend_gitlink=frontend_gitlink, profile="production", platform="linux/amd64",
+              base_url=os.environ["PRODUCTION_BASE_URL"], candidate_number=None, builder_image=os.environ["BUILDER_IMAGE"],
+              build_files=os.environ["BUILD_FILES"].split()))
+          outputs = dict(source_sha=source_sha, frontend_gitlink=frontend_gitlink,
+                         builder_image=request["builder_image"], request=json.dumps(request, separators=(",", ":")),
+                         artifact=f"letovo-images-{request['run_id']}-{request['run_attempt']}-production-{source_sha}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for key, value in outputs.items():
+                  output.write(f"{key}={value}\n")
+          PY
+
+      - name: Checkout frozen source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ steps.freeze.outputs.source_sha }}", path: source-checkout, persist-credentials: false}
+
+      - name: Checkout public frontend
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: main
-          submodules: recursive
-          ssh-key: ${{ secrets.SUBMODULE_SSH_KEY }}
+          repository: letovo-dev/letovo-all-frontend
+          ref: ${{ steps.freeze.outputs.frontend_gitlink }}
+          path: source-checkout/frontend
           persist-credentials: false
 
-      - name: Resolve pinned backend builder
-        run: bash scripts/export_backend_builder.sh
+      - name: Pack frozen source
+        id: pack
+        env: {EXPECTED_JSON: "${{ steps.freeze.outputs.request }}"}
+        run: |
+          set -euo pipefail
+          for directory in source-checkout/scripts source-checkout/src; do test -d "$directory" && test ! -L "$directory"; done
+          cp --remove-destination control/scripts/export_backend_builder.sh source-checkout/scripts/export_backend_builder.sh
+          cp --remove-destination control/src/backend-builder.lock source-checkout/src/backend-builder.lock
+          printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/source_archive.py pack source-checkout "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/source.tar"
+          echo "source_sha256=$(sha256sum "$RUNNER_TEMP/source.tar" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Try Mac
+        id: mac
+        env:
+          MAC_CI_ENABLED: ${{ vars.MAC_CI_ENABLED }}
+          MAC_CI_BASTION_HOST: ${{ vars.MAC_CI_BASTION_HOST || 'ya.sergeiscv.ru' }}
+          MAC_CI_BASTION_USER: ${{ vars.MAC_CI_BASTION_USER || 'letovo-ci-proxy' }}
+          MAC_CI_WORKER_USER: ${{ vars.MAC_CI_WORKER_USER || 'letovo-ci' }}
+          MAC_CI_WORKER_PORT: ${{ vars.MAC_CI_WORKER_PORT || '22222' }}
+          MAC_CI_SSH_KEY: ${{ secrets.MAC_CI_SSH_KEY }}
+          MAC_CI_KNOWN_HOSTS: ${{ secrets.MAC_CI_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          credentials="$(mktemp -d "$RUNNER_TEMP/mac-auth.XXXXXX")"
+          trap 'rm -rf "$credentials"' EXIT
+          export MAC_CI_SSH_KEY_FILE="$credentials/key" MAC_CI_KNOWN_HOSTS_FILE="$credentials/known_hosts"
+          printf '%s\n' "$MAC_CI_SSH_KEY" > "$MAC_CI_SSH_KEY_FILE"
+          printf '%s\n' "$MAC_CI_KNOWN_HOSTS" > "$MAC_CI_KNOWN_HOSTS_FILE"
+          chmod 600 "$MAC_CI_SSH_KEY_FILE" "$MAC_CI_KNOWN_HOSTS_FILE"
+          unset MAC_CI_SSH_KEY MAC_CI_KNOWN_HOSTS
+          status=0
+          bash control/scripts/ci/try-mac.sh "$RUNNER_TEMP/source.tar" "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/mac-summary" || status=$?
+          rm -rf "$credentials"; trap - EXIT
+          cat "$RUNNER_TEMP/mac-summary" >> "$GITHUB_STEP_SUMMARY"
+          case "$status" in
+            0) echo "fallback=false" >> "$GITHUB_OUTPUT" ;;
+            75) echo "fallback=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$status" ;;
+          esac
+
+      - name: Upload frozen source
+        if: steps.mac.outputs.fallback == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ steps.freeze.outputs.artifact }}-source", path: "${{ runner.temp }}/source.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
+
+      - name: Extract bounded result
+        if: steps.mac.outputs.fallback == 'false'
+        run: python3 control/scripts/ci/result_archive.py "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/verified"
+
+      - name: Upload result
+        if: steps.mac.outputs.fallback == 'false'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ steps.freeze.outputs.artifact }}", path: "${{ runner.temp }}/result.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
+
+  fetch-release-builder:
+    needs: [build-release-images]
+    if: needs.build-release-images.outputs.fallback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: {contents: read, packages: read}
+    outputs:
+      image_id: ${{ steps.builder.outputs.image_id }}
+      archive_sha256: ${{ steps.builder.outputs.archive_sha256 }}
+    steps:
+      - name: Export private builder
+        id: builder
+        env: {GH_TOKEN: "${{ github.token }}", BUILDER_IMAGE: "${{ needs.build-release-images.outputs.builder_image }}"}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/docker-auth.XXXXXX")"
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker pull --platform linux/amd64 "$BUILDER_IMAGE"
+          inspection="$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$BUILDER_IMAGE")"
+          [[ "$inspection" =~ ^sha256:[0-9a-f]{64}\ amd64\ linux$ ]]
+          image_id="$(cut -d ' ' -f 1 <<< "$inspection")"
+          docker save "$BUILDER_IMAGE" > "$RUNNER_TEMP/builder.tar"
+          test "$(stat -c %s "$RUNNER_TEMP/builder.tar")" -le 2147483648
+          echo "image_id=$image_id" >> "$GITHUB_OUTPUT"
+          echo "archive_sha256=$(sha256sum "$RUNNER_TEMP/builder.tar" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+          rm -rf "$DOCKER_CONFIG"; unset GH_TOKEN DOCKER_CONFIG; trap - EXIT
+      - name: Upload pinned builder
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ needs.build-release-images.outputs.artifact }}-builder", path: "${{ runner.temp }}/builder.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
+
+  hosted-release-images:
+    needs: [build-release-images, fetch-release-builder]
+    if: needs.build-release-images.outputs.fallback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions: {contents: read}
+    steps:
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with: {ref: "${{ needs.build-release-images.outputs.source_sha }}", path: control, persist-credentials: false}
+      - name: Download frozen source
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with: {name: "${{ needs.build-release-images.outputs.artifact }}-source", path: "${{ runner.temp }}/source-download"}
+      - name: Download pinned builder
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with: {name: "${{ needs.build-release-images.outputs.artifact }}-builder", path: "${{ runner.temp }}/builder-download"}
+      - name: Extract frozen source
+        env: {EXPECTED_JSON: "${{ needs.build-release-images.outputs.request }}", SOURCE_SHA256: "${{ needs.build-release-images.outputs.source_sha256 }}"}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$SOURCE_SHA256" "$RUNNER_TEMP/source-download/source.tar" | sha256sum --check
+          test "$(stat -c %s "$RUNNER_TEMP/source-download/source.tar")" -le 268435456
+          printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/source_archive.py extract "$RUNNER_TEMP/source-download/source.tar" "$RUNNER_TEMP/source"
+          cmp "$RUNNER_TEMP/source/request.json" "$RUNNER_TEMP/request.json"
+      - name: Load pinned builder
+        env: {BUILDER_SHA256: "${{ needs.fetch-release-builder.outputs.archive_sha256 }}", BUILDER_ID: "${{ needs.fetch-release-builder.outputs.image_id }}"}
+        run: |
+          set -euo pipefail
+          [[ "$BUILDER_SHA256" =~ ^[0-9a-f]{64}$ && "$BUILDER_ID" =~ ^sha256:[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$BUILDER_SHA256" "$RUNNER_TEMP/builder-download/builder.tar" | sha256sum --check
+          test "$(stat -c %s "$RUNNER_TEMP/builder-download/builder.tar")" -le 2147483648
+          docker load < "$RUNNER_TEMP/builder-download/builder.tar"
+          test "$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$BUILDER_ID")" = "$BUILDER_ID amd64 linux"
+          docker tag "$BUILDER_ID" "letovo-ci/backend-builder:$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with: {node-version: 22}
+      - name: Install hosted dependencies
+        run: python3 -m pip install --disable-pip-version-check psycopg2-binary pytest && sudo apt-get update && sudo apt-get install -y zstd
+      - name: Hosted fallback
+        env: {LOCAL_BUILDER_REF: "letovo-ci/backend-builder:${{ github.run_id }}-${{ github.run_attempt }}", LOCAL_BUILDER_IMAGE_ID: "${{ needs.fetch-release-builder.outputs.image_id }}"}
+        run: |
+          set -euo pipefail
+          docker buildx use default
+          bash control/scripts/ci/build-bundle.sh "$RUNNER_TEMP/source" "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/bundle"
+          tar --format=ustar -cf "$RUNNER_TEMP/result.tar" -C "$RUNNER_TEMP/bundle" \
+            manifest.json images/backend.tar.zst images/registration.tar.zst images/frontend.tar.zst images/uploader.tar.zst \
+            reports/backend.json reports/registration.json reports/frontend.json reports/uploader.json
+      - name: Extract bounded result
+        run: python3 control/scripts/ci/result_archive.py "$RUNNER_TEMP/result.tar" "$RUNNER_TEMP/verified"
+      - name: Upload result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with: {name: "${{ needs.build-release-images.outputs.artifact }}", path: "${{ runner.temp }}/result.tar", if-no-files-found: error, compression-level: 0, retention-days: 3}
+
+  release:
+    needs: [build-release-images, hosted-release-images]
+    if: always() && inputs.child_avatar_migration_mode == 'apply' && needs.build-release-images.result == 'success' && (needs.build-release-images.outputs.fallback == 'false' || (needs.build-release-images.outputs.fallback == 'true' && needs.hosted-release-images.result == 'success'))
+    runs-on: ubuntu-latest
+    environment: production
+    permissions: {contents: read, packages: write}
+    steps:
+      - name: Checkout frozen release source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.build-release-images.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Checkout public frontend
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: letovo-dev/letovo-all-frontend
+          ref: ${{ needs.build-release-images.outputs.frontend_gitlink }}
+          path: frontend
+          persist-credentials: false
 
       - name: Resolve release images
         id: release
@@ -151,7 +383,8 @@ jobs:
           INPUT_BASE_URL: ${{ inputs.base_url }}
         run: |
           set -euo pipefail
-          release_sha="$(git rev-parse HEAD)"
+          release_sha="${{ needs.build-release-images.outputs.source_sha }}"
+          test "$(git rev-parse HEAD)" = "$release_sha"
           base_url="${INPUT_BASE_URL%/}"
           base_url="${base_url%/}"
           if [[ "$base_url" == *$'\r'* || "$base_url" == *$'\n'* ]]; then
@@ -205,117 +438,35 @@ jobs:
           [[ "$CHILD_AVATAR_EXPECTED_COUNT" =~ ^[0-9]+$ ]] || { echo "child_avatar_expected_count must be a non-negative integer"; exit 1; }
           [[ "$CHILD_AVATAR_EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]] || { echo "child_avatar_expected_sha256 must be a lowercase SHA-256"; exit 1; }
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Download exact release bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with: {name: "${{ needs.build-release-images.outputs.artifact }}", path: "${{ runner.temp }}/download"}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Recreate expected release request
+        env: {EXPECTED_JSON: "${{ needs.build-release-images.outputs.request }}"}
+        run: printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/expected.json" && python3 scripts/ci/image_manifest.py validate-request "$RUNNER_TEMP/expected.json"
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract bounded release result
+        run: python3 scripts/ci/result_archive.py "$RUNNER_TEMP/download/result.tar" "$RUNNER_TEMP/verified"
 
-      - name: Set up Node.js for frontend route scan
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+      - name: Verify release bundle before credentials or load
+        run: python3 scripts/ci/image_manifest.py verify "$RUNNER_TEMP/verified/manifest.json" "$RUNNER_TEMP/expected.json" "$RUNNER_TEMP/verified" --skip-image-inspect
 
-      - name: Scan production frontend bundle routes
-        working-directory: frontend
-        env:
-          NEXT_TELEMETRY_DISABLED: "1"
-          NEXT_PUBLIC_BASE_URL: ${{ steps.release.outputs.base_url }}/letovo-api
-          NEXT_PUBLIC_BASE_URL_UPLOAD: ${{ steps.release.outputs.base_url }}/letovo-api/upload/
-          NEXT_PUBLIC_BASE_URL_MEDIA: ${{ steps.release.outputs.base_url }}/letovo-api/media/get
-          NEXT_PUBLIC_UPLOAD_URL: ${{ steps.release.outputs.base_url }}/letovo-api/upload/
-          NEXT_PUBLIC_BASE_URL_CLEAR: ${{ steps.release.outputs.base_url }}
-          LETOVO_BUILD_SHA: ${{ steps.release.outputs.release_sha }}
-          NEXT_PUBLIC_OTEL_ENABLED: "true"
-          NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: /otel/v1/traces
-          NEXT_PUBLIC_OTEL_SERVICE_NAME: letovo-frontend
-          NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT: production
-          NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE: letovocorp
-          NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO: "0.1"
-          NEXT_PUBLIC_LETOVO_BUILD_SHA: ${{ steps.release.outputs.release_sha }}
+      - name: Install archive decompressor
+        run: sudo apt-get update && sudo apt-get install -y zstd
+
+      - name: Load bounded verified release images
+        run: bash scripts/ci/publish-bundle.sh "$RUNNER_TEMP/verified" "$RUNNER_TEMP/expected.json" release --load-only
+
+      - name: Publish verified release images
+        env: {GH_TOKEN: "${{ github.token }}"}
         run: |
           set -euo pipefail
-          npm ci
-          npm run build
-          if grep -R -I -n -E 'ya\.sergeiscv\.ru|/undefined/auth|/letovo-api/letovo-api' .next; then
-            echo "Found forbidden frontend route or host in built production bundle"
-            exit 1
-          fi
-
-      - name: Build and push production backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          push: true
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
-          tags: ${{ steps.release.outputs.backend_image }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push production registration image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src
-          push: true
-          build-args: |
-            BUILDER_IMAGE=${{ env.BUILDER_IMAGE }}
-            MAIN_FILE=registration_server.cpp
-            TEST_FILE=test.cpp
-            BUILD_FILES=${{ env.BACKEND_BUILD_FILES }}
-            LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
-          tags: ${{ steps.release.outputs.registration_image }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push production frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          file: ./frontend/dockerfile
-          push: true
-          build-args: |
-            LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
-            NEXT_PUBLIC_BASE_URL=${{ steps.release.outputs.base_url }}/letovo-api
-            NEXT_PUBLIC_BASE_URL_UPLOAD=${{ steps.release.outputs.base_url }}/letovo-api/upload/
-            NEXT_PUBLIC_BASE_URL_MEDIA=${{ steps.release.outputs.base_url }}/letovo-api/media/get
-            NEXT_PUBLIC_UPLOAD_URL=${{ steps.release.outputs.base_url }}/letovo-api/upload/
-            NEXT_PUBLIC_BASE_URL_CLEAR=${{ steps.release.outputs.base_url }}
-            NEXT_PUBLIC_OTEL_ENABLED=true
-            NEXT_PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=/otel/v1/traces
-            NEXT_PUBLIC_OTEL_SERVICE_NAME=letovo-frontend
-            NEXT_PUBLIC_OTEL_DEPLOYMENT_ENVIRONMENT=production
-            NEXT_PUBLIC_OTEL_SERVICE_NAMESPACE=letovocorp
-            NEXT_PUBLIC_OTEL_TRACES_SAMPLER_RATIO=0.1
-            NEXT_PUBLIC_LETOVO_BUILD_SHA=${{ steps.release.outputs.release_sha }}
-          tags: ${{ steps.release.outputs.frontend_image }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push production uploader image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./src/python-helpers
-          file: ./src/python-helpers/dockerfile.uploader
-          build-args: |
-            UPLOADER_CAPABILITIES_URL=${{ steps.release.outputs.base_url }}/letovo-api/auth/amiuploader
-          push: true
-          tags: ${{ steps.release.outputs.uploader_image }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          export DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/publish-auth.XXXXXX")"
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          bash scripts/ci/publish-bundle.sh "$RUNNER_TEMP/verified" "$RUNNER_TEMP/expected.json" release --publish-only
+          rm -rf "$DOCKER_CONFIG"; unset GH_TOKEN DOCKER_CONFIG; trap - EXIT
 
       - name: Configure production SSH
         env:
@@ -657,7 +808,7 @@ jobs:
           REMOTE
 
       - name: Set up Node.js for live e2e
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
 

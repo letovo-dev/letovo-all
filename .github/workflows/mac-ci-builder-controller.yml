@@ -1,0 +1,280 @@
+name: Trusted Mac backend-builder controller
+
+'on':
+  workflow_run:
+    workflows: [Mac builder CI request]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    steps:
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          path: control
+          persist-credentials: false
+      - name: Freeze builder request
+        id: freeze
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTROL_SHA: ${{ github.sha }}
+          REQUEST_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, subprocess, sys
+          sys.path.insert(0, "control/scripts/ci")
+          def api(path):
+              return json.loads(subprocess.check_output(
+                  ["gh", "api", "repos/letovo-dev/letovo-all/" + path]
+              ))
+
+          def sha(value):
+              if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{40}", value):
+                  raise ValueError("invalid SHA")
+              return value
+
+          control_sha = sha(os.environ["CONTROL_SHA"])
+          assert subprocess.check_output(
+              ["git", "-C", "control", "rev-parse", "HEAD"], text=True
+          ).strip() == control_sha
+          trigger = json.load(open(os.environ["GITHUB_EVENT_PATH"]))["workflow_run"]
+          run = api("actions/runs/" + os.environ["REQUEST_RUN"])
+          for record in (trigger, run):
+              assert record["name"] == "Mac builder CI request"
+              assert record["path"] == ".github/workflows/backend-builder-request.yml"
+              assert record["event"] == "pull_request" and record["conclusion"] == "success"
+              assert record["repository"]["full_name"] == "letovo-dev/letovo-all"
+              assert record["head_repository"]["full_name"] == "letovo-dev/letovo-all"
+          assert run["head_sha"] == trigger["head_sha"]
+          assert len(run["pull_requests"]) == 1
+          link = run["pull_requests"][0]
+          pr_number = link["number"]
+          assert isinstance(pr_number, int) and pr_number > 0
+          pr = api(f"pulls/{pr_number}")
+          assert pr["state"] == "open" and not pr["merged"]
+          assert pr["head"]["repo"]["full_name"] == "letovo-dev/letovo-all"
+          assert pr["base"]["repo"]["full_name"] == "letovo-dev/letovo-all"
+          assert pr["base"]["ref"] == "main"
+          head_sha = sha(pr["head"]["sha"])
+          assert head_sha == run["head_sha"] == link["head"]["sha"]
+          source_sha = sha(pr["merge_commit_sha"])
+          merge = api("commits/" + source_sha)
+          assert merge["sha"] == source_sha
+          assert [parent["sha"] for parent in merge["parents"]] == [pr["base"]["sha"], head_sha]
+          changed = set()
+          for page in range(1, 31):
+              files = api(f"pulls/{pr_number}/files?per_page=100&page={page}")
+              assert isinstance(files, list)
+              changed.update(item["filename"] for item in files)
+              if len(files) < 100:
+                  break
+          else:
+              raise ValueError("builder PR file list exceeds trusted bound")
+          assert changed & {"src/backend-builder.env", "src/Dockerfile.builder"}
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"control_sha={control_sha}\nsource_sha={source_sha}\n")
+          PY
+      - name: Checkout frozen merge
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ steps.freeze.outputs.source_sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Freeze builder artifact identity
+        id: identity
+        env:
+          SOURCE_SHA: ${{ steps.freeze.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, sys
+          sys.path.insert(0, "control/scripts/ci")
+          from builder_artifact import source_revisions, validate_request
+          revision, manifest_revision = source_revisions("candidate")
+          request = validate_request({
+              "schema_version": 1,
+              "artifact": "backend-builder",
+              "repository": "letovo-dev/letovo-all",
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "source_sha": os.environ["SOURCE_SHA"],
+              "platform": "linux/amd64",
+              "builder_revision": revision,
+              "dependency_manifest_revision": manifest_revision,
+          })
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write("request=" + json.dumps(request, separators=(",", ":")) + "\n")
+              output.write(f"artifact=letovo-builder-{request['run_id']}-{request['run_attempt']}-{revision}\n")
+          PY
+    outputs:
+      control_sha: ${{ steps.freeze.outputs.control_sha }}
+      source_sha: ${{ steps.freeze.outputs.source_sha }}
+      request: ${{ steps.identity.outputs.request }}
+      artifact: ${{ steps.identity.outputs.artifact }}
+
+  mac:
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    outputs:
+      fallback: ${{ steps.mac.outputs.fallback }}
+    steps:
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.resolve.outputs.control_sha }}
+          path: control
+          persist-credentials: false
+      - name: Checkout frozen merge
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.resolve.outputs.source_sha }}
+          path: candidate
+          persist-credentials: false
+      - name: Pack frozen builder source
+        env:
+          EXPECTED_JSON: ${{ needs.resolve.outputs.request }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/builder_artifact.py pack-source \
+            candidate "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/source.tar"
+      - name: Try Mac builder
+        id: mac
+        env:
+          MAC_CI_ENABLED: ${{ vars.MAC_CI_ENABLED }}
+          MAC_CI_BASTION_HOST: ${{ vars.MAC_CI_BASTION_HOST || 'ya.sergeiscv.ru' }}
+          MAC_CI_BASTION_USER: ${{ vars.MAC_CI_BASTION_USER || 'letovo-ci-proxy' }}
+          MAC_CI_WORKER_USER: ${{ vars.MAC_CI_WORKER_USER || 'letovo-ci' }}
+          MAC_CI_WORKER_PORT: ${{ vars.MAC_CI_WORKER_PORT || '22222' }}
+          MAC_CI_SSH_KEY: ${{ secrets.MAC_CI_SSH_KEY }}
+          MAC_CI_KNOWN_HOSTS: ${{ secrets.MAC_CI_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          credentials="$(mktemp -d "$RUNNER_TEMP/mac-auth.XXXXXX")"
+          trap 'rm -rf "$credentials"' EXIT
+          export MAC_CI_SSH_KEY_FILE="$credentials/key"
+          export MAC_CI_KNOWN_HOSTS_FILE="$credentials/known_hosts"
+          printf '%s\n' "$MAC_CI_SSH_KEY" > "$MAC_CI_SSH_KEY_FILE"
+          printf '%s\n' "$MAC_CI_KNOWN_HOSTS" > "$MAC_CI_KNOWN_HOSTS_FILE"
+          chmod 600 "$MAC_CI_SSH_KEY_FILE" "$MAC_CI_KNOWN_HOSTS_FILE"
+          unset MAC_CI_SSH_KEY MAC_CI_KNOWN_HOSTS
+          status=0
+          bash control/scripts/ci/try-mac.sh "$RUNNER_TEMP/source.tar" \
+            "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/result.tar" \
+            "$RUNNER_TEMP/mac-summary" builder || status=$?
+          cat "$RUNNER_TEMP/mac-summary" >> "$GITHUB_STEP_SUMMARY"
+          case "$status" in
+            0) echo "fallback=false" >> "$GITHUB_OUTPUT" ;;
+            75) echo "fallback=true" >> "$GITHUB_OUTPUT" ;;
+            *) exit "$status" ;;
+          esac
+      - name: Upload frozen source for fallback
+        if: steps.mac.outputs.fallback == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ needs.resolve.outputs.artifact }}-source
+          path: ${{ runner.temp }}/source.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Upload Mac result
+        if: steps.mac.outputs.fallback == 'false'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ needs.resolve.outputs.artifact }}
+          path: ${{ runner.temp }}/result.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+  hosted:
+    needs: [resolve, mac]
+    if: needs.mac.outputs.fallback == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.resolve.outputs.control_sha }}
+          path: control
+          persist-credentials: false
+      - name: Download frozen source
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.resolve.outputs.artifact }}-source
+          path: ${{ runner.temp }}/source
+      - name: Hosted builder fallback
+        env:
+          EXPECTED_JSON: ${{ needs.resolve.outputs.request }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/builder_artifact.py extract-source \
+            "$RUNNER_TEMP/source/source.tar" "$RUNNER_TEMP/frozen"
+          cmp "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/frozen/request.json"
+          bash control/scripts/ci/build-builder.sh "$RUNNER_TEMP/frozen" \
+            "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/output"
+          python3 control/scripts/ci/builder_artifact.py pack-result \
+            "$RUNNER_TEMP/output" "$RUNNER_TEMP/result.tar"
+      - name: Upload hosted result
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ needs.resolve.outputs.artifact }}
+          path: ${{ runner.temp }}/result.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+  verify:
+    needs: [resolve, mac, hosted]
+    if: always() && needs.resolve.result == 'success' && needs.mac.result == 'success' && (needs.hosted.result == 'success' || needs.hosted.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted controls
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.resolve.outputs.control_sha }}
+          path: control
+          persist-credentials: false
+      - name: Download exact result
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.resolve.outputs.artifact }}
+          path: ${{ runner.temp }}/download
+      - name: Verify exact builder image
+        env:
+          EXPECTED_JSON: ${{ needs.resolve.outputs.request }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$EXPECTED_JSON" > "$RUNNER_TEMP/request.json"
+          python3 control/scripts/ci/builder_artifact.py extract-result \
+            "$RUNNER_TEMP/download/result.tar" "$RUNNER_TEMP/verified"
+          python3 control/scripts/ci/builder_artifact.py verify-result \
+            "$RUNNER_TEMP/request.json" "$RUNNER_TEMP/verified"
+          zstd -dc "$RUNNER_TEMP/verified/images/backend-builder.tar.zst" | docker load
+          reference="$(python3 control/scripts/ci/builder_artifact.py image-field \
+            "$RUNNER_TEMP/verified/manifest.json" local_ref)"
+          expected_id="$(python3 control/scripts/ci/builder_artifact.py image-field \
+            "$RUNNER_TEMP/verified/manifest.json" image_id)"
+          test "$(docker image inspect --format '{{.Id}} {{.Architecture}} {{.Os}}' "$reference")" = \
+            "$expected_id amd64 linux"

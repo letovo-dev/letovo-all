@@ -542,6 +542,38 @@ def test_request_schema_rejects_shell_unsafe_build_file(tmp_path):
     assert "build_files" in result.stderr
 
 
+def test_production_request_accepts_configured_https_origin(tmp_path):
+    request_path = tmp_path / "request.json"
+    configured = request("production")
+    configured["base_url"] = "https://school.example:8443"
+    write_request(request_path, configured)
+
+    result = run(sys.executable, str(IMAGE_MANIFEST), "validate-request", str(request_path))
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "https://ya.sergeiscv.ru",
+        "http://school.example",
+        "https://user@school.example",
+        "https://school.example/path",
+        "https://school.example?query=yes",
+        "https://school.example/",
+    ],
+)
+def test_production_request_rejects_unsafe_or_non_origin_url(tmp_path, base_url):
+    request_path = tmp_path / "request.json"
+    configured = request("production")
+    configured["base_url"] = base_url
+    write_request(request_path, configured)
+
+    result = run(sys.executable, str(IMAGE_MANIFEST), "validate-request", str(request_path))
+    assert result.returncode != 0
+    assert "base_url" in result.stderr
+
+
 def test_build_and_publish_keep_privileges_separate():
     builder = BUILD_BUNDLE.read_text(encoding="utf-8")
     publisher = PUBLISH_BUNDLE.read_text(encoding="utf-8")
